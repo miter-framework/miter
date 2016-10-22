@@ -5,13 +5,15 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "server": "node ./index",
-    "start": "yarn watch && yarn run server"
+    "start": "tsc ; echo 'Serving' ; node ./index.js",
+    "start-dev": "tsc; concurrently 'tsc -w' 'supervisor -w ./dist -q -- ./index.js'"
   },
   "devDependencies": {
     "@types/express": "^4.0.33",
     "@types/node": "^6.0.45",
-    "typescript": "^2.0.3"
+    "typescript": "^2.0.3",
+    "concurrently": "^3.1.0",
+    "supervisor": "^0.11.0"
   },
   "dependencies": {
     "express": "^4.14.0",

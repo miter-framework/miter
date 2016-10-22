@@ -33,7 +33,7 @@ export class Server {
       <title>Title</title>
    </head>
    <body>
-      Hello, World 3!
+      Hello, World!
    </body>
 </html>
 
