@@ -16,6 +16,7 @@
     "typescript": "^2.0.3"
   },
   "dependencies": {
+    "debug": "^2.2.0",
     "express": "^4.14.0",
     "reflect-metadata": "^0.1.8",
     "yarn": "^0.16.1"
