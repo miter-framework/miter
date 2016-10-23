@@ -4,6 +4,8 @@ import * as express from 'express';
 import * as http from 'http';
 var debug = require("debug")("express:server");
 
+import { RouterReflector } from './router/reflector';
+
 export class Server {
    constructor() {
       this.app = express();
@@ -21,25 +23,10 @@ export class Server {
       
    }
    
+   private routerReflector: RouterReflector;
    routes() {
       let router: express.Router = express.Router();
-      
-      router.get('/', function(req: express.Request, res: express.Response, next: express.NextFunction) {
-         res.send(`
-
-<!doctype HTML>
-<html>
-   <head>
-      <title>Title</title>
-   </head>
-   <body>
-      Hello, World!
-   </body>
-</html>
-
-         `);
-      });
-      
+      this.routerReflector = new RouterReflector(router);
       this.app.use(router);
    }
    
