@@ -10,7 +10,7 @@ export class UserController {
    
    @Get('/api/users/find')
    async find(req, res, next) {
-      res.send(200, htmlBody(`Hello, World!`));
+      res.status(200).send(htmlBody(`Hello, World!`));
    }
    
 }

@@ -11,17 +11,17 @@ export class TestController {
    
    @Get('/')
    index(req: express.Request, res: express.Response) {
-      res.send(200, htmlBody(`Home! <a href='/about'>About Us</a>`));
+      res.status(200).send(htmlBody(`Home! <a href='/about'>About Us</a>`));
    }
    
    @Get('/about')
    about(req: express.Request, res: express.Response) {
-      res.send(200, htmlBody(`About us! <a href='/foobar'>Stuff</a>`));
+      res.status(200).send(htmlBody(`About us! <a href='/foobar'>Stuff</a>`));
    }
    
    @Get('/foobar')
    foobar(req: express.Request, res: express.Response) {
-      res.send(200, htmlBody(`Foobar! <a href='/'>Go home</a>`));
+      res.status(200).send(htmlBody(`Foobar! <a href='/'>Go home</a>`));
    }
    
 }

@@ -13,7 +13,6 @@ export function createRouteDecorator(meta: RouteMetadata | string, method?: Rout
    return function(controller: any, routeName: string, routeFn: RouteFuncDescriptor) {
       var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controller) || [];
       routes.push(routeName);
-      console.log(`Adding route to controller ${JSON.stringify(controller)}. Current length: ${routes.length}. ControllerRoutesSym: ${ControllerRoutesSym.toString()}`);
       Reflect.defineMetadata(ControllerRoutesSym, routes, controller);
       
       Reflect.defineMetadata(RouteMetadataSym, meta, controller, routeName);

@@ -19,15 +19,15 @@ export class RouterReflector {
    addController(controllerFn: any) {
       if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
       var controllerInst = this.controllers[controllerFn] = new controllerFn();
+      var controllerProto = controllerFn.prototype;
       
-      var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerFn);
-      if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerFn}.`);
+      var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
+      if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerProto}.`);
       
-      var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controllerFn) || [];
-      console.log(`Reflecting routes for ${controllerFn.name}. Route count: ${routes.length}. ControllerRoutesSym: ${ControllerRoutesSym.toString()}`);
+      var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controllerProto) || [];
       for (var q = 0; q < routes.length; q++) {
          var routeFnName: string = routes[q];
-         var routeMeta: RouteMetadata = Reflect.getOwnMetadata(RouteMetadataSym, controllerFn, routeFnName);
+         var routeMeta: RouteMetadata = Reflect.getOwnMetadata(RouteMetadataSym, controllerProto, routeFnName);
          if (!routeMeta) throw new Error(`Could not find route metadata for route ${controllerFn}.${routeFnName}.`);
          
          this.addRoute(controllerInst, routeFnName, meta, routeMeta);
