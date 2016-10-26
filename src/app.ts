@@ -3,13 +3,22 @@
 import * as express from 'express';
 import * as http from 'http';
 var debug = require("debug")("express:server");
+import { Sequelize } from 'sequelize';
 
+import { OrmReflector } from './orm/reflector';
 import { RouterReflector } from './router/reflector';
 
 export class Server {
    constructor() {
       this.app = express();
+      
+      console.log("Loading configuration...");
       this.config();
+      
+      console.log("Loading database configuration...");
+      this.orm();
+      
+      console.log("Loading routes...");
       this.routes();
    }
    
@@ -21,6 +30,12 @@ export class Server {
    
    config() {
       
+   }
+   
+   private ormReflector: OrmReflector;
+   orm() {
+      let sequelize: Sequelize;
+      this.ormReflector = new OrmReflector(sequelize);
    }
    
    private routerReflector: RouterReflector;
@@ -68,6 +83,6 @@ export class Server {
    private onListening() {
       var addr = this.httpServer.address();
       var bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
-      debug("Listening on " + bind);
+      debug(`Listening on ${bind}`);
    }
 }

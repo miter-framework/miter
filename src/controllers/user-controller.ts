@@ -1,4 +1,4 @@
-import { Controller, Get } from '../router/decorators';
+import { Controller, Get } from './decorators';
 
 function htmlBody(body: string, title?: string) {
    title = title || 'Title!';

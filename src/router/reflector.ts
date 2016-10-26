@@ -11,12 +11,12 @@ export class RouterReflector {
    
    reflectRoutes(controllers: any[]) {
       for (var q = 0; q < controllers.length; q++) {
-         this.addController(controllers[q]);
+         this.reflectControllerRoutes(controllers[q]);
       }
    }
    
    private controllers: any = {};
-   addController(controllerFn: any) {
+   reflectControllerRoutes(controllerFn: any) {
       if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
       var controllerInst = this.controllers[controllerFn] = new controllerFn();
       var controllerProto = controllerFn.prototype;

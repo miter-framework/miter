@@ -11,6 +11,7 @@
   "devDependencies": {
     "@types/express": "^4.0.33",
     "@types/node": "^6.0.45",
+    "@types/sequelize": "^4.0.38",
     "concurrently": "^3.1.0",
     "supervisor": "^0.11.0",
     "typescript": "^2.0.3"
@@ -18,7 +19,9 @@
   "dependencies": {
     "debug": "^2.2.0",
     "express": "^4.14.0",
+    "lodash": "^4.16.4",
     "reflect-metadata": "^0.1.8",
+    "sequelize": "^3.24.6",
     "yarn": "^0.16.1"
   },
   "keywords": [
