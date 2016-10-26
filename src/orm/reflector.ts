@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Sequelize } from 'sequelize';
 import { AppModels } from '../models';
-import 'lodash';
+import _ = require('lodash');
 
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from './metadata';
 
