@@ -1,19 +1,20 @@
 "use strict";
 
 import * as express from 'express';
+
+import config = require('config');
+
+import { Sequelize } from 'sequelize';
+import { OrmReflector } from './orm/reflector';
+
+import { RouterReflector } from './router/reflector';
+
 import * as http from 'http';
 var debug = require("debug")("express:server");
-import { Sequelize } from 'sequelize';
-
-import { OrmReflector } from './orm/reflector';
-import { RouterReflector } from './router/reflector';
 
 export class Server {
    constructor() {
       this.app = express();
-      
-      console.log("Loading configuration...");
-      this.config();
       
       console.log("Loading database configuration...");
       this.orm();
@@ -27,10 +28,6 @@ export class Server {
    }
    
    public app: express.Application;
-   
-   config() {
-      
-   }
    
    private ormReflector: OrmReflector;
    orm() {

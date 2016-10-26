@@ -1,5 +1,8 @@
 /node_modules/
 /dist/
 
+/config/**/local.js
+/config/**/local-*.js
+
 yarn.lock
 yarn-error.log
