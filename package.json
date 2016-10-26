@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "tsc ; echo 'Serving' ; node ./index.js",
+    "start": "tsc ; node ./index.js",
     "start-dev": "tsc; concurrently 'tsc -w' 'supervisor -w ./dist -q -- ./index.js'"
   },
   "devDependencies": {
@@ -23,6 +23,7 @@
     "debug": "^2.2.0",
     "express": "^4.14.0",
     "lodash": "^4.16.4",
+    "mysql": "^2.11.1",
     "reflect-metadata": "^0.1.8",
     "sequelize": "^3.24.6",
     "yarn": "^0.16.1"
