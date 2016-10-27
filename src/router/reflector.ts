@@ -1,9 +1,8 @@
 import 'reflect-metadata';
 import * as express from 'express';
-import { AppControllers } from '../controllers';
-
+import { AppControllers } from 'controllers';
+import { Injector } from 'inject';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
-import { Injector } from '../inject';
 
 export class RouterReflector {
    constructor(private router: express.Router, private injector: Injector) {

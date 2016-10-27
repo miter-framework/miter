@@ -2,13 +2,13 @@
 
 import * as express from 'express';
 
-import { Injector } from './inject';
+import { Injector } from 'inject';
 
 import config = require('config');
 import * as Sequelize from 'sequelize';
-import { OrmReflector } from './orm/reflector';
+import { OrmReflector } from 'orm';
 
-import { RouterReflector } from './router/reflector';
+import { RouterReflector } from 'router';
 
 import * as http from 'http';
 var debug = require("debug")("express:server");

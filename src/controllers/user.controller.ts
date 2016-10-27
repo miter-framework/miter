@@ -1,7 +1,7 @@
 import * as express from 'express';
-import { Controller, Get } from './decorators';
-import { AuthService } from '../services/auth.service';
-import { EvenIdPolicy } from '../policies/even-id.policy';
+import { Controller, Get } from 'decorators';
+import { AuthService } from 'services/auth.service';
+import { EvenIdPolicy } from 'policies/even-id.policy';
 
 function htmlBody(body: string, title?: string) {
    title = title || 'Title!';

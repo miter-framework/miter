@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { Policy } from './decorators';
+import { Policy } from 'decorators';
 
 @Policy()
 export class AdminPolicy {

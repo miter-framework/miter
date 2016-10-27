@@ -1,4 +1,4 @@
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../../orm/metadata';
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from 'orm';
 import "reflect-metadata";
 
 function furnishDefaults(meta: ModelMetadata, model: any) {

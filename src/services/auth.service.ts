@@ -1,4 +1,4 @@
-import { Service } from './decorators';
+import { Service } from 'decorators';
 import { TestService } from './test.service';
 
 @Service()

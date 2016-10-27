@@ -1,6 +1,6 @@
-import { PropMetadata, PropMetadataSym, ModelPropertiesSym } from '../../orm/metadata';
+import { PropMetadata, PropMetadataSym, ModelPropertiesSym } from 'orm';
 import * as sequelize from 'sequelize';
-import "reflect-metadata";
+import 'reflect-metadata';
 
 export function Prop(meta: PropMetadata = {}) {
    return function(model: any, propertyName: string) {

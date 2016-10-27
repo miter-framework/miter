@@ -1,13 +1,13 @@
 import "reflect-metadata";
 
-type CtorT = { new (...any): any };
+export type CtorT<T> = { new (...any): T };
 
 export class Injector {
    constructor() { }
    
    private temporaryValue = Symbol.for('recursive-injection');
-   private cache: Map<Function, any> = new Map<Function, any>();
-   resolveInjectable(ctorFn: CtorT) {
+   private cache: Map<CtorT<any>, any> = new Map<CtorT<any>, any>();
+   resolveInjectable(ctorFn: CtorT<any>) {
       if (!ctorFn) {
          console.error('Attempted to inject a falsey type.');
          return;

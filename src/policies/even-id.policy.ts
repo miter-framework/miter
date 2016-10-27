@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { Policy } from './decorators';
+import { Policy } from 'decorators';
 
 @Policy()
 export class EvenIdPolicy {
@@ -8,7 +8,5 @@ export class EvenIdPolicy {
          res.status(401).send('Permission denied!');
          return;
       }
-      
-      return 'string';
    }
 }
