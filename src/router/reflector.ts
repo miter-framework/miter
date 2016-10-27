@@ -45,11 +45,11 @@ export class RouterReflector {
       
       this.router[routeMeta.method](routeMeta.path, async function(req: express.Request, res: express.Response) {
          var allResults = [];
-         // req.policyResults = function(policyFn) {
-         //    for (var q = 0; q < policyTypes.length; q++) {
-         //       if (policyTypes[q] === policyFn) return allResults[q];
-         //    }
-         // };
+         (<any>req).policyResults = function(policyFn) {
+            for (var q = 0; q < policyTypes.length; q++) {
+               if (policyTypes[q] === policyFn) return allResults[q];
+            }
+         };
          let initialStatusCode = res.statusCode;
          for (var q = 0; q < policies.length; q++) {
             let policy = policies[q];
