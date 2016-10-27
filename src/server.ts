@@ -28,10 +28,6 @@ export class Server {
       console.log("Serving");
    }
    
-   public static bootstrap(): Server {
-      return new Server();
-   }
-   
    private _app: express.Application;
    get app(): express.Application {
       return this._app;

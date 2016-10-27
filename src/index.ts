@@ -1,8 +1,6 @@
-#!/usr/bin/env node
-"use strict";
+import { Server } from './server';
 
-//module dependencies.
-var serverInst = require("./dist/app").Server.bootstrap();
+let serverInst = new Server();
 
 //get port from environment and store in Express.
 var port = normalizePort(process.env.PORT || 8080);

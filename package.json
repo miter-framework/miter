@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "description": "The api server for GitSupport",
   "scripts": {
+    "test": "echo 'Not implemented'",
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "tsc ; node ./index.js",
-    "start-dev": "tsc; concurrently 'tsc -w' 'supervisor -w ./dist -q -- ./index.js'"
+    "start": "tsc ; node ./dist/index.js",
+    "start-dev": "tsc ; concurrently 'tsc -w' 'supervisor -w ./dist -q -- ./dist/index.js'"
   },
   "devDependencies": {
     "@types/config": "^0.0.30",
