@@ -12,6 +12,8 @@ export * from './controller.decorator';
 export * from './route.decorator';
 export * from './get.decorator';
 export * from './post.decorator';
+export * from './put.decorator';
+export * from './delete.decorator';
 
 //Policy
 export * from './policy.decorator';
