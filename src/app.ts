@@ -2,6 +2,8 @@
 
 import * as express from 'express';
 
+import { Injector } from './inject';
+
 import config = require('config');
 import * as Sequelize from 'sequelize';
 import { OrmReflector } from './orm/reflector';
@@ -14,7 +16,8 @@ var debug = require("debug")("express:server");
 export class Server {
    constructor() {
       console.log("Initializing api-server...");
-      this.app = express();
+      this._app = express();
+      this._injector = new Injector();
       
       console.log("  Loading database configuration...");
       this.orm();
@@ -29,7 +32,15 @@ export class Server {
       return new Server();
    }
    
-   public app: express.Application;
+   private _app: express.Application;
+   get app(): express.Application {
+      return this._app;
+   }
+   
+   private _injector: Injector;
+   get injector(): Injector {
+      return this._injector;
+   }
    
    private ormReflector: OrmReflector;
    orm() {
@@ -44,13 +55,13 @@ export class Server {
          host: `${host}:${port}`,
          dialect: dialect
       });
-      this.ormReflector = new OrmReflector(sql);
+      this.ormReflector = new OrmReflector(sql, this.injector);
    }
    
    private routerReflector: RouterReflector;
    routes() {
       let router = express.Router();
-      this.routerReflector = new RouterReflector(router);
+      this.routerReflector = new RouterReflector(router, this.injector);
       this.app.use(router);
    }
    

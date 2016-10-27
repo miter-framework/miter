@@ -1,3 +1,5 @@
+import { PolicyCtorT } from './policy';
+
 
 
 export type ControllerMetadata = {

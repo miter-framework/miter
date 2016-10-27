@@ -3,9 +3,10 @@ import * as express from 'express';
 import { AppControllers } from '../controllers';
 
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
+import { Injector } from '../inject';
 
 export class RouterReflector {
-   constructor(private router: express.Router) {
+   constructor(private router: express.Router, private injector: Injector) {
       this.reflectRoutes(AppControllers);
    }
    
@@ -18,7 +19,7 @@ export class RouterReflector {
    private controllers: any = {};
    reflectControllerRoutes(controllerFn: any) {
       if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
-      var controllerInst = this.controllers[controllerFn] = new controllerFn();
+      var controllerInst = this.controllers[controllerFn] = this.injector.resolveInjectable(controllerFn);
       var controllerProto = controllerFn.prototype;
       
       var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);

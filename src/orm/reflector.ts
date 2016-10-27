@@ -4,9 +4,10 @@ import { AppModels } from '../models';
 import _ = require('lodash');
 
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from './metadata';
+import { Injector } from '../inject';
 
 export class OrmReflector {
-   constructor(private orm: Sequelize) {
+   constructor(private orm: Sequelize, private injector: Injector) {
       this.reflectModels(AppModels);
    }
    

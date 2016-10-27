@@ -1,4 +1,4 @@
-import { Model, Prop } from './decorators';
+import { Model, Prop, Types } from './decorators';
 
 @Model('users')
 export class User {
