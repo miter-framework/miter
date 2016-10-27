@@ -17,4 +17,12 @@ export class UserController {
    async find(req: express.Request, res: express.Response) {
       res.status(200).send(htmlBody(`Hello, World! This is the meaning of life, the universe, and everything: ${this.authService.meaningOfLife()}`));
    }
+   
+   @Get({
+      path: '/api/user/:id',
+      policies: [EvenIdPolicy]
+   })
+   async get(req: express.Request, res: express.Response) {
+      res.status(200).send(htmlBody(`GET!!!`));
+   }
 }

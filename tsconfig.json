@@ -9,8 +9,11 @@
     "experimentalDecorators": true,
     "moduleResolution": "node",
     "types": [
+      "config",
+      "express",
+      "lodash",
       "node",
-      "express"
+      "sequelize"
     ]
   },
   "exclude": [

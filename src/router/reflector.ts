@@ -36,6 +36,29 @@ export class RouterReflector {
    }
    
    addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
-      this.router[routeMeta.method](routeMeta.path, controller[routeFnName].bind(controller));
+      let policyTypes = [
+         ...(meta.policies || []),
+         ...(routeMeta.policies || [])
+      ];
+      let policies = policyTypes.map(policyType => this.injector.resolveInjectable(policyType));
+      let boundRoute = controller[routeFnName].bind(controller);
+      
+      this.router[routeMeta.method](routeMeta.path, async function(req: express.Request, res: express.Response) {
+         var allResults = [];
+         // req.policyResults = function(policyFn) {
+         //    for (var q = 0; q < policyTypes.length; q++) {
+         //       if (policyTypes[q] === policyFn) return allResults[q];
+         //    }
+         // };
+         let initialStatusCode = res.statusCode;
+         for (var q = 0; q < policies.length; q++) {
+            let policy = policies[q];
+            var result = await policy.handle(req, res);
+            allResults.push(result);
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+         }
+         
+         return await boundRoute(req, res);
+      });
    }
 }
