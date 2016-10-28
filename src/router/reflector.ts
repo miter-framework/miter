@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import * as express from 'express';
 import { Injector } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
+import './extend-request';
 
 export class RouterReflector {
    constructor(private router: express.Router, private injector: Injector) {
@@ -43,7 +44,7 @@ export class RouterReflector {
       if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create {}`);
       this.router[routeMeta.method](routeMeta.path, async function(req: express.Request, res: express.Response) {
          var allResults: any[] = [];
-         (<any>req).policyResults = function(policyFn) {
+         req.policyResults = function(policyFn) {
             for (var q = 0; q < policyTypes.length; q++) {
                if (policyTypes[q] === policyFn) return allResults[q];
             }
