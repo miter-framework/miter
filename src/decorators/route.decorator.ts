@@ -1,4 +1,4 @@
-import { RouteDecoratorFunc, RouteFunc, RouteFuncDescriptor, RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from 'router';
+import { RouteDecoratorFunc, RouteFunc, RouteFuncDescriptor, RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from '../router';
 import 'reflect-metadata';
 
 export function createRouteDecorator(meta: RouteMetadata | string, method?: RouteMethod): RouteDecoratorFunc {

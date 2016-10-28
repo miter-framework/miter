@@ -1,4 +1,5 @@
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from 'orm';
+import { CtorT, ModelT } from '../core';
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../orm';
 import "reflect-metadata";
 
 function furnishDefaults(meta: ModelMetadata, model: any) {
@@ -10,7 +11,7 @@ export function Model(tableName?: ModelMetadata | string) {
    if (typeof tableName === 'string') meta = { tableName: <string>tableName };
    else meta = tableName;
    
-   return function(model: any) {
+   return function(model: CtorT<ModelT>) {
       furnishDefaults(meta, model);
       Reflect.defineMetadata(ModelMetadataSym, meta, model.prototype);
       

@@ -1,5 +1,4 @@
-import { CtorT } from 'inject';
-import { ServiceT } from 'router';
+import { CtorT, ServiceT } from '../core';
 
 export function Service() {
    return function(service: CtorT<ServiceT>) {
