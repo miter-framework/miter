@@ -1,5 +1,4 @@
-import { CtorT } from 'inject';
-import { PolicyT } from './policy';
+import { CtorT, PolicyT } from '../core';
 
 
 

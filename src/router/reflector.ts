@@ -1,12 +1,10 @@
 import 'reflect-metadata';
 import * as express from 'express';
-import { AppControllers } from 'controllers';
-import { Injector } from 'inject';
+import { Injector } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
 
 export class RouterReflector {
    constructor(private router: express.Router, private injector: Injector) {
-      this.reflectRoutes(AppControllers);
    }
    
    reflectRoutes(controllers: any[]) {

@@ -30,9 +30,10 @@
     "yarn": "^0.16.1"
   },
   "keywords": [
-    "gitsupport",
+    "miter",
     "api",
-    "server"
+    "server",
+    "web framework"
   ],
   "contributors": [
     "Brandon Slade <brandonyoyoslade@gmail.com>"

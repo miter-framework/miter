@@ -1,6 +1,5 @@
-import "reflect-metadata";
-
-export type CtorT<T> = { new (...any): T };
+import 'reflect-metadata';
+import { CtorT } from './ctor';
 
 export class Injector {
    constructor() { }
