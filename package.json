@@ -1,7 +1,7 @@
 {
-  "name": "api-server",
+  "name": "miter",
   "version": "0.0.1",
-  "description": "The api server for GitSupport",
+  "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "echo 'Not implemented'",
     "build": "tsc",
@@ -38,13 +38,13 @@
     "Brandon Slade <brandonyoyoslade@gmail.com>"
   ],
   "license": "ISC",
-  "private": true,
+  "private": false,
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/wiselynx/api-server.git"
+    "url": "git+https://github.com/aboveyou00/rivet.git"
   },
   "bugs": {
-    "url": "https://gitlab.com/wiselynx/api-server/issues"
+    "url": "https://github.com/aboveyou00/rivet/issues"
   },
-  "homepage": "https://gitlab.com/wiselynx/api-server#readme"
+  "homepage": "https://github.com/aboveyou00/rivet#readme"
 }

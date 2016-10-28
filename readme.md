@@ -1,3 +1,3 @@
-#GitSupport API Server
+#Rivet Web Framework
 
 TODO: Impl
