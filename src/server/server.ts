@@ -13,12 +13,10 @@ import * as http from 'http';
 var debug = require("debug")("express:server");
 
 export class Server {
-   constructor(private meta: ServerMetadata) {
+   constructor(private _meta: ServerMetadata) {
       console.log("Initializing api-server...");
       this._app = express();
       this._injector = new Injector();
-      
-      console.log("  I just did this!");
       
       console.log("  Loading database configuration...");
       this.orm();
@@ -37,6 +35,10 @@ export class Server {
    private _injector: Injector;
    get injector(): Injector {
       return this._injector;
+   }
+   
+   get meta(): ServerMetadata {
+      return this._meta;
    }
    
    private ormReflector: OrmReflector;
@@ -59,7 +61,7 @@ export class Server {
    private routerReflector: RouterReflector;
    routes() {
       let router = express.Router();
-      this.routerReflector = new RouterReflector(router, this.injector);
+      this.routerReflector = new RouterReflector(this, router, this.injector);
       this.routerReflector.reflectRoutes(this.meta.controllers || []);
       this.app.use(router);
    }

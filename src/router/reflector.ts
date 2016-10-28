@@ -1,11 +1,12 @@
 import 'reflect-metadata';
 import * as express from 'express';
 import { Injector } from '../core';
+import { Server } from '../server';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
 import './extend-request';
 
 export class RouterReflector {
-   constructor(private router: express.Router, private injector: Injector) {
+   constructor(private server: Server, private router: express.Router, private injector: Injector) {
    }
    
    reflectRoutes(controllers: any[]) {
@@ -35,6 +36,7 @@ export class RouterReflector {
    
    addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
       let policyTypes = [
+         ...(this.server.meta.policies || []),
          ...(meta.policies || []),
          ...(routeMeta.policies || [])
       ];
