@@ -40,8 +40,9 @@ export class RouterReflector {
       let policies = policyTypes.map(policyType => this.injector.resolveInjectable(policyType));
       let boundRoute = controller[routeFnName].bind(controller);
       
+      if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create {}`);
       this.router[routeMeta.method](routeMeta.path, async function(req: express.Request, res: express.Response) {
-         var allResults = [];
+         var allResults: any[] = [];
          (<any>req).policyResults = function(policyFn) {
             for (var q = 0; q < policyTypes.length; q++) {
                if (policyTypes[q] === policyFn) return allResults[q];

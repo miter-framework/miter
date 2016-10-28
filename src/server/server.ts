@@ -18,6 +18,8 @@ export class Server {
       this._app = express();
       this._injector = new Injector();
       
+      console.log("  I just did this!");
+      
       console.log("  Loading database configuration...");
       this.orm();
       
@@ -51,14 +53,14 @@ export class Server {
          dialect: dialect
       });
       this.ormReflector = new OrmReflector(sql, this.injector);
-      this.ormReflector.reflectModels(this.meta.models);
+      this.ormReflector.reflectModels(this.meta.models || []);
    }
    
    private routerReflector: RouterReflector;
    routes() {
       let router = express.Router();
       this.routerReflector = new RouterReflector(router, this.injector);
-      this.routerReflector.reflectRoutes(this.meta.controllers);
+      this.routerReflector.reflectRoutes(this.meta.controllers || []);
       this.app.use(router);
    }
    

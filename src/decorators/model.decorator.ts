@@ -9,7 +9,7 @@ function furnishDefaults(meta: ModelMetadata, model: any) {
 export function Model(tableName?: ModelMetadata | string) {
    var meta: ModelMetadata;
    if (typeof tableName === 'string') meta = { tableName: <string>tableName };
-   else meta = tableName;
+   else if (typeof tableName !== 'undefined') meta = tableName;
    
    return function(model: CtorT<ModelT>) {
       furnishDefaults(meta, model);

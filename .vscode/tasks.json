@@ -26,14 +26,6 @@
       {
          "taskName": "watch",
          "args": ["watch"]
-      },
-      {
-         "taskName": "start",
-         "args": ["start"]
-      },
-      {
-         "taskName": "start-dev",
-         "args": ["start-dev"]
       }
    ]
 }

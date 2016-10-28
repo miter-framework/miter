@@ -8,6 +8,8 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
+    "declaration": true,
+    "strictNullChecks": true,
     "types": [
       "config",
       "express",

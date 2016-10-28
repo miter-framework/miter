@@ -1,3 +1,3 @@
-#Rivet Web Framework
+#Miter Web Framework
 
 TODO: Impl
