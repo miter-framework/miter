@@ -1,9 +1,11 @@
+import path = require('path');
 import 'reflect-metadata';
 import * as express from 'express';
-import { Injector } from '../core';
+import { Injector, CtorT, PolicyT } from '../core';
 import { Server } from '../server';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
 import './extend-request';
+import { hasNoUndefined } from '../util';
 
 export class RouterReflector {
    constructor(private server: Server, private router: express.Router, private injector: Injector) {
@@ -34,23 +36,31 @@ export class RouterReflector {
       }
    }
    
-   addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
+   private addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
       let policyTypes = [
          ...(this.server.meta.policies || []),
          ...(meta.policies || []),
          ...(routeMeta.policies || [])
       ];
       let policies = policyTypes.map(policyType => this.injector.resolveInjectable(policyType));
+      if (!hasNoUndefined(policies)) throw new Error(`Could not resolve all policies for dependency injection. Controller: ${controller}.${routeFnName}`);
       let boundRoute = controller[routeFnName].bind(controller);
       
-      if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create {}`);
-      this.router[routeMeta.method](routeMeta.path, async function(req: express.Request, res: express.Response) {
-         var allResults: any[] = [];
-         req.policyResults = function(policyFn) {
-            for (var q = 0; q < policyTypes.length; q++) {
-               if (policyTypes[q] === policyFn) return allResults[q];
-            }
-         };
+      let fullPath = path.join(...[
+         this.server.meta.path || '',
+         meta.path || '',
+         routeMeta.path
+      ]);
+      
+      if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
+      this.router[routeMeta.method](fullPath, this.createFullRouterFn(policyTypes, policies, boundRoute));
+   }
+   
+   private createFullRouterFn(policyTypes: CtorT<PolicyT<any>>[], policies: PolicyT<any>[], boundRoute: any) {
+      const self = this;
+      return async function(req: express.Request, res: express.Response) {
+         let allResults: any[] = [];
+         req.policyResults = self.createPolicyResultsFn(policyTypes, allResults);
          let initialStatusCode = res.statusCode;
          for (var q = 0; q < policies.length; q++) {
             let policy = policies[q];
@@ -60,6 +70,13 @@ export class RouterReflector {
          }
          
          return await boundRoute(req, res);
-      });
+      };
+   }
+   private createPolicyResultsFn(policyTypes: CtorT<PolicyT<any>>[], allResults: any[]) {
+      return function(policyFn) {
+         for (var q = 0; q < policyTypes.length; q++) {
+            if (policyTypes[q] === policyFn) return allResults[q];
+         }
+      }
    }
 }
