@@ -2,7 +2,8 @@ import { PropMetadata, PropMetadataSym, ModelPropertiesSym } from '../orm';
 import * as sequelize from 'sequelize';
 import 'reflect-metadata';
 
-export function Prop(meta: PropMetadata = {}) {
+export function Prop(propMeta?: PropMetadata) {
+   let meta = propMeta || {};
    return function(model: any, propertyName: string) {
       var props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, model) || [];
       props.push(propertyName);

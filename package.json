@@ -1,6 +1,6 @@
 {
   "name": "miter",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "echo 'Not implemented'",
@@ -22,8 +22,7 @@
     "lodash": "^4.16.4",
     "mysql": "^2.11.1",
     "reflect-metadata": "^0.1.8",
-    "sequelize": "^3.24.6",
-    "typescript": "^2.0.6"
+    "sequelize": "^3.24.6"
   },
   "keywords": [
     "miter",

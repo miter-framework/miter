@@ -6,7 +6,7 @@ export class Injector {
    
    private temporaryValue = Symbol.for('recursive-injection');
    private cache: Map<CtorT<any>, any> = new Map<CtorT<any>, any>();
-   resolveInjectable(ctorFn: CtorT<any>) {
+   resolveInjectable<T>(ctorFn: CtorT<T>): T | undefined {
       if (!ctorFn) {
          console.error('Attempted to inject a falsey type.');
          return;

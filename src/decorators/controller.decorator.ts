@@ -1,7 +1,8 @@
 import { CtorT, ControllerT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../router';
 
-export function Controller(meta: ControllerMetadata) {
+export function Controller(meta?: ControllerMetadata) {
+   meta = meta || {};
    return function(controller: CtorT<ControllerT>) {
       Reflect.defineMetadata(ControllerMetadataSym, meta, controller.prototype);
       
