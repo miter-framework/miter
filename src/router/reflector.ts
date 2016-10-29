@@ -66,12 +66,30 @@ export class RouterReflector {
          let initialStatusCode = res.statusCode;
          for (var q = 0; q < policies.length; q++) {
             let policy = policies[q];
-            var result = await policy.handle(req, res);
+            let result: any;
+            try {
+               result = await policy.handle(req, res);
+            }
+            catch (e) {
+               console.error(e);
+               console.log('Serving 500 - Internal server error');
+               res.status(500);
+               res.send('Internal server error');
+               return;
+            }
             allResults.push(result);
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
          }
          
-         return await boundRoute(req, res);
+         try {
+            return await boundRoute(req, res);
+         }
+         catch (e) {
+            console.error(e);
+            console.log('Serving 500 - Internal server error');
+            res.status(500);
+            res.send('Internal server error');
+         }
       };
    }
    private createPolicyResultsFn(policyTypes: CtorT<PolicyT<any>>[], allResults: any[]) {
@@ -79,6 +97,7 @@ export class RouterReflector {
          for (var q = 0; q < policyTypes.length; q++) {
             if (policyTypes[q] === policyFn) return allResults[q];
          }
+         return undefined;
       }
    }
 }
