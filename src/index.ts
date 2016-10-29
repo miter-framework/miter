@@ -4,6 +4,5 @@ export * from './orm';
 export * from './router';
 export * from './server';
 
-import { Miter } from './miter';
-export { Miter };
+import { Miter } from './server/miter';
 export default Miter;

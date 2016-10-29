@@ -1,4 +1,5 @@
-import { ServerMetadata, Server } from './server';
+import { ServerMetadata } from '../core/metadata';
+import { Server } from './server';
 
 export class Miter {
    public static launch(meta: ServerMetadata): Server {

@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import _ = require('lodash');
 import { Sequelize } from 'sequelize';
 
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from './metadata';
 import { Injector } from '../core';
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../core/metadata';
 
 export class OrmReflector {
    constructor(private orm: Sequelize, private injector: Injector) {

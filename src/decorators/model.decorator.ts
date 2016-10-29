@@ -1,6 +1,6 @@
 import { CtorT, ModelT } from '../core';
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../orm';
-import "reflect-metadata";
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../core/metadata';
+import 'reflect-metadata';
 
 function furnishDefaults(meta: ModelMetadata, model: any) {
    if (!meta.tableName) meta.tableName = model.name;

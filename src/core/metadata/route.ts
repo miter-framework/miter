@@ -1,22 +1,4 @@
-import { CtorT, PolicyT } from '../core';
-
-
-
-export type ControllerMetadata = {
-   path?: string,
-   policies?: CtorT<PolicyT<any>>[]
-}
-export const ControllerMetadataSym = Symbol.for('ControllerMetadata');
-export const ControllerRoutesSym = Symbol.for('ControllerRoutes');
-
-
-
-export type PolicyMetadata = {
-   
-}
-export const PolicyMetadataSym = Symbol.for('PolicyMetadata');
-
-
+import { CtorT, PolicyT } from '../../core';
 
 export type RouteMethod = 'get' | 'post' | 'put' | 'head' | 'delete' | 'options' | 'trace' | 'copy' | 'lock' | 'mkcol' |
                           'move' | 'purge' | 'propfind' | 'proppatch' | 'unlock' | 'report' | 'mkactivity' | 'checkout' |

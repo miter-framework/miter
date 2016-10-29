@@ -5,7 +5,7 @@ import config = require('config');
 import * as Sequelize from 'sequelize';
 
 import { Injector } from '../core';
-import { ServerMetadata } from './metadata';
+import { ServerMetadata } from '../core/metadata';
 import { OrmReflector } from '../orm';
 import { RouterReflector } from '../router';
 

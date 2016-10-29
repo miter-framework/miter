@@ -1,4 +1,4 @@
-import { PropMetadata, PropMetadataSym, ModelPropertiesSym } from '../orm';
+import { PropMetadata, PropMetadataSym, ModelPropertiesSym } from '../core/metadata';
 import * as sequelize from 'sequelize';
 import 'reflect-metadata';
 

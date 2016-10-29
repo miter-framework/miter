@@ -1,4 +1,4 @@
-import { CtorT, ControllerT, ModelT, ServiceT, PolicyT } from '../core';
+import { CtorT, ControllerT, ModelT, ServiceT, PolicyT } from '../../core';
 
 export type ServerMetadata = {
    port: number | string,
@@ -8,10 +8,3 @@ export type ServerMetadata = {
    services?: CtorT<ServiceT>[],
    policies?: CtorT<PolicyT<any>>[]
 }
-
-
-
-export type ServiceMetadata = {
-   
-}
-export const ServiceMetadataSym = Symbol.for('SeviceMetadata');

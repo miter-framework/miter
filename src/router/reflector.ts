@@ -1,10 +1,11 @@
 import path = require('path');
 import 'reflect-metadata';
 import * as express from 'express';
-import { Injector, CtorT, PolicyT } from '../core';
-import { Server } from '../server';
-import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from './metadata';
+
 import './extend-request';
+import { Injector, CtorT, PolicyT } from '../core';
+import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../core/metadata';
+import { Server } from '../server';
 import { hasNoUndefined } from '../util';
 
 export class RouterReflector {
@@ -25,6 +26,7 @@ export class RouterReflector {
       
       var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
       if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerProto}.`);
+      console.log(`    Reflecting routes for controller ${controllerFn.name}`);
       
       var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controllerProto) || [];
       for (var q = 0; q < routes.length; q++) {

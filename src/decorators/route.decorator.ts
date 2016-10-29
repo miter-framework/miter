@@ -1,5 +1,10 @@
-import { RouteDecoratorFunc, RouteFunc, RouteFuncDescriptor, RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from '../router';
+import * as express from 'express';
+import { RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from '../core/metadata';
 import 'reflect-metadata';
+
+export type RouteFunc = (req: express.Request, res: express.Response) => void | Promise<void>;
+export type RouteFuncDescriptor = TypedPropertyDescriptor<RouteFunc>;
+export type RouteDecoratorFunc = (target: Object, propertyKey: string, propertyDescriptor: RouteFuncDescriptor) => void;
 
 export function createRouteDecorator(meta: RouteMetadata | string, method?: RouteMethod): RouteDecoratorFunc {
    if (typeof meta === 'string') meta = { path: <string>meta };
