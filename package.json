@@ -1,12 +1,12 @@
 {
   "name": "miter",
-  "version": "0.0.5",
+  "version": "0.0.10",
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "echo 'Not implemented'",
-    "build": "tsc",
-    "watch": "tsc -w",
-    "postinstall": "tsc"
+    "build": "rm -rf dist; tsc",
+    "watch": "rm -rf dist; tsc -w",
+    "prepublish": "rm -rf dist; tsc"
   },
   "devDependencies": {
     "@types/config": "^0.0.30",
@@ -34,6 +34,8 @@
     "Brandon Slade <brandonyoyoslade@gmail.com>"
   ],
   "license": "ISC",
+  "typings": "./dist/index",
+  "main": "./dist/index.js",
   "private": false,
   "repository": {
     "type": "git",
@@ -42,10 +44,5 @@
   "bugs": {
     "url": "https://github.com/aboveyou00/rivet/issues"
   },
-  "homepage": "https://github.com/aboveyou00/rivet#readme",
-  "typings": "./dist/index",
-  "files": [
-    "./dist"
-  ],
-  "main": "./dist/index.js"
+  "homepage": "https://github.com/aboveyou00/rivet#readme"
 }

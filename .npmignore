@@ -1,7 +1,11 @@
 /node_modules/
-/dist/
+/dist/**/*.js.map
+/src/
+/.vscode/
 
 .yarnclean
 yarn.lock
 yarn-error.log
+.npmignore
 npm-debug.log
+tsconfig.json

@@ -47,10 +47,12 @@ export class RouterReflector {
       let boundRoute = controller[routeFnName].bind(controller);
       
       let fullPath = path.join(...[
+         '/',
          this.server.meta.path || '',
          meta.path || '',
          routeMeta.path
       ]);
+      console.log(`      Adding route ${routeFnName} (${fullPath})`);
       
       if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
       this.router[routeMeta.method](fullPath, this.createFullRouterFn(policyTypes, policies, boundRoute));
