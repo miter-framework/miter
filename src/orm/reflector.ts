@@ -4,9 +4,10 @@ import { Sequelize } from 'sequelize';
 
 import { Injector } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../core/metadata';
+import { Server } from '../server';
 
 export class OrmReflector {
-   constructor(private orm: Sequelize, private injector: Injector) {
+   constructor(private server: Server, private orm: Sequelize) {
    }
    
    async sync() {

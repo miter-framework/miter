@@ -9,7 +9,7 @@ import { Server } from '../server';
 import { hasNoUndefined } from '../util';
 
 export class RouterReflector {
-   constructor(private server: Server, private router: express.Router, private injector: Injector) {
+   constructor(private server: Server, private router: express.Router) {
    }
    
    reflectRoutes(controllers: any[]) {
@@ -21,7 +21,7 @@ export class RouterReflector {
    private controllers: any = {};
    reflectControllerRoutes(controllerFn: any) {
       if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
-      var controllerInst = this.controllers[controllerFn] = this.injector.resolveInjectable(controllerFn);
+      var controllerInst = this.controllers[controllerFn] = this.server.injector.resolveInjectable(controllerFn);
       var controllerProto = controllerFn.prototype;
       
       var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
@@ -44,7 +44,7 @@ export class RouterReflector {
          ...(meta.policies || []),
          ...(routeMeta.policies || [])
       ];
-      let policies = policyTypes.map(policyType => this.injector.resolveInjectable(policyType));
+      let policies = policyTypes.map(policyType => this.server.injector.resolveInjectable(policyType));
       if (!hasNoUndefined(policies)) throw new Error(`Could not resolve all policies for dependency injection. Controller: ${controller}.${routeFnName}`);
       let boundRoute = controller[routeFnName].bind(controller);
       

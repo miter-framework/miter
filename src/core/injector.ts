@@ -27,4 +27,10 @@ export class Injector {
       this.cache.set(ctorFn, inst);
       return inst;
    }
+   provide<T>(ctorFn: CtorT<T>, t: T): this {
+      if (!ctorFn) throw new Error('Attempted to provide a value for a falsey type.');
+      if (this.cache.has(ctorFn)) throw new Error(`Duplicate value provided for ${ctorFn.name || ctorFn}.`);
+      this.cache.set(ctorFn, t);
+      return this;
+   }
 }

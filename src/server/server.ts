@@ -7,6 +7,7 @@ import * as Sequelize from 'sequelize';
 import { Injector } from '../core';
 import { ServerMetadata } from '../core/metadata';
 import { OrmReflector } from '../orm';
+import { ServiceReflector } from '../services';
 import { RouterReflector } from '../router';
 
 import * as http from 'http';
@@ -14,17 +15,8 @@ var debug = require("debug")("express:server");
 
 export class Server {
    constructor(private _meta: ServerMetadata) {
-      console.log("Initializing api-server...");
-      this._app = express();
       this._injector = new Injector();
-      
-      console.log("  Loading database configuration...");
-      this.orm();
-      
-      console.log("  Loading routes...");
-      this.routes();
-      
-      console.log("Serving");
+      this._injector.provide(Server, this);
    }
    
    private _app: express.Application;
@@ -41,8 +33,30 @@ export class Server {
       return this._meta;
    }
    
+   async init() {
+      try {
+         console.log("Initializing api-server...");
+         this._app = express();
+         
+         console.log("  Loading database configuration...");
+         this.reflectOrm();
+         
+         console.log("  Starting services...");
+         await this.startServices();
+         
+         console.log("  Loading routes...");
+         this.reflectRoutes();
+         
+         console.log("Serving");
+         this.listen();
+      }
+      catch (e) {
+         console.error("FATAL ERROR: Failed to launch server.");
+      }
+   }
+   
    private ormReflector: OrmReflector;
-   orm() {
+   reflectOrm() {
       var name = config.get<string>('connections.db.name');
       var port = config.get<number>('connections.db.port');
       var user = config.get<string>('connections.db.user');
@@ -54,14 +68,20 @@ export class Server {
          host: `${host}:${port}`,
          dialect: dialect
       });
-      this.ormReflector = new OrmReflector(sql, this.injector);
+      this.ormReflector = new OrmReflector(this, sql);
       this.ormReflector.reflectModels(this.meta.models || []);
    }
    
+   private serviceReflector: ServiceReflector;
+   async startServices() {
+      this.serviceReflector = new ServiceReflector(this);
+      await this.serviceReflector.reflectServices(this.meta.services || []);
+   }
+   
    private routerReflector: RouterReflector;
-   routes() {
+   reflectRoutes() {
       let router = express.Router();
-      this.routerReflector = new RouterReflector(this, router, this.injector);
+      this.routerReflector = new RouterReflector(this, router);
       this.routerReflector.reflectRoutes(this.meta.controllers || []);
       this.app.use(router);
    }

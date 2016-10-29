@@ -4,7 +4,7 @@ import { Server } from './server';
 export class Miter {
    public static launch(meta: ServerMetadata): Server {
       let serverInst = new Server(meta);
-      serverInst.listen();
+      serverInst.init();
       return serverInst;
    }
    
