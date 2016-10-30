@@ -1,3 +1,5 @@
 
 
-export type CtorT<T> = { new (...any): T };
+export interface CtorT<T> {
+   new (...any): T
+};

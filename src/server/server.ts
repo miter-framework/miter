@@ -1,8 +1,6 @@
 "use strict";
 
 import * as express from 'express';
-import config = require('config');
-import * as Sequelize from 'sequelize';
 
 import { Injector } from '../core';
 import { ServerMetadata } from '../core/metadata';
@@ -39,37 +37,28 @@ export class Server {
          this._app = express();
          
          console.log("  Loading database configuration...");
-         this.reflectOrm();
+         await this.reflectOrm();
          
          console.log("  Starting services...");
          await this.startServices();
          
          console.log("  Loading routes...");
          this.reflectRoutes();
-         
-         console.log("Serving");
-         this.listen();
       }
       catch (e) {
          console.error("FATAL ERROR: Failed to launch server.");
+         console.error(`${e}`);
+         return;
       }
+      
+      console.log("Serving");
+      this.listen();
    }
    
    private ormReflector: OrmReflector;
-   reflectOrm() {
-      var name = config.get<string>('connections.db.name');
-      var port = config.get<number>('connections.db.port');
-      var user = config.get<string>('connections.db.user');
-      var password = config.get<string>('connections.db.password');
-      var host = config.get<string>('connections.db.host');
-      var dialect = config.has('connections.db.dialect') ? config.get<string>('connections.db.dialect') : 'mysql';
-      
-      let sql = new Sequelize(name, user, password, {
-         host: `${host}:${port}`,
-         dialect: dialect
-      });
-      this.ormReflector = new OrmReflector(this, sql);
-      this.ormReflector.reflectModels(this.meta.models || []);
+   async reflectOrm() {
+      this.ormReflector = new OrmReflector(this);
+      await this.ormReflector.init();
    }
    
    private serviceReflector: ServiceReflector;

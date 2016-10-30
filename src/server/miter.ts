@@ -2,9 +2,9 @@ import { ServerMetadata } from '../core/metadata';
 import { Server } from './server';
 
 export class Miter {
-   public static launch(meta: ServerMetadata): Server {
+   public static async launch(meta: ServerMetadata): Promise<Server> {
       let serverInst = new Server(meta);
-      serverInst.init();
+      await serverInst.init();
       return serverInst;
    }
    

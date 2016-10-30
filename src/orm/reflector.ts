@@ -1,28 +1,49 @@
 import 'reflect-metadata';
 import _ = require('lodash');
-import { Sequelize } from 'sequelize';
+import config = require('config');
+import * as Sequelize from 'sequelize';
 
-import { Injector } from '../core';
+import { Injector, StaticModelT, ModelT, PkType } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../core/metadata';
 import { Server } from '../server';
+import { DbImpl } from './db-impl';
 
 export class OrmReflector {
-   constructor(private server: Server, private orm: Sequelize) {
+   constructor(private server: Server) {
+   }
+   
+   private sql: Sequelize.Sequelize;
+   
+   async init() {
+      var name = config.get<string>('connections.db.name');
+      var port = config.get<number>('connections.db.port');
+      var user = config.get<string>('connections.db.user');
+      var password = config.get<string>('connections.db.password');
+      var host = config.get<string>('connections.db.host');
+      var dialect = config.has('connections.db.dialect') ? config.get<string>('connections.db.dialect') : 'mysql';
+      
+      this.sql = new Sequelize(name, user, password, {
+         host: host,
+         dialect: dialect
+      });
+      
+      this.reflectModels(this.server.meta.models || []);
+      await this.sync();
    }
    
    async sync() {
-      await this.orm.sync();
+      await this.sql.sync();
    }
    
-   reflectModels(models: any[]) {
+   reflectModels(models: StaticModelT<ModelT<PkType>>[]) {
       for (var q = 0; q < models.length; q++) {
          this.reflectModel(models[q]);
       }
    }
    
-   private models: any = {};
-   reflectModel(modelFn: any) {
-      if (this.models[modelFn]) throw new Error(`A model was passed to the orm-reflector twice: ${modelFn}.`);
+   private models = new Map<StaticModelT<ModelT<PkType>>, Sequelize.Model<{}, {}>>();
+   reflectModel(modelFn: StaticModelT<ModelT<PkType>>) {
+      if (this.models.has(modelFn)) throw new Error(`A model was passed to the orm-reflector twice: ${modelFn}.`);
       var modelProto = modelFn.prototype;
       
       var meta: ModelMetadata = Reflect.getOwnMetadata(ModelMetadataSym, modelProto);
@@ -47,6 +68,9 @@ export class OrmReflector {
          columns[propName] = columnMeta;
       }
       
-      this.models[modelFn] = this.orm.define(tableName, columns, modelOptions);
+      let model = this.sql.define(tableName, columns, modelOptions);
+      let db = new DbImpl(modelFn, model);
+      this.models.set(modelFn, model);
+      modelFn.db = db;
    }
 }
