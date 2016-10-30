@@ -1,6 +1,6 @@
 {
   "name": "miter",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "echo 'Not implemented'",
