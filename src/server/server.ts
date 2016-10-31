@@ -36,13 +36,8 @@ export class Server {
          console.log("Initializing api-server...");
          this._app = express();
          
-         console.log("  Loading database configuration...");
          await this.reflectOrm();
-         
-         console.log("  Starting services...");
          await this.startServices();
-         
-         console.log("  Loading routes...");
          this.reflectRoutes();
       }
       catch (e) {
@@ -57,18 +52,27 @@ export class Server {
    
    private ormReflector: OrmReflector;
    async reflectOrm() {
-      this.ormReflector = new OrmReflector(this);
-      await this.ormReflector.init();
+      let orm = this.meta.orm;
+      if (orm && (typeof orm.enabled === 'undefined' || orm.enabled) && orm.db) {
+         console.log("  Loading database configuration...");
+         this.ormReflector = new OrmReflector(this);
+         await this.ormReflector.init();
+      }
+      else if (this.meta.models && this.meta.models.length) {
+         console.log("  Warning: Models included in server metadata, but no orm configuration defined.");
+      }
    }
    
    private serviceReflector: ServiceReflector;
    async startServices() {
+      console.log("  Starting services...");
       this.serviceReflector = new ServiceReflector(this);
       await this.serviceReflector.reflectServices(this.meta.services || []);
    }
    
    private routerReflector: RouterReflector;
    reflectRoutes() {
+      console.log("  Loading routes...");
       let router = express.Router();
       this.routerReflector = new RouterReflector(this, router);
       this.routerReflector.reflectRoutes(this.meta.controllers || []);

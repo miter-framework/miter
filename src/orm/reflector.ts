@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import _ = require('lodash');
-import config = require('config');
 import * as Sequelize from 'sequelize';
 
 import { Injector, StaticModelT, ModelT, PkType } from '../core';
@@ -15,16 +14,21 @@ export class OrmReflector {
    private sql: Sequelize.Sequelize;
    
    async init() {
-      var name = config.get<string>('connections.db.name');
-      var port = config.get<number>('connections.db.port');
-      var user = config.get<string>('connections.db.user');
-      var password = config.get<string>('connections.db.password');
-      var host = config.get<string>('connections.db.host');
-      var dialect = config.has('connections.db.dialect') ? config.get<string>('connections.db.dialect') : 'mysql';
+      let orm = this.server.meta.orm;
+      if (!orm || (typeof orm.enabled !== 'undefined' && !orm.enabled) || !orm.db) return;
+      let db = orm.db;
       
-      this.sql = new Sequelize(name, user, password, {
+      let host = db.host;
+      let port: number | undefined = undefined;
+      if (typeof host !== 'string') {
+         port = host.port;
+         host = host.domain;
+      }
+      
+      this.sql = new Sequelize(db.name, db.user, db.password, {
          host: host,
-         dialect: dialect
+         dialect: db.dialect || 'mysql',
+         port: port
       });
       
       this.reflectModels(this.server.meta.models || []);
