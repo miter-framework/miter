@@ -1,4 +1,3 @@
-import path = require('path');
 import 'reflect-metadata';
 import * as express from 'express';
 
@@ -48,7 +47,7 @@ export class RouterReflector {
       if (!hasNoUndefined(policies)) throw new Error(`Could not resolve all policies for dependency injection. Controller: ${controller}.${routeFnName}`);
       let boundRoute = controller[routeFnName].bind(controller);
       
-      let fullPath = path.join(...[
+      let fullPath = this.joinUrls(...[
          '/',
          this.server.meta.path || '',
          meta.path || '',
@@ -58,6 +57,16 @@ export class RouterReflector {
       
       if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
       this.router[routeMeta.method](fullPath, this.createFullRouterFn(policyTypes, policies, boundRoute));
+   }
+   private joinUrls(...urls: string[]): string {
+      let partial = '';
+      for (let url in urls) {
+         if (!url) continue;
+         if (url.startsWith('/') && partial.endsWith('/')) url = url.substring(1);
+         if (url && partial && !partial.endsWith('/')) url = `/${partial}`;
+         partial = partial + url;
+      }
+      return partial;
    }
    
    private createFullRouterFn(policyTypes: CtorT<PolicyT<any>>[], policies: PolicyT<any>[], boundRoute: any) {
