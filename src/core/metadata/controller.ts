@@ -1,8 +1,8 @@
-import { CtorT, PolicyT } from '../../core';
+import { PolicyDescriptor } from '../../core';
 
 export type ControllerMetadata = {
    path?: string,
-   policies?: CtorT<PolicyT<any>>[]
+   policies?: PolicyDescriptor[]
 }
 export const ControllerMetadataSym = Symbol.for('ControllerMetadata');
 export const ControllerRoutesSym = Symbol.for('ControllerRoutes');

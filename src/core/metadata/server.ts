@@ -1,4 +1,4 @@
-import { CtorT, ControllerT, StaticModelT, ModelT, PkType, ServiceT, PolicyT } from '../../core';
+import { CtorT, ControllerT, StaticModelT, ModelT, PkType, ServiceT, PolicyDescriptor } from '../../core';
 
 export type DatabaseMetadata = {
    name: string,
@@ -26,5 +26,5 @@ export type ServerMetadata = {
    controllers?: CtorT<ControllerT>[],
    models?: StaticModelT<ModelT<PkType>>[],
    services?: CtorT<ServiceT>[],
-   policies?: CtorT<PolicyT<any>>[]
+   policies?: PolicyDescriptor[]
 }

@@ -2,11 +2,12 @@ import 'reflect-metadata';
 import * as express from 'express';
 
 import './extend-request';
-import { Injector, CtorT, PolicyT } from '../core';
+import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../core/metadata';
 import { Server } from '../server';
 import { hasNoUndefined } from '../util/has-no-undefined';
 import { joinRoutePaths } from '../util/join-route-paths';
+import { wrapPromise } from '../util/wrap-promise';
 
 export class RouterReflector {
    constructor(private server: Server, private router: express.Router) {
@@ -39,13 +40,12 @@ export class RouterReflector {
    }
    
    private addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
-      let policyTypes = [
+      let policyDescriptors = [
          ...(this.server.meta.policies || []),
          ...(meta.policies || []),
          ...(routeMeta.policies || [])
       ];
-      let policies = policyTypes.map(policyType => this.server.injector.resolveInjectable(policyType));
-      if (!hasNoUndefined(policies)) throw new Error(`Could not resolve all policies for dependency injection. Controller: ${controller}.${routeFnName}`);
+      let policies = this.resolvePolicies(policyDescriptors);
       let boundRoute = controller[routeFnName].bind(controller);
       
       let fullPath = joinRoutePaths(...[
@@ -56,20 +56,48 @@ export class RouterReflector {
       console.log(`      Adding route ${routeFnName} (${fullPath})`);
       
       if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
-      this.router[routeMeta.method](fullPath, this.createFullRouterFn(policyTypes, policies, boundRoute));
+      this.router[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute));
+   }
+   private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][] {
+      return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }] => {
+         let key: undefined | CtorT<PolicyT<any>>;
+         let fn: { (req: express.Request, res: express.Response): Promise<any> };
+         if (this.isPolicyCtor(desc)) {
+            key = desc;
+            let val = this.server.injector.resolveInjectable(desc);
+            if (!val) throw new Error(`Could not resolve dependency for policy: ${desc}`);
+            desc = val;
+         }
+         if (this.isPolicyT(desc)) {
+            fn = desc.handle.bind(desc);
+         }
+         else {
+            let handler = desc;
+            fn = async function(req: express.Request, res: express.Response) {
+               await wrapPromise(handler, req, res);
+            }
+         }
+         return [key, fn];
+      });
+   }
+   private isPolicyCtor(desc: PolicyDescriptor): desc is CtorT<PolicyT<any>> {
+      return !this.isPolicyT(desc) && !!(<CtorT<PolicyT<any>>>desc).prototype.handle;
+   }
+   private isPolicyT(desc: PolicyDescriptor): desc is PolicyT<any> {
+      return !!(<PolicyT<any>>desc).handle;
    }
    
-   private createFullRouterFn(policyTypes: CtorT<PolicyT<any>>[], policies: PolicyT<any>[], boundRoute: any) {
+   private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], boundRoute: any) {
       const self = this;
       return async function(req: express.Request, res: express.Response) {
          let allResults: any[] = [];
-         req.policyResults = self.createPolicyResultsFn(policyTypes, allResults);
+         req.policyResults = self.createPolicyResultsFn(policies, allResults);
          let initialStatusCode = res.statusCode;
          for (var q = 0; q < policies.length; q++) {
             let policy = policies[q];
             let result: any;
             try {
-               result = await policy.handle(req, res);
+               result = await policy[1](req, res);
             }
             catch (e) {
                console.error(e);
@@ -93,10 +121,11 @@ export class RouterReflector {
          }
       };
    }
-   private createPolicyResultsFn(policyTypes: CtorT<PolicyT<any>>[], allResults: any[]) {
+   private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], allResults: any[]) {
+      let keys = policies.map(poli => poli[0]);
       return function(policyFn) {
-         for (var q = 0; q < policyTypes.length; q++) {
-            if (policyTypes[q] === policyFn) return allResults[q];
+         for (var q = 0; q < keys.length; q++) {
+            if (keys[q] === policyFn) return allResults[q];
          }
          return undefined;
       }
