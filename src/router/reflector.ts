@@ -5,7 +5,8 @@ import './extend-request';
 import { Injector, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../core/metadata';
 import { Server } from '../server';
-import { hasNoUndefined } from '../util';
+import { hasNoUndefined } from '../util/has-no-undefined';
+import { joinRoutePaths } from '../util/join-route-paths';
 
 export class RouterReflector {
    constructor(private server: Server, private router: express.Router) {
@@ -47,8 +48,7 @@ export class RouterReflector {
       if (!hasNoUndefined(policies)) throw new Error(`Could not resolve all policies for dependency injection. Controller: ${controller}.${routeFnName}`);
       let boundRoute = controller[routeFnName].bind(controller);
       
-      let fullPath = this.joinUrls(...[
-         '/',
+      let fullPath = joinRoutePaths(...[
          this.server.meta.path || '',
          meta.path || '',
          routeMeta.path
@@ -57,16 +57,6 @@ export class RouterReflector {
       
       if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
       this.router[routeMeta.method](fullPath, this.createFullRouterFn(policyTypes, policies, boundRoute));
-   }
-   private joinUrls(...urls: string[]): string {
-      let partial = '';
-      for (let url in urls) {
-         if (!url) continue;
-         if (url.startsWith('/') && partial.endsWith('/')) url = url.substring(1);
-         if (url && partial && !partial.endsWith('/')) url = `/${partial}`;
-         partial = partial + url;
-      }
-      return partial;
    }
    
    private createFullRouterFn(policyTypes: CtorT<PolicyT<any>>[], policies: PolicyT<any>[], boundRoute: any) {

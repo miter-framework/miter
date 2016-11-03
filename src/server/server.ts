@@ -1,6 +1,7 @@
 "use strict";
 
 import * as express from 'express';
+import * as bodyParser from 'body-parser';
 
 import { Injector } from '../core';
 import { ServerMetadata } from '../core/metadata';
@@ -34,8 +35,7 @@ export class Server {
    async init() {
       try {
          console.log("Initializing api-server...");
-         this._app = express();
-         
+         await this.createExpressApp();
          await this.reflectOrm();
          await this.startServices();
          this.reflectRoutes();
@@ -48,6 +48,11 @@ export class Server {
       
       console.log("Serving");
       this.listen();
+   }
+   
+   createExpressApp() {
+      this._app = express();
+      this._app.use(bodyParser.urlencoded({ extended: true }));
    }
    
    private ormReflector: OrmReflector;

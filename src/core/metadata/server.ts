@@ -13,9 +13,15 @@ export type OrmMetadata = {
    db?: DatabaseMetadata
 }
 
+export type JwtMetadata = {
+   secret: string | Buffer,
+   tokenProperty?: string
+}
+
 export type ServerMetadata = {
    port: number | string,
    orm?: OrmMetadata,
+   jwt?: JwtMetadata,
    path?: string,
    controllers?: CtorT<ControllerT>[],
    models?: StaticModelT<ModelT<PkType>>[],
