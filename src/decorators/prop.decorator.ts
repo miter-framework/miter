@@ -13,7 +13,10 @@ export function Prop(propMeta?: PropMetadata) {
          var reflectType = Reflect.getMetadata('design:type', model, propertyName);
          var sequelizeType: any = null;
          if (reflectType === String) sequelizeType = sequelize.STRING;
-         else if (reflectType === Number) sequelizeType = sequelize.FLOAT;
+         else if (reflectType === Number) {
+            if (meta.primaryKey || meta.autoIncrement) sequelizeType = sequelize.INTEGER;
+            else sequelizeType = sequelize.FLOAT;
+         }
          else if (reflectType === Date) sequelizeType = sequelize.DATE;
          else if (reflectType === Boolean) sequelizeType = sequelize.BOOLEAN;
          else throw new Error(`Could not infer column type for model property: ${propertyName}`);
