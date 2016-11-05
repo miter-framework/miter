@@ -8,6 +8,7 @@ import { ServerMetadata } from '../core/metadata';
 import { OrmReflector } from '../orm';
 import { ServiceReflector } from '../services';
 import { RouterReflector } from '../router';
+import { clc } from '../util/clc';
 
 import * as http from 'http';
 var debug = require("debug")("express:server");
@@ -53,6 +54,14 @@ export class Server {
    createExpressApp() {
       this._app = express();
       this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
+      if (this.meta.allowCrossOrigin) {
+         console.log(clc.yellowBright(`  Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`));
+         this._app.use(function(req, res, next) {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "X-Requested-With");
+            next();
+         });
+      }
       this._app.use(...(this.meta.middleware || []));
    }
    

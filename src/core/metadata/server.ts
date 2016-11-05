@@ -28,5 +28,6 @@ export type ServerMetadata = {
    models?: StaticModelT<ModelT<PkType>>[],
    services?: CtorT<ServiceT>[],
    policies?: PolicyDescriptor[],
-   middleware?: express.Handler[]
+   middleware?: express.Handler[],
+   allowCrossOrigin?: boolean
 }
