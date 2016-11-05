@@ -52,7 +52,8 @@ export class Server {
    
    createExpressApp() {
       this._app = express();
-      this._app.use(bodyParser.urlencoded({ extended: true }));
+      this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
+      this._app.use(...(this.meta.middleware || []));
    }
    
    private ormReflector: OrmReflector;

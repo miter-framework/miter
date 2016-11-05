@@ -1,3 +1,4 @@
+import * as express from 'express';
 import { CtorT, ControllerT, StaticModelT, ModelT, PkType, ServiceT, PolicyDescriptor } from '../../core';
 
 export type DatabaseMetadata = {
@@ -26,5 +27,6 @@ export type ServerMetadata = {
    controllers?: CtorT<ControllerT>[],
    models?: StaticModelT<ModelT<PkType>>[],
    services?: CtorT<ServiceT>[],
-   policies?: PolicyDescriptor[]
+   policies?: PolicyDescriptor[],
+   middleware?: express.Handler[]
 }
