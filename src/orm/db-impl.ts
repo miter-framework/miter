@@ -26,8 +26,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
       let result = await this.model.findOne(query);
       return result && this.wrapResult(result);
    }
-   async findOrCreate(query: FindOrCreateQueryT): Promise<[T, boolean]> {
-      let [result, created] = await this.model.findOrCreate(query);
+   async findOrCreate(query: Sql.WhereOptions, defaults?: Object | T): Promise<[T, boolean]> {
+      let [result, created] = await this.model.findOrCreate({ where: query, defaults: <any>defaults || {} });
       return [result && this.wrapResult(result), created];
    }
    async findAndCountAll(query?: QueryT) {
@@ -56,20 +56,27 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
    }
    
    async save(t: T) {
-      let [affected, results] = await this.update({ where: { id: t.id } }, t);
-      if (affected != 1 || affected != results.length) throw new Error(`Tried to save model, but more than one row was affected.`);
-      return results[0];
+      let [result, created] = await this.findOrCreate({ id: t.id }, t);
+      return result;
    }
-   async update(query: UpdateQueryT, replace: Object): Promise<[number, T[]]> {
+   async update(query: number | string | T | UpdateQueryT, replace: Object): Promise<boolean | number> {
+      let isId = true;
+      if (this.isId(query)) query = { where: { id: query } };
+      else if (this.isT(query)) query = { where: { id: query.id } };
+      else isId = false;
       let [affected, results] = await this.model.update(<any>replace, query);
-      return [affected, this.wrapResults(results)];
+      return affected;
    }
    
-   async destroy(query: T | DestroyQueryT) {
+   async destroy(query: number | string | T | DestroyQueryT): Promise<any> {
+      if (this.isId(query)) query = { where: { id: query } };
       if (this.isT(query)) query = { where: { id: query.id } };
       return await this.model.destroy(query);
    }
    
+   private isId(query: any): query is (number | string) {
+      return typeof query === 'number' || typeof query == 'string';
+   }
    private isT(query: T | DestroyQueryT): query is T {
       return !!(<T>query).id;
    }

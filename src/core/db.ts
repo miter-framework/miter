@@ -14,9 +14,9 @@ export interface Db<T> {
    create(t: T | Object): Promise<T>;
    create(t: (T | Object)[]): Promise<T[]>;
    
-   findById(id: number): Promise<T | null>;
+   findById(id: string | number): Promise<T | null>;
    findOne(query: QueryT): Promise<T | null>;
-   findOrCreate(query: FindOrCreateQueryT): Promise<[T, boolean]>;
+   findOrCreate(query: string | Sql.WhereOptions, defaults?: Object | T): Promise<[T, boolean]>;
    findAndCountAll(query?: QueryT): Promise<CountAllResults<T>>;
    findAll(query?: QueryT): Promise<T[]>;
    all(query?: QueryT): Promise<T[]>;
@@ -27,8 +27,11 @@ export interface Db<T> {
    sum<T>(field: string): Promise<T>;
    
    save(t: T): Promise<T>;
-   update(query: Object | T, replace: Object): Promise<[number, T]>;
+   update(id: number | string, replace: Object): Promise<boolean>;
+   update(t: T, replace: Object): Promise<boolean>;
+   update(query: UpdateQueryT, replace: Object): Promise<[number, T[]]>;
    
-   destroy(t: T): Promise<void>;
+   destroy(id: string | number): Promise<boolean>;
+   destroy(t: T): Promise<boolean>;
    destroy(query: DestroyQueryT): Promise<number>;
 }

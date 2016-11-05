@@ -13,6 +13,7 @@ export var DATEONLY = sequelize.DATEONLY;
 export var BOOLEAN = sequelize.BOOLEAN;
 export var ENUM = sequelize.ENUM;
 export var UUID = sequelize.UUID;
+export var VIRTUAL = sequelize.VIRTUAL;
 
 //PostgreSQL only:
 export var ARRAY = sequelize.ARRAY;
