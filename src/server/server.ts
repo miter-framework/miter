@@ -62,7 +62,9 @@ export class Server {
             next();
          });
       }
-      this._app.use(...(this.meta.middleware || []));
+      if (this.meta.middleware && this.meta.middleware.length) {
+         this._app.use(...this.meta.middleware);
+      }
    }
    
    private ormReflector: OrmReflector;
