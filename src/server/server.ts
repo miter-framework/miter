@@ -58,7 +58,7 @@ export class Server {
          console.log(clc.yellowBright(`  Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`));
          this._app.use(function(req, res, next) {
             res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "X-Requested-With");
+            res.header("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
             next();
          });
       }
