@@ -6,20 +6,23 @@ export type RouteFunc = (req: express.Request, res: express.Response) => void | 
 export type RouteFuncDescriptor = TypedPropertyDescriptor<RouteFunc>;
 export type RouteDecoratorFunc = (target: Object, propertyKey: string, propertyDescriptor: RouteFuncDescriptor) => void;
 
-export function createRouteDecorator(meta: RouteMetadata | string, method?: RouteMethod): RouteDecoratorFunc {
-   if (typeof meta === 'string') meta = { path: <string>meta };
+export function createRouteDecorator(pathOrMeta: RouteMetadata | string, method?: RouteMethod): RouteDecoratorFunc {
+   if (typeof pathOrMeta === 'string') pathOrMeta = { path: <string>pathOrMeta };
    if (typeof method !== 'undefined') {
-      if (meta.method && meta.method != method) throw new Error(`Redeclaration of route method: ${meta}`);
-      meta.method = method;
+      if (pathOrMeta.method && pathOrMeta.method != method) throw new Error(`Redeclaration of route method: ${pathOrMeta}`);
+      pathOrMeta.method = method;
    }
-   else meta.method = meta.method || 'get';
+   else pathOrMeta.method = pathOrMeta.method || 'get';
+   let meta = pathOrMeta;
    
    return function(controller: any, routeName: string, routeFn: RouteFuncDescriptor) {
-      var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controller) || [];
-      routes.push(routeName);
-      Reflect.defineMetadata(ControllerRoutesSym, routes, controller);
+      var controllerRoutes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controller) || [];
+      if (!controllerRoutes.find(route => route == routeName)) controllerRoutes.push(routeName);
+      Reflect.defineMetadata(ControllerRoutesSym, controllerRoutes, controller);
       
-      Reflect.defineMetadata(RouteMetadataSym, meta, controller, routeName);
+      var methodRoutes: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controller, routeName) || [];
+      methodRoutes.push(meta);
+      Reflect.defineMetadata(RouteMetadataSym, methodRoutes, controller, routeName);
    }
 }
 

@@ -43,7 +43,7 @@ export class Server {
       }
       catch (e) {
          console.error("FATAL ERROR: Failed to launch server.");
-         console.error(`${e}`);
+         console.error(e);
          return;
       }
       

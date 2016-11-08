@@ -32,10 +32,11 @@ export class RouterReflector {
       var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controllerProto) || [];
       for (var q = 0; q < routes.length; q++) {
          var routeFnName: string = routes[q];
-         var routeMeta: RouteMetadata = Reflect.getOwnMetadata(RouteMetadataSym, controllerProto, routeFnName);
-         if (!routeMeta) throw new Error(`Could not find route metadata for route ${controllerFn}.${routeFnName}.`);
-         
-         this.addRoute(controllerInst, routeFnName, meta, routeMeta);
+         var routeMetaArr: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controllerProto, routeFnName) || [];
+         for (var w = 0; w < routeMetaArr.length; w++) {
+            let routeMeta = routeMetaArr[w];
+            this.addRoute(controllerInst, routeFnName, meta, routeMeta);
+         }
       }
    }
    
@@ -53,9 +54,9 @@ export class RouterReflector {
          meta.path || '',
          routeMeta.path
       ]);
-      console.log(`      Adding route ${routeFnName} (${fullPath})`);
-      
       if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
+      console.log(`      Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
+      
       this.router[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute));
    }
    private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][] {
