@@ -113,13 +113,14 @@ export class RouterReflector {
          }
          
          try {
-            return await boundRoute(req, res);
+            await boundRoute(req, res);
          }
          catch (e) {
             console.error(e);
             console.error(clc.error('A route threw an exception. Serving 500 - Internal server error'));
             res.status(500);
             res.send('Internal server error');
+            return;
          }
          if (res.statusCode === initialStatusCode && !res.headersSent) {
             console.error(clc.error(`A route failed to send a response. Serving 404 - Not Found`));

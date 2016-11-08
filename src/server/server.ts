@@ -17,7 +17,12 @@ var debug = require("debug")("express:server");
 export class Server {
    constructor(private _meta: ServerMetadata) {
       this._injector = new Injector();
-      this._injector.provide(Server, this);
+      this._injector.provide({provide: Server, useValue: this});
+      if (_meta.inject) {
+         for (var q = 0; q < _meta.inject.length; q++) {
+            this._injector.provide(_meta.inject[q]);
+         }
+      }
    }
    
    private _app: express.Application;
@@ -120,7 +125,7 @@ export class Server {
       this.app.use(router);
    }
    
-   private httpServer: http.Server;
+   private httpServer: http.Server | undefined;
    private listen() {
       console.log(clc.info("Serving"));
       
@@ -134,7 +139,7 @@ export class Server {
    }
    private async stopListening() {
       console.log("  Closing http server...");
-      if (this.httpServer) await wrapPromise(this.httpServer.close);
+      if (this.httpServer) await wrapPromise(this.httpServer.close.bind(this.httpServer));
    }
    private onError(error) {
       if (error.syscall !== "listen") {
@@ -148,11 +153,13 @@ export class Server {
       case "EACCES":
          console.error(clc.error(`${bind} requires elevated privileges`));
          this.errorCode = 1;
+         this.httpServer = undefined;
          this.shutdown();
          break;
       case "EADDRINUSE":
          console.error(clc.error(`${bind} is already in use`));
          this.errorCode = 1;
+         this.httpServer = undefined;
          this.shutdown();
          break;
       default:
@@ -160,6 +167,7 @@ export class Server {
       }
    }
    private onListening() {
+      if (!this.httpServer) throw new Error(`onListening called, but there is no httpServer!`);
       var addr = this.httpServer.address();
       var bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
       debug(clc.info(`Listening on ${bind}`));
