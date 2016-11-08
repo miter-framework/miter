@@ -8,6 +8,7 @@ import { Server } from '../server';
 import { hasNoUndefined } from '../util/has-no-undefined';
 import { joinRoutePaths } from '../util/join-route-paths';
 import { wrapPromise } from '../util/wrap-promise';
+import { clc } from '../util/clc';
 
 export class RouterReflector {
    constructor(private server: Server, private router: express.Router) {
@@ -101,8 +102,8 @@ export class RouterReflector {
                result = await policy[1](req, res);
             }
             catch (e) {
+               console.error(clc.error('A policy threw an exception. Serving 500 - Internal server error'));
                console.error(e);
-               console.log('Serving 500 - Internal server error');
                res.status(500);
                res.send('Internal server error');
                return;
@@ -116,9 +117,14 @@ export class RouterReflector {
          }
          catch (e) {
             console.error(e);
-            console.log('Serving 500 - Internal server error');
+            console.error(clc.error('A route threw an exception. Serving 500 - Internal server error'));
             res.status(500);
             res.send('Internal server error');
+         }
+         if (res.statusCode === initialStatusCode && !res.headersSent) {
+            console.error(clc.error(`A route failed to send a response. Serving 404 - Not Found`));
+            res.status(404);
+            res.send(`Not found.`);
          }
       };
    }

@@ -1,7 +1,8 @@
 import * as express from 'express';
+import * as expressJwt from 'express-jwt';
+
 import { Policy } from '../decorators';
 import { Server } from '../server';
-import * as expressJwt from 'express-jwt';
 import { wrapPromise } from '../util/wrap-promise';
 
 @Policy()

@@ -8,6 +8,7 @@ import { ServerMetadata } from '../core/metadata';
 import { OrmReflector } from '../orm';
 import { ServiceReflector } from '../services';
 import { RouterReflector } from '../router';
+import { wrapPromise } from '../util/wrap-promise';
 import { clc } from '../util/clc';
 
 import * as http from 'http';
@@ -34,35 +35,39 @@ export class Server {
    }
    
    async init() {
-      process.on('SIGINT', () => this.shutdown());
+      process.on('SIGINT', () => {
+         console.log('\r\n');
+         this.shutdown();
+      });
       
       try {
-         console.log("Initializing miter server...");
+         console.log(clc.info("Initializing miter server..."));
          await this.createExpressApp();
          await this.reflectOrm();
          await this.startServices();
          this.reflectRoutes();
       }
       catch (e) {
-         console.error(clc.redBright("FATAL ERROR: Failed to launch server."));
+         console.error(clc.error("FATAL ERROR: Failed to launch server."));
          console.error(e);
          return;
       }
       
       this.listen();
    }
+   private errorCode: number = 0;
    async shutdown() {
       try {
-         console.log(`\r\nShutting down miter server...`);
-         this.stopListening();
+         console.log(clc.info(`Shutting down miter server...`));
+         await this.stopListening();
          await this.stopServices();
       }
       catch (e) {
-         console.error(clc.redBright("FATAL ERROR: Failed to gracefully shutdown server."));
+         console.error(clc.error("FATAL ERROR: Failed to gracefully shutdown server."));
          console.error(e);
       }
       finally {
-         process.exit();
+         process.exit(this.errorCode);
       }
    }
    
@@ -70,7 +75,7 @@ export class Server {
       this._app = express();
       this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
       if (this.meta.allowCrossOrigin) {
-         console.log(clc.yellowBright(`  Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`));
+         console.log(clc.warn(`  Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`));
          this._app.use(function(req, res, next) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
@@ -91,7 +96,7 @@ export class Server {
          await this.ormReflector.init();
       }
       else if (this.meta.models && this.meta.models.length) {
-         console.log(clc.yellowBright("  Warning: Models included in server metadata, but no orm configuration defined."));
+         console.log(clc.warn("  Warning: Models included in server metadata, but no orm configuration defined."));
       }
    }
    
@@ -117,7 +122,7 @@ export class Server {
    
    private httpServer: http.Server;
    private listen() {
-      console.log("Serving");
+      console.log(clc.info("Serving"));
       
       //create http server
       this.httpServer = http.createServer(this.app);
@@ -127,9 +132,9 @@ export class Server {
       this.httpServer.on("listening", () => this.onListening());
       this.httpServer.listen(this.meta.port);
    }
-   private stopListening() {
+   private async stopListening() {
       console.log("  Closing http server...");
-      if (this.httpServer) this.httpServer.close();
+      if (this.httpServer) await wrapPromise(this.httpServer.close);
    }
    private onError(error) {
       if (error.syscall !== "listen") {
@@ -141,12 +146,14 @@ export class Server {
       // handle specific listen errors with friendly messages
       switch (error.code) {
       case "EACCES":
-         console.error(`${bind} requires elevated privileges`);
-         process.exit(1);
+         console.error(clc.error(`${bind} requires elevated privileges`));
+         this.errorCode = 1;
+         this.shutdown();
          break;
       case "EADDRINUSE":
-         console.error(`${bind} is already in use`);
-         process.exit(1);
+         console.error(clc.error(`${bind} is already in use`));
+         this.errorCode = 1;
+         this.shutdown();
          break;
       default:
          throw error;
@@ -155,6 +162,6 @@ export class Server {
    private onListening() {
       var addr = this.httpServer.address();
       var bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
-      debug(`Listening on ${bind}`);
+      debug(clc.info(`Listening on ${bind}`));
    }
 }

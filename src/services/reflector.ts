@@ -1,6 +1,8 @@
+import * as _ from 'lodash';
+
 import { CtorT, ServiceT } from '../core';
 import { Server } from '../server';
-import * as _ from 'lodash';
+import { clc } from '../util/clc';
 
 export class ServiceReflector {
    constructor(private server: Server) {
@@ -14,17 +16,18 @@ export class ServiceReflector {
             result = await this.reflectService(services[q]);
          }
          catch (e) {
-            console.error(`Exception occurred when trying to start service: ${services[q].name || services[q]}`);
+            console.error(clc.error(`Exception occurred when trying to start service: ${services[q].name || services[q]}`));
             console.error(e);
             result = false;
          }
          if (!result) {
-            console.error(`    Failed to start service: ${services[q].name || services[q]}`);
+            console.error(clc.error(`    Failed to start service: ${services[q].name || services[q]}`));
             failures++;
          }
       }
       
-      console.log(`    ${services.length - failures} services started correctly out of ${services.length}`);
+      let format = (!!failures ? clc.error : (str: string) => str);
+      console.log(format(`    ${services.length - failures} services started correctly out of ${services.length}`));
    }
    
    private _startedServices: ServiceT[] = [];
@@ -59,7 +62,8 @@ export class ServiceReflector {
          }
       }
       
-      console.log(`    ${services.length - failures} services terminated correctly out of ${services.length}`);
+      let format = (!!failures ? clc.error : (str: string) => str);
+      console.log(format(`    ${services.length - failures} services terminated correctly out of ${services.length}`));
    }
    async shutdownService(service: ServiceT): Promise<boolean> {
       if (typeof service.stop !== 'undefined') {
