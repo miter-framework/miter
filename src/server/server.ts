@@ -34,21 +34,36 @@ export class Server {
    }
    
    async init() {
+      process.on('SIGINT', () => this.shutdown());
+      
       try {
-         console.log("Initializing api-server...");
+         console.log("Initializing miter server...");
          await this.createExpressApp();
          await this.reflectOrm();
          await this.startServices();
          this.reflectRoutes();
       }
       catch (e) {
-         console.error("FATAL ERROR: Failed to launch server.");
+         console.error(clc.redBright("FATAL ERROR: Failed to launch server."));
          console.error(e);
          return;
       }
       
-      console.log("Serving");
       this.listen();
+   }
+   async shutdown() {
+      try {
+         console.log(`\r\nShutting down miter server...`);
+         this.stopListening();
+         await this.stopServices();
+      }
+      catch (e) {
+         console.error(clc.redBright("FATAL ERROR: Failed to gracefully shutdown server."));
+         console.error(e);
+      }
+      finally {
+         process.exit();
+      }
    }
    
    createExpressApp() {
@@ -76,19 +91,23 @@ export class Server {
          await this.ormReflector.init();
       }
       else if (this.meta.models && this.meta.models.length) {
-         console.log("  Warning: Models included in server metadata, but no orm configuration defined.");
+         console.log(clc.yellowBright("  Warning: Models included in server metadata, but no orm configuration defined."));
       }
    }
    
    private serviceReflector: ServiceReflector;
-   async startServices() {
+   private async startServices() {
       console.log("  Starting services...");
       this.serviceReflector = new ServiceReflector(this);
       await this.serviceReflector.reflectServices(this.meta.services || []);
    }
+   private async stopServices() {
+      console.log("  Shutting down services...");
+      await this.serviceReflector.shutdownServices();
+   }
    
    private routerReflector: RouterReflector;
-   reflectRoutes() {
+   private reflectRoutes() {
       console.log("  Loading routes...");
       let router = express.Router();
       this.routerReflector = new RouterReflector(this, router);
@@ -97,7 +116,9 @@ export class Server {
    }
    
    private httpServer: http.Server;
-   listen() {
+   private listen() {
+      console.log("Serving");
+      
       //create http server
       this.httpServer = http.createServer(this.app);
       
@@ -105,6 +126,10 @@ export class Server {
       this.httpServer.on("error", (err) => this.onError(err));
       this.httpServer.on("listening", () => this.onListening());
       this.httpServer.listen(this.meta.port);
+   }
+   private stopListening() {
+      console.log("  Closing http server...");
+      if (this.httpServer) this.httpServer.close();
    }
    private onError(error) {
       if (error.syscall !== "listen") {
