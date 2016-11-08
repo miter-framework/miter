@@ -40,11 +40,6 @@ export class Server {
    }
    
    async init() {
-      process.on('SIGINT', () => {
-         console.log('\r\n');
-         this.shutdown();
-      });
-      
       try {
          console.log(clc.info("Initializing miter server..."));
          await this.createExpressApp();
@@ -60,7 +55,7 @@ export class Server {
       
       this.listen();
    }
-   private errorCode: number = 0;
+   errorCode: number = 0;
    async shutdown() {
       try {
          console.log(clc.info(`Shutting down miter server...`));
@@ -70,9 +65,6 @@ export class Server {
       catch (e) {
          console.error(clc.error("FATAL ERROR: Failed to gracefully shutdown server."));
          console.error(e);
-      }
-      finally {
-         process.exit(this.errorCode);
       }
    }
    
@@ -134,12 +126,15 @@ export class Server {
       
       //listen on provided ports
       this.httpServer.on("error", (err) => this.onError(err));
-      this.httpServer.on("listening", () => this.onListening());
-      this.httpServer.listen(this.meta.port);
+      // this.httpServer.on("listening", () => this.onListening());
+      this.httpServer.listen(this.meta.port, () => this.onListening());
    }
    private async stopListening() {
       console.log("  Closing http server...");
-      if (this.httpServer) await wrapPromise(this.httpServer.close.bind(this.httpServer));
+      await wrapPromise((cb) => {
+         if (!this.httpServer) return cb();
+         this.httpServer.close(cb);
+      });
    }
    private onError(error) {
       if (error.syscall !== "listen") {
