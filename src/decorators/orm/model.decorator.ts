@@ -1,5 +1,5 @@
-import { StaticModelT, ModelT, PkType } from '../core';
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../core/metadata';
+import { StaticModelT, ModelT, PkType } from '../../core';
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../../core/metadata';
 import 'reflect-metadata';
 import { Pk } from './pk.decorator';
 

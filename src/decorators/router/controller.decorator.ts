@@ -1,5 +1,5 @@
-import { CtorT, ControllerT } from '../core';
-import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../core/metadata';
+import { CtorT, ControllerT } from '../../core';
+import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../../core/metadata';
 
 export function Controller(meta?: ControllerMetadata) {
    meta = meta || {};
