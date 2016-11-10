@@ -34,4 +34,6 @@ export interface Db<T> {
    destroy(id: string | number): Promise<boolean>;
    destroy(t: T): Promise<boolean>;
    destroy(query: DestroyQueryT): Promise<number>;
+   
+   fromJson(json: any): T;
 }

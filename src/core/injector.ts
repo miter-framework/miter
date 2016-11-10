@@ -31,7 +31,6 @@ export class Injector {
       let types: any[] = Reflect.getOwnMetadata('design:paramtypes', ctorFn);
       if (!types) throw new Error(`Could not dependency inject ${ctorFn.name || ctorFn}. No design-time metadata could be reflected.`);
       let values = types.map(type => this.resolveInjectable(type));
-      
       return new ctorFn(...values);
    }
    provide<T>(provideMeta: ProvideMetadata<any>): this {

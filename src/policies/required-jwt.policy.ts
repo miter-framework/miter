@@ -3,8 +3,8 @@ import { Server } from '../server';
 import { JwtBasePolicy } from './jwt-base.policy';
 
 @Policy()
-export class JwtPolicy extends JwtBasePolicy {
+export class RequiredJwtPolicy extends JwtBasePolicy {
    constructor(server: Server) {
-      super(server, false);
+      super(server, true);
    }
 }

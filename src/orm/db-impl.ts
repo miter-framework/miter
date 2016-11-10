@@ -1,10 +1,13 @@
 import * as Sql from 'sequelize'; 
 import { StaticModelT, ModelT, PkType, Db,
          QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT,
-         CountAllResults } from '../core';
+         CountAllResults, CtorT } from '../core';
+import { ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../core/metadata';
+import { Types } from '../decorators';
 
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
    constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>) {
+      this.copyVals = this.createCopyValsFn();
    }
    
    async create(t: Object | T | Object[] | T[]): Promise<any> {
@@ -81,8 +84,39 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
       return !!(<T>query).id;
    }
    
+   private copyVals: { (sql: TInstance, t: T): void };
+   private createCopyValsFn() {
+      let directProps: string[] = [];
+      let translateProps: [string, {(val: string): any}][] = [];
+      
+      var props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, this.modelFn.prototype) || [];
+      for (var q = 0; q < props.length; q++) {
+         var propName: string = props[q];
+         var propMeta: PropMetadata = Reflect.getOwnMetadata(PropMetadataSym, this.modelFn.prototype, propName);
+         if (!propMeta) throw new Error(`Could not find model property metadata for property ${this.modelFn.name || this.modelFn}.${propName}.`);
+         
+         if (propMeta.type == Types.DATE) translateProps.push([propName, dateStr => new Date(dateStr)]);
+         else directProps.push(propName);
+      }
+      
+      return function(sql: TInstance, t: any) {
+         for (var q = 0; q < directProps.length; q++) {
+            t[directProps[q]] = sql[directProps[q]];
+         }
+         for (var q = 0; q < translateProps.length; q++) {
+            let propName = translateProps[q][0];
+            let translateFn = translateProps[q][1];
+            t[propName] = translateFn(sql[propName]);
+         }
+      }
+   }
+   fromJson(json: any): T {
+      return this.wrapResult(json);
+   }
    private wrapResult(result: TInstance): T {
-      return <T><any>result;
+      let t = new this.modelFn();
+      this.copyVals(result, t);
+      return t;
    }
    private wrapResults(results: TInstance[]): T[] {
       return results.map(result => this.wrapResult(result));
