@@ -1,5 +1,5 @@
 import { CtorT, ServiceT } from '../../core';
-import { ServiceMetadata, ServiceMetadataSym } from '../../core/metadata';
+import { ServiceMetadata, ServiceMetadataSym } from '../../metadata';
 
 export function Service(meta?: ServiceMetadata) {
    meta = meta || {};

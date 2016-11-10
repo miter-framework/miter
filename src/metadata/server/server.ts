@@ -1,8 +1,8 @@
 import * as express from 'express';
 import { CtorT, ControllerT, StaticModelT, ModelT, PkType, ServiceT, PolicyDescriptor } from '../../core';
 import { ProvideMetadata } from './provide';
-import { OrmMetadata } from './orm';
-import { JwtMetadata } from './jwt';
+import { OrmMetadata } from '../orm';
+import { JwtMetadata } from '../policies';
 
 export type ServerMetadata = {
    port: number | string,

@@ -5,5 +5,3 @@ export * from './service';
 
 export * from './ctor';
 export * from './injector';
-
-export * from './metadata';

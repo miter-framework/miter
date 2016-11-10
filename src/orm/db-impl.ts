@@ -2,7 +2,7 @@ import * as Sql from 'sequelize';
 import { StaticModelT, ModelT, PkType, Db,
          QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT,
          CountAllResults, CtorT } from '../core';
-import { ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../core/metadata';
+import { ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../metadata';
 import { Types } from '../decorators';
 
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {

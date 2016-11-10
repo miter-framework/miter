@@ -4,7 +4,7 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 
 import { Injector } from '../core';
-import { ServerMetadata } from '../core/metadata';
+import { ServerMetadata } from '../metadata';
 import { OrmReflector } from '../orm';
 import { ServiceReflector } from '../services';
 import { RouterReflector } from '../router';

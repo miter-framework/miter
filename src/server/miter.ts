@@ -1,4 +1,4 @@
-import { ServerMetadata } from '../core/metadata';
+import { ServerMetadata } from '../metadata';
 import { Server } from './server';
 import { clc } from '../util/clc';
 

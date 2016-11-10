@@ -15,5 +15,5 @@ export type ModelMetadata = {
    comment?: string,
    engine?: string
 }
-export const ModelMetadataSym = Symbol.for('ControllerMetadata');
+export const ModelMetadataSym = Symbol.for('ModelMetadata');
 export const ModelPropertiesSym = Symbol.for('ModelProperties');

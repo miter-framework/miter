@@ -3,7 +3,7 @@ import _ = require('lodash');
 import * as Sequelize from 'sequelize';
 
 import { Injector, StaticModelT, ModelT, PkType } from '../core';
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../core/metadata';
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../metadata';
 import { Server } from '../server';
 import { DbImpl } from './db-impl';
 

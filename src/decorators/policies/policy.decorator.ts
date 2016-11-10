@@ -1,5 +1,5 @@
 import { CtorT, PolicyT } from '../../core';
-import { PolicyMetadata, PolicyMetadataSym } from '../../core/metadata';
+import { PolicyMetadata, PolicyMetadataSym } from '../../metadata';
 
 export function Policy<T>(meta?: PolicyMetadata) {
    meta = meta || {};

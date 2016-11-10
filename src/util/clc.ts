@@ -1,4 +1,5 @@
 import clc = require('cli-color');
+
 declare module 'cli-color' {
    interface Format {
       info: Format;
@@ -9,4 +10,5 @@ declare module 'cli-color' {
 clc.info = clc.cyan;
 clc.error = clc.redBright;
 clc.warn = clc.yellowBright;
+
 export { clc };

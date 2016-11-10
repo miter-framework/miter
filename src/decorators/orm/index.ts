@@ -1,6 +1,6 @@
 
 
-export * from './relations';
+export * from './associations';
 
 export * from './model.decorator';
 export * from './pk.decorator';

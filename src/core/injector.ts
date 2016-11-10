@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { CtorT } from './ctor';
-import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from './metadata/provide';
+import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata';
 import { clc } from '../util/clc';
 
 export class Injector {

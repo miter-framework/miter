@@ -3,7 +3,7 @@ import * as express from 'express';
 
 import './extend-request';
 import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
-import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../core/metadata';
+import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
 import { Server } from '../server';
 import { hasNoUndefined } from '../util/has-no-undefined';
 import { joinRoutePaths } from '../util/join-route-paths';
