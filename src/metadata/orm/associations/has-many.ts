@@ -1,9 +1,8 @@
-import { CtorT, ModelT } from '../../../core';
+import * as Sql from 'sequelize';
+import { StaticModelT, ModelT } from '../../../core';
 
-export type HasManyMetadata = {
-   foreignModel: CtorT<ModelT<any>>,
-   
-   foreignKey?: string
+export interface HasManyMetadata extends Sql.AssociationOptionsHasMany {
+   foreignModel: StaticModelT<ModelT<any>>
 };
 
 export const ModelHasManyAssociationsSym = Symbol.for('ModelHasManyAssociations');

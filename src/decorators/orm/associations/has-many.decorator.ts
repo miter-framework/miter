@@ -1,11 +1,11 @@
-import { CtorT, ModelT } from '../../../core';
+import { StaticModelT, ModelT } from '../../../core';
 import { HasManyMetadata, ModelHasManyAssociationsSym, HasManyMetadataSym } from '../../../metadata';
 
 function isHasManyMetadata(test: any): test is HasManyMetadata {
    return !!(<any>test).foreignModel;
 }
 
-export function HasMany(propMeta: HasManyMetadata | CtorT<ModelT<any>>) {
+export function HasMany(propMeta: HasManyMetadata | StaticModelT<ModelT<any>>) {
    let meta: HasManyMetadata;
    if (isHasManyMetadata(propMeta)) meta = propMeta;
    else meta = { foreignModel: propMeta };

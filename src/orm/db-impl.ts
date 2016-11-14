@@ -1,4 +1,4 @@
-import * as Sql from 'sequelize'; 
+import * as Sql from 'sequelize';
 import { StaticModelT, ModelT, PkType, Db,
          QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT,
          CountAllResults, CtorT } from '../core';
@@ -69,6 +69,17 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
       else isId = false;
       let [affected, results] = await this.model.update(<any>replace, query);
       return affected;
+   }
+   async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T): Promise<[T, boolean]> {
+      let [result, created] = await this.findOrCreate(query, defaults);
+      if (!created) {
+         let worked = await this.update({ where: query }, defaults);
+         if (!worked) throw new Error("Failed to update or create a model.");
+         let resultOrNull = await this.findOne(query);
+         if (!resultOrNull) throw new Error("Updated row, but could not find it afterwards.");
+         result = resultOrNull;
+      }
+      return [result, created];
    }
    
    async destroy(query: number | string | T | DestroyQueryT): Promise<any> {
