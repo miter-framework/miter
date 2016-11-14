@@ -121,13 +121,8 @@ export class Server {
    private listen() {
       console.log(clc.info("Serving"));
       
-      //create http server
-      this.httpServer = http.createServer(this.app);
-      
-      //listen on provided ports
+      this.httpServer = this.app.listen(this.meta.port, () => this.onListening());
       this.httpServer.on("error", (err) => this.onError(err));
-      // this.httpServer.on("listening", () => this.onListening());
-      this.httpServer.listen(this.meta.port, () => this.onListening());
    }
    private async stopListening() {
       console.log("  Closing http server...");
@@ -165,6 +160,6 @@ export class Server {
       if (!this.httpServer) throw new Error(`onListening called, but there is no httpServer!`);
       var addr = this.httpServer.address();
       var bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
-      debug(clc.info(`Listening on ${bind}`));
+      console.log(clc.info(`Listening on ${bind}`));
    }
 }
