@@ -73,9 +73,9 @@ export class Server {
       this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
       if (this.meta.allowCrossOrigin) {
          console.log(clc.warn(`  Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`));
-         this._app.use(function(req, res, next) {
+         this._app.use(function(req: express.Request, res: express.Response, next) {
             res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization");
+            res.header("Access-Control-Allow-Headers", req.header("Access-Control-Request-Headers"));
             next();
          });
       }
