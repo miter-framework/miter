@@ -4,9 +4,9 @@
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "echo 'Not implemented'",
-    "build": "rm -rf dist; tsc",
-    "watch": "rm -rf dist; tsc -w",
-    "prepublish": "rm -rf dist; tsc"
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prepublish": "tsc"
   },
   "dependencies": {
     "@types/body-parser": "^0.0.33",
