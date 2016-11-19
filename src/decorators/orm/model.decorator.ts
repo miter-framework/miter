@@ -4,7 +4,8 @@ import 'reflect-metadata';
 import { Pk } from './pk.decorator';
 
 function furnishDefaults(meta: ModelMetadata, model: any) {
-   if (!meta.tableName) meta.tableName = model.name;
+   if (!meta) meta = { tableName: model.name };
+   else if (!meta.tableName) meta.tableName = model.name;
 }
 
 export function Model(tableName?: ModelMetadata | string) {

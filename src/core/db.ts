@@ -29,7 +29,7 @@ export interface Db<T> {
    save(t: T): Promise<T>;
    update(id: number | string, replace: Object): Promise<boolean>;
    update(t: T, replace: Object): Promise<boolean>;
-   update(query: UpdateQueryT, replace: Object): Promise<[number, T[]]>;
+   update(query: UpdateQueryT, replace: Object): Promise<number>;
    updateOrCreate(query: string | Sql.WhereOptions, defaults: Object | T) : Promise<[T, boolean]>;
    
    destroy(id: string | number): Promise<boolean>;

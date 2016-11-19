@@ -23,9 +23,9 @@ export class JwtBasePolicy {
    private jwtHandler: express.RequestHandler;
    
    async handle(req: express.Request, res: express.Response) {
-      if (!this.jwtHandler) return;
-      await wrapPromise<void>(this.jwtHandler, req, res);
-      if (req[this.property]) req[this.property] = await this.fromJson(req[this.property]);
+      if (this.jwtHandler) await wrapPromise<void>(this.jwtHandler, req, res);
+      if (req[this.property]) return req[this.property] = await this.fromJson(req[this.property]);
+      return null;
    }
    
    protected async fromJson(json: any) {
