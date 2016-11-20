@@ -3,7 +3,7 @@
   "version": "0.0.18",
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
-    "test": "echo 'Not implemented'",
+    "test": "tsc ; node ./dist/test/index.js",
     "build": "tsc",
     "watch": "tsc -w",
     "prepublish": "tsc"
@@ -15,6 +15,7 @@
     "@types/express-jwt": "^0.0.33",
     "@types/lodash": "^4.14.37",
     "@types/node": "^6.0.45",
+    "@types/pluralize": "^0.0.27",
     "@types/sequelize": "^4.0.38",
     "body-parser": "^1.15.2",
     "cli-color": "^1.1.0",
@@ -23,6 +24,7 @@
     "express-jwt": "^5.1.0",
     "lodash": "^4.16.4",
     "mysql": "^2.11.1",
+    "pluralize": "^3.0.0",
     "reflect-metadata": "^0.1.8",
     "sequelize": "^3.24.6",
     "typescript": "^2.0.10"

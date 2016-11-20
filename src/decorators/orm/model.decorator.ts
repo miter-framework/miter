@@ -3,18 +3,12 @@ import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../../metad
 import 'reflect-metadata';
 import { Pk } from './pk.decorator';
 
-function furnishDefaults(meta: ModelMetadata, model: any) {
-   if (!meta) meta = { tableName: model.name };
-   else if (!meta.tableName) meta.tableName = model.name;
-}
-
-export function Model(tableName?: ModelMetadata | string) {
+export function Model(tableName: ModelMetadata | string | undefined) {
    var meta: ModelMetadata;
-   if (typeof tableName === 'string') meta = { tableName: <string>tableName };
-   else if (typeof tableName !== 'undefined') meta = tableName;
+   if (typeof tableName === 'string') meta = { tableName: tableName };
+   else meta = tableName || {};
    
    return function(model: StaticModelT<ModelT<PkType>>) {
-      furnishDefaults(meta, model);
       Reflect.defineMetadata(ModelMetadataSym, meta, model.prototype);
       
       let props = Reflect.getOwnMetadata(ModelPropertiesSym, model.prototype) || [];

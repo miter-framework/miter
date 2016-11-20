@@ -6,11 +6,17 @@ import { Injector, StaticModelT, ModelT, PkType } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym,
          ModelHasManyAssociationsSym, HasManyMetadata, HasManyMetadataSym } from '../metadata';
 import { Server } from '../server';
+import { OrmTransformService } from '../services';
 import { DbImpl } from './db-impl';
 
 export class OrmReflector {
    constructor(private server: Server) {
+      let ormTransform = server.injector.resolveInjectable(OrmTransformService);
+      if (!ormTransform) throw new Error(`Failed to resolve OrmTransformService. Can't reflect ORM models`);
+      this.ormTransform = ormTransform;
    }
+   
+   private ormTransform: OrmTransformService;
    
    private sql: Sequelize.Sequelize;
    
@@ -55,7 +61,7 @@ export class OrmReflector {
       let meta: ModelMetadata = Reflect.getOwnMetadata(ModelMetadataSym, modelProto);
       if (!meta) throw new Error(`Expecting class with @Model decorator, could not reflect model properties for ${modelProto}.`);
       
-      let tableName = meta.tableName;
+      let tableName = meta.tableName || this.ormTransform.transformModelName(modelFn.name, meta) || modelFn.name;
       let columns = {};
       let modelOptions = _.cloneDeep(meta);
       
@@ -66,10 +72,8 @@ export class OrmReflector {
          if (!propMeta) throw new Error(`Could not find model property metadata for property ${modelFn.name || modelFn}.${propName}.`);
          
          let columnMeta = <any>_.cloneDeep(propMeta);
-         if (propMeta.columnName) {
-            delete columnMeta.columnName;
-            columnMeta.field = propMeta.columnName;
-         }
+         columnMeta.field = columnMeta.columnName || this.ormTransform.transformColumnName(propName, propMeta) || propName;
+         delete columnMeta.columnName;
          
          columns[propName] = columnMeta;
       }

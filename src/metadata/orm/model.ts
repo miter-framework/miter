@@ -1,7 +1,7 @@
 
 
 export type ModelMetadata = {
-   tableName: string,
+   tableName?: string,
    freezeTableName?: boolean,
    
    timestamps?: boolean,
