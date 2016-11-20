@@ -2,7 +2,7 @@ import { PropMetadata, PropMetadataSym, ModelPropertiesSym } from '../../metadat
 import * as sequelize from 'sequelize';
 import 'reflect-metadata';
 
-export function Prop(columnName: PropMetadata | string | undefined) {
+export function Prop(columnName?: PropMetadata | string) {
    let meta: PropMetadata;
    if (typeof columnName === 'string') meta = { columnName: columnName };
    else meta = columnName || {};

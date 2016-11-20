@@ -5,10 +5,17 @@ import { ModelMetadata, PropMetadata } from '../metadata';
 export class OrmTransformService {
    constructor() { }
    
-   public transformModelName(className: string, modelMeta: ModelMetadata): string | null {
+   public transformModel(modelMeta: ModelMetadata): ModelMetadata | null {
+      return modelMeta;
+   }
+   public transformModelName(className: string): string | null {
       return null;
    }
-   public transformColumnName(fieldName: string, propMeta: PropMetadata): string | null {
+   
+   public transformColumn(propMeta: PropMetadata): PropMetadata | null {
+      return propMeta;
+   }
+   public transformColumnName(fieldName: string): string | null {
       return null;
    }
 }

@@ -60,8 +60,9 @@ export class OrmReflector {
       
       let meta: ModelMetadata = Reflect.getOwnMetadata(ModelMetadataSym, modelProto);
       if (!meta) throw new Error(`Expecting class with @Model decorator, could not reflect model properties for ${modelProto}.`);
+      meta = this.ormTransform.transformModel(meta) || meta;
       
-      let tableName = meta.tableName || this.ormTransform.transformModelName(modelFn.name, meta) || modelFn.name;
+      let tableName = meta.tableName || this.ormTransform.transformModelName(modelFn.name) || modelFn.name;
       let columns = {};
       let modelOptions = _.cloneDeep(meta);
       
@@ -70,9 +71,10 @@ export class OrmReflector {
          let propName: string = props[q];
          let propMeta: PropMetadata = Reflect.getOwnMetadata(PropMetadataSym, modelProto, propName);
          if (!propMeta) throw new Error(`Could not find model property metadata for property ${modelFn.name || modelFn}.${propName}.`);
+         propMeta = this.ormTransform.transformColumn(propMeta) || propMeta;
          
          let columnMeta = <any>_.cloneDeep(propMeta);
-         columnMeta.field = columnMeta.columnName || this.ormTransform.transformColumnName(propName, propMeta) || propName;
+         columnMeta.field = columnMeta.columnName || this.ormTransform.transformColumnName(propName) || propName;
          delete columnMeta.columnName;
          
          columns[propName] = columnMeta;

@@ -3,7 +3,7 @@ import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../../metad
 import 'reflect-metadata';
 import { Pk } from './pk.decorator';
 
-export function Model(tableName: ModelMetadata | string | undefined) {
+export function Model(tableName?: ModelMetadata | string) {
    var meta: ModelMetadata;
    if (typeof tableName === 'string') meta = { tableName: tableName };
    else meta = tableName || {};

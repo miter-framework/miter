@@ -1,5 +1,5 @@
 import { Service } from '../decorators';
-import { ModelMetadata, PropMetadata } from '../metadata';
+import { ModelMetadata } from '../metadata';
 import { OrmTransformService } from './orm-transform.service';
 import { pluralize } from '../util/pluralize';
 
@@ -9,13 +9,17 @@ export class SnakeCaseOrmTransformService extends OrmTransformService {
       super();
    }
    
-   public transformModelName(className: string, modelMeta: ModelMetadata): string | null {
+   public transformModel(modelMeta: ModelMetadata): ModelMetadata | null {
+      modelMeta.underscored = true;
+      return modelMeta;
+   }
+   public transformModelName(className: string): string | null {
       let parts = [...this.splitOnWords(className)].filter(Boolean);
       if (!parts.length) return null;
       parts[parts.length - 1] = pluralize(parts[parts.length - 1]);
       return parts.map(pt => pt.toLowerCase()).join('_');
    }
-   public transformColumnName(fieldName: string, propMeta: PropMetadata): string | null {
+   public transformColumnName(fieldName: string): string | null {
       let parts = [...this.splitOnWords(fieldName)].filter(Boolean);
       if (!parts.length) return null;
       parts[parts.length - 1] = pluralize(parts[parts.length - 1], false);
