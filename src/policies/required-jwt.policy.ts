@@ -4,7 +4,7 @@ import { JwtBasePolicy } from './jwt-base.policy';
 
 @Policy()
 export class RequiredJwtPolicy extends JwtBasePolicy {
-   constructor(server: Server) {
-      super(server, true);
-   }
+    constructor(server: Server) {
+        super(server, true);
+    }
 }

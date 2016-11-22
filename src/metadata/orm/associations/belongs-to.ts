@@ -1,10 +1,10 @@
 
 
 export type BelongsToMetadata = {
-   columnName?: string,
-   
-   foreignKey?: string,
-   foreignTableName?: string
+    columnName?: string,
+    
+    foreignKey?: string,
+    foreignTableName?: string
 };
 
 export const ModelBelongsToAssociationsSym = Symbol.for('ModelBelongsToAssociations');

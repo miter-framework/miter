@@ -1,6 +1,6 @@
 
 
 export type JwtMetadata = {
-   secret: string | Buffer,
-   tokenProperty?: string
+    secret: string | Buffer,
+    tokenProperty?: string
 }

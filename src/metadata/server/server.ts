@@ -5,15 +5,15 @@ import { OrmMetadata } from '../orm';
 import { JwtMetadata } from '../policies';
 
 export type ServerMetadata = {
-   port: number | string,
-   orm?: OrmMetadata,
-   jwt?: JwtMetadata,
-   path?: string,
-   inject?: ProvideMetadata<any>[],
-   controllers?: CtorT<ControllerT>[],
-   models?: StaticModelT<ModelT<PkType>>[],
-   services?: CtorT<ServiceT>[],
-   policies?: PolicyDescriptor[],
-   middleware?: express.Handler[],
-   allowCrossOrigin?: boolean
+    port: number | string,
+    orm?: OrmMetadata,
+    jwt?: JwtMetadata,
+    path?: string,
+    inject?: ProvideMetadata<any>[],
+    controllers?: CtorT<ControllerT>[],
+    models?: StaticModelT<ModelT<PkType>>[],
+    services?: CtorT<ServiceT>[],
+    policies?: PolicyDescriptor[],
+    middleware?: express.Handler[],
+    allowCrossOrigin?: boolean
 }

@@ -1,27 +1,27 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es6",
-    "outDir": "dist",
-    "rootDir": "./src",
-    "sourceMap": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "moduleResolution": "node",
-    "declaration": true,
-    "strictNullChecks": true,
-    "types": [
-      "express",
-      "lodash",
-      "node",
-      "sequelize",
-      "pluralize"
-    ]
-  },
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
-  "compileOnSave": false,
-  "buildOnSave": false
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es6",
+        "outDir": "dist",
+        "rootDir": "./src",
+        "sourceMap": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "moduleResolution": "node",
+        "declaration": true,
+        "strictNullChecks": true,
+        "types": [
+            "express",
+            "lodash",
+            "node",
+            "sequelize",
+            "pluralize"
+        ]
+    },
+    "exclude": [
+        "node_modules",
+        "dist"
+    ],
+    "compileOnSave": false,
+    "buildOnSave": false
 }

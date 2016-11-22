@@ -1,10 +1,10 @@
 
 
 export type HasOneMetadata = {
-   columnName?: string,
-   
-   foreignKey?: string,
-   foreignTableName?: string
+    columnName?: string,
+    
+    foreignKey?: string,
+    foreignTableName?: string
 };
 
 export const ModelHasOneAssociationsSym = Symbol.for('ModelHasOneAssociations');

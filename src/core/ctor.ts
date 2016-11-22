@@ -1,5 +1,5 @@
 
 
 export interface CtorT<T> {
-   new (...any): T
+    new (...any): T
 };
