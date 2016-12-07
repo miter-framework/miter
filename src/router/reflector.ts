@@ -5,6 +5,7 @@ import './extend-request';
 import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
 import { Server } from '../server';
+import { inhertitanceHierarchy } from '../util/inheritance-hierarchy';
 import { hasNoUndefined } from '../util/has-no-undefined';
 import { joinRoutePaths } from '../util/join-route-paths';
 import { wrapPromise } from '../util/wrap-promise';
@@ -30,17 +31,32 @@ export class RouterReflector {
         if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerProto}.`);
         console.log(`    Reflecting routes for controller ${controllerFn.name}`);
         
-        var routes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controllerProto) || [];
-        for (var q = 0; q < routes.length; q++) {
-            var routeFnName: string = routes[q];
-            var routeMetaArr: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controllerProto, routeFnName) || [];
+        let routes = this.reflectRouteMeta(controllerProto);
+        for (let q = 0; q < routes.length; q++) {
+            let [routeFnName, routeMetaArr] = routes[q];
             for (var w = 0; w < routeMetaArr.length; w++) {
-            let routeMeta = routeMetaArr[w];
-            this.addRoute(controllerInst, routeFnName, meta, routeMeta);
+                let routeMeta = routeMetaArr[w];
+                this.addRoute(controllerInst, routeFnName, meta, routeMeta);
             }
         }
     }
-
+    
+    private reflectRouteMeta(controllerProto): [string, RouteMetadata[]][] {
+        let hierarchy = inhertitanceHierarchy(controllerProto);
+        let routeMeta: [string, RouteMetadata[]][] = [];
+        for (let r = 0; r < hierarchy.length; r++) {
+            let fn = hierarchy[r].prototype;
+            let routeNames: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, fn) || [];
+            for (var q = 0; q < routeNames.length; q++) {
+                var routeFnName: string = routeNames[q];
+                var routeMetaArr: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, fn, routeFnName) || [];
+                routeMeta.push([routeFnName, routeMetaArr]);
+                //TODO: Ensure routes on parent classes are still accessible
+            }
+        }
+        return routeMeta;
+    }
+    
     private addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
         let policyDescriptors = [
             ...(this.server.meta.policies || []),
@@ -50,11 +66,15 @@ export class RouterReflector {
         let policies = this.resolvePolicies(policyDescriptors);
         let boundRoute = controller[routeFnName].bind(controller);
         
+        let pathPart = routeMeta.path;
+        if (controller.transformPathPart) pathPart = controller.transformPathPart(pathPart) || pathPart;
         let fullPath = joinRoutePaths(...[
             this.server.meta.path || '',
             meta.path || '',
-            routeMeta.path
+            pathPart
         ]);
+        if (controller.transformPath) fullPath = controller.transformPath(fullPath) || fullPath;
+        
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         console.log(`      Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
@@ -65,19 +85,19 @@ export class RouterReflector {
             let key: undefined | CtorT<PolicyT<any>>;
             let fn: { (req: express.Request, res: express.Response): Promise<any> };
             if (this.isPolicyCtor(desc)) {
-            key = desc;
-            let val = this.server.injector.resolveInjectable(desc);
-            if (!val) throw new Error(`Could not resolve dependency for policy: ${desc}`);
-            desc = val;
+                key = desc;
+                let val = this.server.injector.resolveInjectable(desc);
+                if (!val) throw new Error(`Could not resolve dependency for policy: ${desc}`);
+                desc = val;
             }
             if (this.isPolicyT(desc)) {
-            fn = desc.handle.bind(desc);
+                fn = desc.handle.bind(desc);
             }
             else {
-            let handler = desc;
-            fn = async function(req: express.Request, res: express.Response) {
-                await wrapPromise(handler, req, res);
-            }
+                let handler = desc;
+                fn = async function(req: express.Request, res: express.Response) {
+                    await wrapPromise(handler, req, res);
+                }
             }
             return [key, fn];
         });
@@ -96,36 +116,36 @@ export class RouterReflector {
             req.policyResults = self.createPolicyResultsFn(policies, allResults);
             let initialStatusCode = res.statusCode;
             for (var q = 0; q < policies.length; q++) {
-            let policy = policies[q];
-            let result: any;
+                let policy = policies[q];
+                let result: any;
+                try {
+                    result = await policy[1](req, res);
+                }
+                catch (e) {
+                    console.error(clc.error('A policy threw an exception. Serving 500 - Internal server error'));
+                    console.error(e);
+                    res.status(500);
+                    res.send('Internal server error');
+                    return;
+                }
+                allResults.push(result);
+                if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            }
+            
             try {
-                result = await policy[1](req, res);
+                await boundRoute(req, res);
             }
             catch (e) {
-                console.error(clc.error('A policy threw an exception. Serving 500 - Internal server error'));
                 console.error(e);
+                console.error(clc.error('A route threw an exception. Serving 500 - Internal server error'));
                 res.status(500);
                 res.send('Internal server error');
                 return;
             }
-            allResults.push(result);
-            if (res.statusCode !== initialStatusCode || res.headersSent) return;
-            }
-            
-            try {
-            await boundRoute(req, res);
-            }
-            catch (e) {
-            console.error(e);
-            console.error(clc.error('A route threw an exception. Serving 500 - Internal server error'));
-            res.status(500);
-            res.send('Internal server error');
-            return;
-            }
             if (res.statusCode === initialStatusCode && !res.headersSent) {
-            console.error(clc.error(`A route failed to send a response. Serving 404 - Not Found`));
-            res.status(404);
-            res.send(`Not found.`);
+                console.error(clc.error(`A route failed to send a response. Serving 404 - Not Found`));
+                res.status(404);
+                res.send(`Not found.`);
             }
         };
     }
@@ -133,7 +153,7 @@ export class RouterReflector {
         let keys = policies.map(poli => poli[0]);
         return function(policyFn) {
             for (var q = 0; q < keys.length; q++) {
-            if (keys[q] === policyFn) return allResults[q];
+                if (keys[q] === policyFn) return allResults[q];
             }
             return undefined;
         }
