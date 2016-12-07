@@ -2,10 +2,15 @@ import * as _ from 'lodash';
 
 import { CtorT, ServiceT } from '../core';
 import { Server } from '../server';
+import { Logger } from '../services';
 import { clc } from '../util/clc';
 
 export class ServiceReflector {
     constructor(private server: Server) {
+    }
+    
+    get logger() {
+        return this.server.logger;
     }
     
     async reflectServices(services: CtorT<ServiceT>[]) {
@@ -16,18 +21,18 @@ export class ServiceReflector {
                 result = await this.reflectService(services[q]);
             }
             catch (e) {
-                console.error(clc.error(`Exception occurred when trying to start service: ${services[q].name || services[q]}`));
-                console.error(e);
+                this.logger.error('services', `Exception occurred when trying to start service: ${services[q].name || services[q]}`);
+                this.logger.error('services', e);
                 result = false;
             }
             if (!result) {
-                console.error(clc.error(`    Failed to start service: ${services[q].name || services[q]}`));
+                this.logger.error('services', `Failed to start service: ${services[q].name || services[q]}`);
                 failures++;
             }
         }
         
-        let format = (!!failures ? clc.error : (str: string) => str);
-        console.log(format(`    ${services.length - failures} services started correctly out of ${services.length}`));
+        if (!!failures) this.logger.error('services', `${services.length - failures} services started correctly out of ${services.length}`);
+        else this.logger.info('services', `${services.length - failures} services started correctly out of ${services.length}`);
     }
     
     private _startedServices: ServiceT[] = [];
@@ -52,18 +57,18 @@ export class ServiceReflector {
                 result = await this.shutdownService(services[q]);
             }
             catch (e) {
-                console.error(`Exception occurred when trying to stop service: ${services[q]}`);
-                console.error(e);
+                this.logger.error('services', `Exception occurred when trying to stop service: ${services[q]}`);
+                this.logger.error('services', e);
                 result = false;
             }
             if (!result) {
-                console.error(`    Failed to start service: ${services[q]}`);
+                this.logger.error('services', `Failed to start service: ${services[q]}`);
                 failures++;
             }
         }
         
-        let format = (!!failures ? clc.error : (str: string) => str);
-        console.log(format(`    ${services.length - failures} services terminated correctly out of ${services.length}`));
+        if (!!failures) this.logger.error('services', `${services.length - failures} services terminated correctly out of ${services.length}`);
+        else this.logger.info('services', `${services.length - failures} services terminated correctly out of ${services.length}`);
     }
     async shutdownService(service: ServiceT): Promise<boolean> {
         if (typeof service.stop !== 'undefined') {

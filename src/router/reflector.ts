@@ -2,17 +2,19 @@ import 'reflect-metadata';
 import * as express from 'express';
 
 import './extend-request';
+
 import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
 import { Server } from '../server';
-import { inhertitanceHierarchy } from '../util/inheritance-hierarchy';
-import { hasNoUndefined } from '../util/has-no-undefined';
-import { joinRoutePaths } from '../util/join-route-paths';
-import { wrapPromise } from '../util/wrap-promise';
-import { clc } from '../util/clc';
+import { Logger } from '../services/logger';
+import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise, clc } from '../util';
 
 export class RouterReflector {
     constructor(private server: Server, private router: express.Router) {
+    }
+    
+    get logger() {
+        return this.server.logger;
     }
     
     reflectRoutes(controllers: any[]) {
@@ -29,7 +31,7 @@ export class RouterReflector {
         
         var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
         if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerProto}.`);
-        console.log(`    Reflecting routes for controller ${controllerFn.name}`);
+        this.logger.info('router', `Reflecting routes for controller ${controllerFn.name}`);
         
         let routes = this.reflectRouteMeta(controllerProto);
         for (let q = 0; q < routes.length; q++) {
@@ -76,7 +78,7 @@ export class RouterReflector {
         if (controller.transformPath) fullPath = controller.transformPath(fullPath) || fullPath;
         
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
-        console.log(`      Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
+        this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
         this.router[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute));
     }
@@ -122,8 +124,8 @@ export class RouterReflector {
                     result = await policy[1](req, res);
                 }
                 catch (e) {
-                    console.error(clc.error('A policy threw an exception. Serving 500 - Internal server error'));
-                    console.error(e);
+                    this.logger.error('router', 'A policy threw an exception. Serving 500 - Internal server error');
+                    this.logger.error('router', e);
                     res.status(500);
                     res.send('Internal server error');
                     return;
@@ -136,14 +138,14 @@ export class RouterReflector {
                 await boundRoute(req, res);
             }
             catch (e) {
-                console.error(e);
-                console.error(clc.error('A route threw an exception. Serving 500 - Internal server error'));
+                this.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error');
+                this.logger.error('router', e);
                 res.status(500);
                 res.send('Internal server error');
                 return;
             }
             if (res.statusCode === initialStatusCode && !res.headersSent) {
-                console.error(clc.error(`A route failed to send a response. Serving 404 - Not Found`));
+                this.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
                 res.status(404);
                 res.send(`Not found.`);
             }

@@ -6,7 +6,7 @@ import { Injector, StaticModelT, ModelT, PkType } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym,
          ModelHasManyAssociationsSym, HasManyMetadata, HasManyMetadataSym } from '../metadata';
 import { Server } from '../server';
-import { OrmTransformService } from '../services';
+import { OrmTransformService, Logger } from '../services';
 import { DbImpl } from './db-impl';
 
 export class OrmReflector {
@@ -15,11 +15,15 @@ export class OrmReflector {
         if (!ormTransform) throw new Error(`Failed to resolve OrmTransformService. Can't reflect ORM models`);
         this.ormTransform = ormTransform;
     }
-
+    
+    get logger() {
+        return this.server.logger;
+    }
+    
     private ormTransform: OrmTransformService;
-
+    
     private sql: Sequelize.Sequelize;
-
+    
     async init() {
         let orm = this.server.meta.orm;
         if (!orm || (typeof orm.enabled !== 'undefined' && !orm.enabled) || !orm.db) return;

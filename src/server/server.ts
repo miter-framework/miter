@@ -6,7 +6,7 @@ import * as bodyParser from 'body-parser';
 import { Injector } from '../core';
 import { ServerMetadata } from '../metadata';
 import { OrmReflector } from '../orm';
-import { ServiceReflector } from '../services';
+import { ServiceReflector, Logger } from '../services';
 import { RouterReflector } from '../router';
 import { wrapPromise } from '../util/wrap-promise';
 import { clc } from '../util/clc';
@@ -18,11 +18,17 @@ export class Server {
     constructor(private _meta: ServerMetadata) {
         this._injector = new Injector();
         this._injector.provide({provide: Server, useValue: this});
+        this._injector.provide({provide: Logger, useValue: this._logger = new Logger(this.meta.logLevel)});
         if (_meta.inject) {
             for (var q = 0; q < _meta.inject.length; q++) {
                 this._injector.provide(_meta.inject[q]);
             }
         }
+    }
+    
+    private _logger: Logger;
+    get logger(): Logger {
+        return this._logger;
     }
     
     private _app: express.Application;
@@ -41,15 +47,15 @@ export class Server {
     
     async init() {
         try {
-            console.log(clc.info("Initializing miter server..."));
+            this.logger.info('miter', `Initializing miter server...`);
             await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();
             this.reflectRoutes();
         }
         catch (e) {
-            console.error(clc.error("FATAL ERROR: Failed to launch server."));
-            console.error(e);
+            this.logger.error('miter', `FATAL ERROR: Failed to launch server.`);
+            this.logger.error('miter', e);
             return;
         }
         
@@ -58,13 +64,13 @@ export class Server {
     errorCode: number = 0;
     async shutdown() {
         try {
-            console.log(clc.info(`Shutting down miter server...`));
+            this.logger.info('miter', `Shutting down miter server...`);
             await this.stopListening();
             await this.stopServices();
         }
         catch (e) {
-            console.error(clc.error("FATAL ERROR: Failed to gracefully shutdown server."));
-            console.error(e);
+            this.logger.error('miter', `FATAL ERROR: Failed to gracefully shutdown server.`);
+            this.logger.error('miter', e);
         }
     }
     
@@ -72,7 +78,7 @@ export class Server {
         this._app = express();
         this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
         if (this.meta.allowCrossOrigin) {
-            console.log(clc.warn(`  Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`));
+            this.logger.warn('miter', `Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`);
             this._app.use(function(req: express.Request, res: express.Response, next) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", req.header("Access-Control-Request-Headers"));
@@ -88,48 +94,53 @@ export class Server {
     async reflectOrm() {
         let orm = this.meta.orm;
         if (orm && (typeof orm.enabled === 'undefined' || orm.enabled) && orm.db) {
-            console.log("  Loading database configuration...");
+            this.logger.trace('orm', `Initializing ORM...`);
             this.ormReflector = new OrmReflector(this);
             await this.ormReflector.init();
+            this.logger.info('orm', `Finished initializing ORM.`);
         }
         else if (this.meta.models && this.meta.models.length) {
-            console.log(clc.warn("  Warning: Models included in server metadata, but no orm configuration defined."));
+            this.logger.warn('orm', `Warning: Models included in server metadata, but no orm configuration defined.`);
         }
     }
     
     private serviceReflector: ServiceReflector;
     private async startServices() {
-        console.log("  Starting services...");
+        this.logger.trace('services', `Starting services...`);
         this.serviceReflector = new ServiceReflector(this);
         await this.serviceReflector.reflectServices(this.meta.services || []);
+        this.logger.info('services', `Finished starting services.`);
     }
     private async stopServices() {
-        console.log("  Shutting down services...");
+        this.logger.trace('services', `Shutting down services...`);
         await this.serviceReflector.shutdownServices();
+        this.logger.info('services', `Finished shutting down services.`);
     }
     
     private routerReflector: RouterReflector;
     private reflectRoutes() {
-        console.log("  Loading routes...");
+        this.logger.trace('router', `Loading routes...`);
         let router = express.Router();
         this.routerReflector = new RouterReflector(this, router);
         this.routerReflector.reflectRoutes(this.meta.controllers || []);
         this.app.use(router);
+        this.logger.info('router', `Finished loading routes.`);
     }
     
     private httpServer: http.Server | undefined;
     private listen() {
-        console.log(clc.info("Serving"));
+        this.logger.info('miter', `Serving`);
         
         this.httpServer = this.app.listen(this.meta.port, () => this.onListening());
         this.httpServer.on("error", (err) => this.onError(err));
     }
     private async stopListening() {
-        console.log("  Closing http server...");
+        this.logger.trace('miter', `Closing HTTP server...`);
         await wrapPromise((cb) => {
             if (!this.httpServer) return cb();
             this.httpServer.close(cb);
         });
+        this.logger.info('miter', `Finished closing HTTP server.`);
     }
     private onError(error) {
         if (error.syscall !== "listen") {
@@ -141,13 +152,13 @@ export class Server {
         // handle specific listen errors with friendly messages
         switch (error.code) {
         case "EACCES":
-            console.error(clc.error(`${bind} requires elevated privileges`));
+            this.logger.error('miter', `${bind} requires elevated privileges`);
             this.errorCode = 1;
             this.httpServer = undefined;
             this.shutdown();
             break;
         case "EADDRINUSE":
-            console.error(clc.error(`${bind} is already in use`));
+            this.logger.error('miter', `${bind} is already in use`);
             this.errorCode = 1;
             this.httpServer = undefined;
             this.shutdown();
@@ -160,6 +171,6 @@ export class Server {
         if (!this.httpServer) throw new Error(`onListening called, but there is no httpServer!`);
         var addr = this.httpServer.address();
         var bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
-        console.log(clc.info(`Listening on ${bind}`));
+        this.logger.info('miter', `Listening on ${bind}`);
     }
 }

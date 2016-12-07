@@ -4,6 +4,8 @@ import { ProvideMetadata } from './provide';
 import { OrmMetadata } from '../orm';
 import { JwtMetadata } from '../policies';
 
+export type LogLevel = 'trace' | 'verbose' | 'warn' | 'info' | 'error';
+
 export type ServerMetadata = {
     port: number | string,
     orm?: OrmMetadata,
@@ -15,5 +17,6 @@ export type ServerMetadata = {
     services?: CtorT<ServiceT>[],
     policies?: PolicyDescriptor[],
     middleware?: express.Handler[],
-    allowCrossOrigin?: boolean
+    allowCrossOrigin?: boolean,
+    logLevel?: LogLevel | { [name: string]: LogLevel }
 }
