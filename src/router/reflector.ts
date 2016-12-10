@@ -124,8 +124,8 @@ export class RouterReflector {
                     result = await policy[1](req, res);
                 }
                 catch (e) {
-                    this.logger.error('router', 'A policy threw an exception. Serving 500 - Internal server error');
-                    this.logger.error('router', e);
+                    self.logger.error('router', 'A policy threw an exception. Serving 500 - Internal server error');
+                    self.logger.error('router', e);
                     res.status(500);
                     res.send('Internal server error');
                     return;
@@ -138,14 +138,14 @@ export class RouterReflector {
                 await boundRoute(req, res);
             }
             catch (e) {
-                this.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error');
-                this.logger.error('router', e);
+                self.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error');
+                self.logger.error('router', e);
                 res.status(500);
                 res.send('Internal server error');
                 return;
             }
             if (res.statusCode === initialStatusCode && !res.headersSent) {
-                this.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
+                self.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
                 res.status(404);
                 res.send(`Not found.`);
             }
