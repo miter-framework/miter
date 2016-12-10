@@ -4,7 +4,6 @@
 /.vscode/
 
 .yarnclean
-yarn.lock
 yarn-error.log
 .npmignore
 npm-debug.log
