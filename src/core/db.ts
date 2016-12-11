@@ -11,8 +11,9 @@ export interface CountAllResults<T> {
     results: T[]
 };
 export interface Db<T> {
+    // create(t: (T | Object)[]): Promise<T[]>;
+    create(t: (T | Object)[]): Promise<boolean>;
     create(t: T | Object): Promise<T>;
-    create(t: (T | Object)[]): Promise<T[]>;
     
     findById(id: string | number): Promise<T | null>;
     findOne(query: QueryT): Promise<T | null>;

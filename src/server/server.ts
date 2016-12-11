@@ -94,7 +94,7 @@ export class Server {
     async reflectOrm() {
         let orm = this.meta.orm;
         if (orm && (typeof orm.enabled === 'undefined' || orm.enabled) && orm.db) {
-            this.logger.trace('orm', `Initializing ORM...`);
+            this.logger.verbose('orm', `Initializing ORM...`);
             this.ormReflector = new OrmReflector(this);
             await this.ormReflector.init();
             this.logger.info('orm', `Finished initializing ORM.`);
@@ -106,20 +106,20 @@ export class Server {
     
     private serviceReflector: ServiceReflector;
     private async startServices() {
-        this.logger.trace('services', `Starting services...`);
+        this.logger.verbose('services', `Starting services...`);
         this.serviceReflector = new ServiceReflector(this);
         await this.serviceReflector.reflectServices(this.meta.services || []);
         this.logger.info('services', `Finished starting services.`);
     }
     private async stopServices() {
-        this.logger.trace('services', `Shutting down services...`);
+        this.logger.verbose('services', `Shutting down services...`);
         await this.serviceReflector.shutdownServices();
         this.logger.info('services', `Finished shutting down services.`);
     }
     
     private routerReflector: RouterReflector;
     private reflectRoutes() {
-        this.logger.trace('router', `Loading routes...`);
+        this.logger.verbose('router', `Loading routes...`);
         let router = express.Router();
         this.routerReflector = new RouterReflector(this, router);
         this.routerReflector.reflectRoutes(this.meta.controllers || []);
@@ -135,7 +135,7 @@ export class Server {
         this.httpServer.on("error", (err) => this.onError(err));
     }
     private async stopListening() {
-        this.logger.trace('miter', `Closing HTTP server...`);
+        this.logger.verbose('miter', `Closing HTTP server...`);
         await wrapPromise((cb) => {
             if (!this.httpServer) return cb();
             this.httpServer.close(cb);

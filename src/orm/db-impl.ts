@@ -5,6 +5,12 @@ import { StaticModelT, ModelT, PkType, Db,
 import { ModelPropertiesSym, PropMetadata, PropMetadataSym } from '../metadata';
 import { Types } from '../decorators';
 
+type CopyValMeta = {
+    columnName: string,
+    propertyName: string,
+    transformFn: { (val: any): any }
+};
+
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
     constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>) {
         this.copyVals = this.createCopyValsFn();
@@ -13,7 +19,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     async create(t: Object | T | Object[] | T[]): Promise<any> {
         if (t instanceof Array) {
             let results = await this.model.bulkCreate(<any>t);
-            return this.wrapResults(results);
+            // return this.wrapResults(results);
+            return true;
         }
         else {
             let result = await this.model.create(<any>t);
@@ -97,8 +104,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     
     private copyVals: { (sql: TInstance, t: T): void };
     private createCopyValsFn() {
-        let directProps: string[] = [];
-        let translateProps: [string, {(val: string): any}][] = [];
+        let allProps: CopyValMeta[] = [];
+        let directTransformFn = (val) => val;
         
         var props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, this.modelFn.prototype) || [];
         for (var q = 0; q < props.length; q++) {
@@ -106,19 +113,20 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             var propMeta: PropMetadata = Reflect.getOwnMetadata(PropMetadataSym, this.modelFn.prototype, propName);
             if (!propMeta) throw new Error(`Could not find model property metadata for property ${this.modelFn.name || this.modelFn}.${propName}.`);
             
-            if (propMeta.type == Types.DATE) translateProps.push([propName, dateStr => new Date(dateStr)]);
-            else directProps.push(propName);
+            let transformFn: { (val: any): any } = directTransformFn;
+            if (propMeta.type == Types.DATE) transformFn = (dateStr) => new Date(dateStr);
+            allProps.push({columnName: propMeta.columnName || propName, propertyName: propName, transformFn: transformFn});
         }
         
+        // console.log(this.modelFn.name || this.modelFn, 'allProps:', `[\r\n    ${allProps.map(p => p.propertyName + ': ' + p.columnName).join(',\r\n    ')}\r\n]`);
+        
         return function(sql: TInstance, t: any) {
-            for (var q = 0; q < directProps.length; q++) {
-            t[directProps[q]] = sql[directProps[q]];
+            for (var q = 0; q < allProps.length; q++) {
+                // console.log(allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
+                // t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].columnName]);
+                t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].propertyName]);
             }
-            for (var q = 0; q < translateProps.length; q++) {
-            let propName = translateProps[q][0];
-            let translateFn = translateProps[q][1];
-            t[propName] = translateFn(sql[propName]);
-            }
+            console.log(JSON.stringify(sql));
         }
     }
     fromJson(json: any): T {

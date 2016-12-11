@@ -13,12 +13,10 @@ export class Logger {
     private logLevelCheck(subsystem: string | null, logLevel: LogLevel) {
         let allowedLevel = (subsystem && this.logLevel[subsystem]) || this.logLevel['default'];
         switch (allowedLevel) {
-        case 'trace':
-            return true;
         case 'verbose':
-            return logLevel !== 'trace';
+            return true;
         case 'warn':
-            return logLevel !== 'trace' && logLevel !== 'verbose';
+            return logLevel !== 'verbose';
         case 'info':
             return logLevel === 'info' || logLevel === 'error';
         case 'error':
@@ -30,6 +28,11 @@ export class Logger {
         if (subsystem) console.log(`[${subsystem}]`, message, ...optionalParams);
         else console.log(message, ...optionalParams);
     }
+    trace(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
+        if (subsystem) console.trace(`[${subsystem}]`, message, ...optionalParams);
+        else console.trace(message, ...optionalParams);
+    }
+    
     error(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         if (typeof message === 'string') message = clc.error(message);
         if (subsystem) console.error(clc.error(`[${subsystem}]`), message, ...optionalParams);
@@ -51,10 +54,5 @@ export class Logger {
         if (!this.logLevelCheck(subsystem, 'verbose')) return;
         if (subsystem) console.log(`[${subsystem}]`, 'verbose:', message, ...optionalParams);
         else console.log('verbose:', message, ...optionalParams);
-    }
-    trace(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
-        if (!this.logLevelCheck(subsystem, 'trace')) return;
-        if (subsystem) console.trace(`[${subsystem}]`, message, ...optionalParams);
-        else console.trace(message, ...optionalParams);
     }
 }

@@ -59,10 +59,10 @@ export class RouterReflector {
         return routeMeta;
     }
     
-    private addRoute(controller: any, routeFnName: string, meta: ControllerMetadata, routeMeta: RouteMetadata) {
+    private addRoute(controller: any, routeFnName: string, controllerMeta: ControllerMetadata, routeMeta: RouteMetadata) {
         let policyDescriptors = [
             ...(this.server.meta.policies || []),
-            ...(meta.policies || []),
+            ...(controllerMeta.policies || []),
             ...(routeMeta.policies || [])
         ];
         let policies = this.resolvePolicies(policyDescriptors);
@@ -72,7 +72,7 @@ export class RouterReflector {
         if (controller.transformPathPart) pathPart = controller.transformPathPart(pathPart) || pathPart;
         let fullPath = joinRoutePaths(...[
             this.server.meta.path || '',
-            meta.path || '',
+            controllerMeta.path || '',
             pathPart
         ]);
         if (controller.transformPath) fullPath = controller.transformPath(fullPath) || fullPath;
@@ -122,6 +122,9 @@ export class RouterReflector {
                 let result: any;
                 try {
                     result = await policy[1](req, res);
+                    let policyCtor = policy[0];
+                    let policyName = (policyCtor && (policyCtor.name || policyCtor)) || '(undefined)';
+                    self.logger.verbose('router', `Policy ${policyName} returned with result ${JSON.stringify(result)}`);
                 }
                 catch (e) {
                     self.logger.error('router', 'A policy threw an exception. Serving 500 - Internal server error');
@@ -154,6 +157,7 @@ export class RouterReflector {
     private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], allResults: any[]) {
         let keys = policies.map(poli => poli[0]);
         return function(policyFn) {
+            if (typeof policyFn === 'number') return allResults[policyFn];
             for (var q = 0; q < keys.length; q++) {
                 if (keys[q] === policyFn) return allResults[q];
             }

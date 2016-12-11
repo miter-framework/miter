@@ -4,7 +4,7 @@ import { ProvideMetadata } from './provide';
 import { OrmMetadata } from '../orm';
 import { JwtMetadata } from '../policies';
 
-export type LogLevel = 'trace' | 'verbose' | 'warn' | 'info' | 'error';
+export type LogLevel = 'verbose' | 'warn' | 'info' | 'error';
 
 export type ServerMetadata = {
     port: number | string,

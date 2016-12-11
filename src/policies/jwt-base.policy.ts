@@ -18,16 +18,16 @@ export class JwtBasePolicy {
             credentialsRequired: credentialsRequired
         });
     }
-
+    
     private property: string;
     private jwtHandler: express.RequestHandler;
-
+    
     async handle(req: express.Request, res: express.Response) {
         if (this.jwtHandler) await wrapPromise<void>(this.jwtHandler, req, res);
         if (req[this.property]) return req[this.property] = await this.fromJson(req[this.property]);
         return null;
     }
-
+    
     protected async fromJson(json: any) {
         return json;
     }

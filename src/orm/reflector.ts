@@ -46,17 +46,17 @@ export class OrmReflector {
         this.reflectAssociations(this.server.meta.models || []);
         await this.sync();
     }
-
+    
     async sync() {
         await this.sql.sync();
     }
-
+    
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {
         for (let q = 0; q < models.length; q++) {
             this.reflectModel(models[q]);
         }
     }
-
+    
     private models = new Map<StaticModelT<ModelT<PkType>>, Sequelize.Model<{}, {}>>();
     reflectModel(modelFn: StaticModelT<ModelT<PkType>>) {
         if (this.models.has(modelFn)) throw new Error(`A model was passed to the orm-reflector twice: ${modelFn.name || modelFn}.`);
@@ -66,7 +66,7 @@ export class OrmReflector {
         if (!meta) throw new Error(`Expecting class with @Model decorator, could not reflect model properties for ${modelProto}.`);
         meta = this.ormTransform.transformModel(meta) || meta;
         
-        let tableName = meta.tableName || this.ormTransform.transformModelName(modelFn.name) || modelFn.name;
+        meta.tableName = meta.tableName || this.ormTransform.transformModelName(modelFn.name) || modelFn.name;
         let columns = {};
         let modelOptions = _.cloneDeep(meta);
         
@@ -77,23 +77,24 @@ export class OrmReflector {
             if (!propMeta) throw new Error(`Could not find model property metadata for property ${modelFn.name || modelFn}.${propName}.`);
             propMeta = this.ormTransform.transformColumn(propMeta) || propMeta;
             
+            propMeta.columnName = propMeta.columnName || this.ormTransform.transformColumnName(propName) || propName;
             let columnMeta = <any>_.cloneDeep(propMeta);
-            columnMeta.field = columnMeta.columnName || this.ormTransform.transformColumnName(propName) || propName;
+            columnMeta.field = columnMeta.columnName;
             delete columnMeta.columnName;
             
             columns[propName] = columnMeta;
         }
         
-        let model = this.sql.define(tableName, columns, modelOptions);
+        let model = this.sql.define(meta.tableName, columns, modelOptions);
         this.models.set(modelFn, model);
     }
-
+    
     private reflectAssociations(models: StaticModelT<ModelT<PkType>>[]) {
         for (let q = 0; q < models.length; q++) {
             this.reflectModelAssociations(models[q]);
         }
     }
-
+    
     private reflectModelAssociations(modelFn: StaticModelT<ModelT<PkType>>) {
         let model = this.models.get(modelFn);
         if (!model) throw new Error(`Could not reflect model associations for a model that failed to be reflected: ${modelFn.name || modelFn}.`);
