@@ -44,10 +44,10 @@
   "private": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aboveyou00/rivet.git"
+    "url": "git+https://github.com/aboveyou00/miter.git"
   },
   "bugs": {
-    "url": "https://github.com/aboveyou00/rivet/issues"
+    "url": "https://github.com/aboveyou00/miter/issues"
   },
-  "homepage": "https://github.com/aboveyou00/rivet#readme"
+  "homepage": "https://github.com/aboveyou00/miter#readme"
 }
