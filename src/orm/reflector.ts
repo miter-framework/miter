@@ -4,10 +4,21 @@ import * as Sequelize from 'sequelize';
 
 import { Injector, StaticModelT, ModelT, PkType } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym,
-         ModelHasManyAssociationsSym, HasManyMetadata, HasManyMetadataSym } from '../metadata';
+         ModelHasManyAssociationsSym, HasManyMetadataSym,
+         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata,
+         ModelHasOneAssociationsSym, HasOneMetadataSym,
+         AssociationMetadata } from '../metadata';
 import { Server } from '../server';
 import { OrmTransformService, Logger } from '../services';
 import { DbImpl } from './db-impl';
+
+type AssociationTypeDef = {
+    sqlName: string,
+    msgName: string,
+    associationsSym: Symbol,
+    metadataSym: Symbol,
+    transform?: (propMeta: AssociationMetadata, propName: string) => void
+};
 
 export class OrmReflector {
     constructor(private server: Server) {
@@ -58,34 +69,40 @@ export class OrmReflector {
     }
     
     private models = new Map<StaticModelT<ModelT<PkType>>, Sequelize.Model<{}, {}>>();
+    private modelsByTableName = new Map<string, StaticModelT<ModelT<PkType>>>();
     reflectModel(modelFn: StaticModelT<ModelT<PkType>>) {
         if (this.models.has(modelFn)) throw new Error(`A model was passed to the orm-reflector twice: ${modelFn.name || modelFn}.`);
         let modelProto = modelFn.prototype;
         
         let meta: ModelMetadata = Reflect.getOwnMetadata(ModelMetadataSym, modelProto);
         if (!meta) throw new Error(`Expecting class with @Model decorator, could not reflect model properties for ${modelProto}.`);
-        meta = this.ormTransform.transformModel(meta) || meta;
+        // let modelOptions = _.cloneDeep(meta);
+        let modelOptions = meta;
+        modelOptions = this.ormTransform.transformModel(modelOptions) || modelOptions;
         
-        meta.tableName = meta.tableName || this.ormTransform.transformModelName(modelFn.name) || modelFn.name;
+        modelOptions.tableName = modelOptions.tableName || this.ormTransform.transformModelName(modelFn.name) || modelFn.name;
+        let dupTable = this.modelsByTableName.get(modelOptions.tableName);
+        if (dupTable) throw new Error(`Defining multiple models with the same table name! ${dupTable.name || dupTable} and ${modelFn.name || modelFn}`);
+        this.modelsByTableName.set(modelOptions.tableName, modelFn);
+        
         let columns = {};
-        let modelOptions = _.cloneDeep(meta);
-        
         let props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, modelProto) || [];
         for (let q = 0; q < props.length; q++) {
             let propName: string = props[q];
             let propMeta: PropMetadata = Reflect.getOwnMetadata(PropMetadataSym, modelProto, propName);
             if (!propMeta) throw new Error(`Could not find model property metadata for property ${modelFn.name || modelFn}.${propName}.`);
-            propMeta = this.ormTransform.transformColumn(propMeta) || propMeta;
             
-            propMeta.columnName = propMeta.columnName || this.ormTransform.transformColumnName(propName) || propName;
-            let columnMeta = <any>_.cloneDeep(propMeta);
-            columnMeta.field = columnMeta.columnName;
-            delete columnMeta.columnName;
+            // let columnMeta = <any>_.cloneDeep(propMeta);
+            let columnMeta = propMeta;
+            columnMeta = this.ormTransform.transformColumn(columnMeta) || columnMeta;
+            
+            (columnMeta as any).field = columnMeta.columnName || this.ormTransform.transformColumnName(propName) || propName;
+            // delete columnMeta.columnName;
             
             columns[propName] = columnMeta;
         }
         
-        let model = this.sql.define(meta.tableName, columns, modelOptions);
+        let model = this.sql.define(modelOptions.tableName, columns, modelOptions);
         this.models.set(modelFn, model);
     }
     
@@ -103,20 +120,61 @@ export class OrmReflector {
         let meta: ModelMetadata = Reflect.getOwnMetadata(ModelMetadataSym, modelProto);
         if (!meta) throw new Error(`Expecting class with @Model decorator, could not reflect model properties for ${modelProto}.`);
         
-        let hasMany: string[] = Reflect.getOwnMetadata(ModelHasManyAssociationsSym, modelProto) || [];
-        for (let q = 0; q < hasMany.length; q++) {
-            let propName: string = hasMany[q];
-            let hasManyMeta: HasManyMetadata = Reflect.getOwnMetadata(HasManyMetadataSym, modelProto, propName);
-            if (!hasManyMeta) throw new Error(`Could not find model has-many metadata for property ${modelFn.name || modelFn}.${propName}.`);
-            
-            let foreignModelFn = hasManyMeta.foreignModel;
-            let foreignModel = this.models.get(foreignModelFn);
-            if (!foreignModel) throw new Error(`Could not create has-many association ${modelFn.name || modelFn}.${propName} to model that has not been reflected: ${foreignModelFn.name || foreignModelFn}`);
-            
-            model.hasMany(foreignModel, hasManyMeta);
+        let associationTypes: AssociationTypeDef[] = [
+            {
+                sqlName: 'hasMany',
+                msgName: 'has-many',
+                associationsSym: ModelHasManyAssociationsSym,
+                metadataSym: HasManyMetadataSym
+            },
+            {
+                sqlName: 'belongsTo',
+                msgName: 'belongs-to',
+                associationsSym: ModelBelongsToAssociationsSym,
+                metadataSym: BelongsToMetadataSym,
+                transform: (propMeta: BelongsToMetadata, propName: string) => {
+                    propMeta.foreignKey = propMeta.foreignKey || this.ormTransform.transformAssociationColumnName(propName) || propName;
+                }
+            },
+            {
+                sqlName: 'hasOne',
+                msgName: 'has-one',
+                associationsSym: ModelHasOneAssociationsSym,
+                metadataSym: HasOneMetadataSym
+            }
+        ];
+        
+        for (let q = 0; q < associationTypes.length; q++) {
+            let def = associationTypes[q];
+            let associationNames = Reflect.getOwnMetadata(def.associationsSym, modelProto) || [];
+            for (let w = 0; w < associationNames.length; w++) {
+                let propName = associationNames[w];
+                let propMeta: AssociationMetadata = Reflect.getOwnMetadata(def.metadataSym, modelProto, propName);
+                if (!propMeta) throw new Error(`Could not find model ${def.msgName} metadata for property ${modelFn.name || modelFn}.${propName}`);
+                
+                let foreignModelFn = this.resolveForeignModelFn(propMeta);
+                if (!foreignModelFn) throw new Error(`Could not resolve foreign model for ${def.msgName} association ${modelFn.name || modelFn}.${propName}`);
+                let foreignModel = this.models.get(foreignModelFn);
+                if (!foreignModel) throw new Error(`Could not create ${def.msgName} association ${modelFn.name || modelFn}.${propName} to model that has not been reflected: ${foreignModelFn.name || foreignModelFn}`);
+                
+                // let sqlMeta = _.cloneDeep(propMeta);
+                let sqlMeta = propMeta;
+                sqlMeta = this.ormTransform.transformAssociation(sqlMeta) || sqlMeta;
+                if (def.transform) def.transform(sqlMeta, propName);
+                
+                model[def.sqlName](foreignModel, propMeta);
+            }
         }
         
         let db = new DbImpl(modelFn, model);
         modelFn.db = db;
+    }
+    
+    private resolveForeignModelFn(meta: AssociationMetadata): StaticModelT<ModelT<any>> | undefined {
+        if (!meta.foreignModel) {
+            if (meta.foreignTableName) return this.modelsByTableName.get(meta.foreignTableName);
+            if (meta.foreignModelName) return [...this.models.keys()].find(model => model.name == meta.foreignModelName);
+        }
+        return meta.foreignModel;
     }
 }

@@ -1,5 +1,5 @@
 import { Service } from '../decorators';
-import { ModelMetadata, PropMetadata } from '../metadata';
+import { ModelMetadata, PropMetadata, AssociationMetadata } from '../metadata';
 
 @Service()
 export class OrmTransformService {
@@ -17,5 +17,12 @@ export class OrmTransformService {
     }
     public transformColumnName(fieldName: string): string | null {
         return null;
+    }
+    
+    public transformAssociation(assocMeta: AssociationMetadata): AssociationMetadata | null {
+        return assocMeta;
+    }
+    public transformAssociationColumnName(fieldName: string): string | null {
+        return fieldName + 'Id';
     }
 }

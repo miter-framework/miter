@@ -1,9 +1,7 @@
 import * as Sql from 'sequelize';
-import { StaticModelT, ModelT } from '../../../core';
+import { AssociationMetadata } from './association';
 
-export interface HasManyMetadata extends Sql.AssociationOptionsHasMany {
-    foreignModel: StaticModelT<ModelT<any>>
-};
+export interface HasManyMetadata extends Sql.AssociationOptionsHasMany, AssociationMetadata { };
 
 export const ModelHasManyAssociationsSym = Symbol.for('ModelHasManyAssociations');
 export const HasManyMetadataSym = Symbol.for('HasManyMetadata');

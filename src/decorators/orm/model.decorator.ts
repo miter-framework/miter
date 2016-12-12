@@ -10,6 +10,7 @@ export function Model(tableName?: ModelMetadata | string) {
     
     return function(model: StaticModelT<ModelT<PkType>>) {
         Reflect.defineMetadata(ModelMetadataSym, meta, model.prototype);
+        model.db = <any>Symbol(); //Just so that future methods will be able to recognize model as a StaticModelT, even though db is undefined atm
         
         let props = Reflect.getOwnMetadata(ModelPropertiesSym, model.prototype) || [];
         if (!props.find(propName => propName == 'id')) {

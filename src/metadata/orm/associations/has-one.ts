@@ -1,11 +1,7 @@
+import * as Sql from 'sequelize';
+import { AssociationMetadata } from './association';
 
-
-export type HasOneMetadata = {
-    columnName?: string,
-    
-    foreignKey?: string,
-    foreignTableName?: string
-};
+export interface HasOneMetadata extends Sql.AssociationOptionsHasOne, AssociationMetadata { };
 
 export const ModelHasOneAssociationsSym = Symbol.for('ModelHasOneAssociations');
 export const HasOneMetadataSym = Symbol.for('HasOneMetadata');
