@@ -15,38 +15,53 @@
 //     process.exit(0);
 // })();
 
-import { CtorT } from '../core';
-import { Test } from './decorators/test.decorator';
-import { ClassNopsSym } from './metadata';
-import 'reflect-metadata';
+// import { CtorT } from '../core';
+// import { Test } from './decorators/test.decorator';
+// import { ClassNopsSym } from './metadata';
+// import 'reflect-metadata';
 
-class A {
-    @Test()
-    func_a() {
+// class A {
+//     @Test()
+//     func_a() {
         
-    }
-}
-class B extends A {
-    @Test()
-    func_b() {
+//     }
+// }
+// class B extends A {
+//     @Test()
+//     func_b() {
         
-    }
-}
+//     }
+// }
 
-function listNops(target: CtorT<Object>): string[] {
-    let nops: string[] = [];
-    while (target) {
-        let newNops = Reflect.getOwnMetadata(ClassNopsSym, target.prototype) || [];
-        nops = [...newNops, ...nops];
-        let proto = Object.getPrototypeOf(target.prototype);
-        target = proto && proto.constructor;
-    }
-    return nops;
-}
+// function listNops(target: CtorT<Object>): string[] {
+//     let nops: string[] = [];
+//     while (target) {
+//         let newNops = Reflect.getOwnMetadata(ClassNopsSym, target.prototype) || [];
+//         nops = [...newNops, ...nops];
+//         let proto = Object.getPrototypeOf(target.prototype);
+//         target = proto && proto.constructor;
+//     }
+//     return nops;
+// }
 
-(() => {
-    let nops = JSON.stringify(listNops(B));
-    console.log(nops);
+// (() => {
+//     let nops = JSON.stringify(listNops(B));
+//     console.log(nops);
+    
+//     process.exit(0);
+// })();
+
+import { A } from './a';
+import { B } from './b';
+
+(function() {
+    console.log(A);
+    console.log(B);
+    console.log(A.b() === B);
+    console.log(B.a() === A);
+    
+    A.b_inst.b_local;
+    B.a_inst.a_local;
     
     process.exit(0);
 })();

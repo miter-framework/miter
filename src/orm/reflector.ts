@@ -4,9 +4,9 @@ import * as Sequelize from 'sequelize';
 
 import { Injector, StaticModelT, ModelT, PkType } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym,
-         ModelHasManyAssociationsSym, HasManyMetadataSym,
+         ModelHasManyAssociationsSym, HasManyMetadataSym, HasManyMetadata,
          ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata,
-         ModelHasOneAssociationsSym, HasOneMetadataSym,
+         ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata,
          AssociationMetadata } from '../metadata';
 import { Server } from '../server';
 import { OrmTransformService, Logger } from '../services';
@@ -53,8 +53,10 @@ export class OrmReflector {
             port: port
         });
         
-        this.reflectModels(this.server.meta.models || []);
-        this.reflectAssociations(this.server.meta.models || []);
+        let models = this.server.meta.models || [];
+        this.reflectModels(models);
+        this.reflectAssociations(models);
+        this.createDbImpls(models);
         await this.sync();
     }
     
@@ -125,7 +127,10 @@ export class OrmReflector {
                 sqlName: 'hasMany',
                 msgName: 'has-many',
                 associationsSym: ModelHasManyAssociationsSym,
-                metadataSym: HasManyMetadataSym
+                metadataSym: HasManyMetadataSym,
+                transform: (propMeta: HasManyMetadata, propName: string) => {
+                    
+                }
             },
             {
                 sqlName: 'belongsTo',
@@ -140,7 +145,10 @@ export class OrmReflector {
                 sqlName: 'hasOne',
                 msgName: 'has-one',
                 associationsSym: ModelHasOneAssociationsSym,
-                metadataSym: HasOneMetadataSym
+                metadataSym: HasOneMetadataSym,
+                transform: (propMeta: HasOneMetadata, propName: string) => {
+                    
+                }
             }
         ];
         
@@ -165,16 +173,36 @@ export class OrmReflector {
                 model[def.sqlName](foreignModel, propMeta);
             }
         }
-        
-        let db = new DbImpl(modelFn, model);
-        modelFn.db = db;
     }
     
-    private resolveForeignModelFn(meta: AssociationMetadata): StaticModelT<ModelT<any>> | undefined {
-        if (!meta.foreignModel) {
-            if (meta.foreignTableName) return this.modelsByTableName.get(meta.foreignTableName);
-            if (meta.foreignModelName) return [...this.models.keys()].find(model => model.name == meta.foreignModelName);
+    private createDbImpls(models: StaticModelT<ModelT<any>>[]) {
+        for (let q = 0; q < models.length; q++) {
+            let modelFn = models[q];
+            let model = this.models.get(modelFn);
+            if (!model) throw new Error(`Could not reflect model associations for a model that failed to be reflected: ${modelFn.name || modelFn}.`);
+            let db = new DbImpl(modelFn, model);
+            modelFn.db = db;
         }
-        return meta.foreignModel;
+    }
+    
+    private isStaticModelT(test: any): test is StaticModelT<ModelT<any>> {
+        return test && !!(<any>test).db;
+    }
+    private isTableNameRef(test: any): test is { tableName: string } {
+        return test.tableName;
+    }
+    private isModelNameRef(test: any): test is { modelName: string } {
+        return test.modelName;
+    }
+    private resolveForeignModelFn(meta: AssociationMetadata): StaticModelT<ModelT<any>> | undefined {
+        let fmod = meta.foreignModel;
+        if (!fmod) return undefined;
+        if (this.isStaticModelT(fmod)) return fmod;
+        if (typeof fmod === 'function') return meta.foreignModel = fmod();
+        else if (this.isTableNameRef(fmod)) return meta.foreignModel = this.modelsByTableName.get(fmod.tableName);
+        else if (this.isModelNameRef(fmod)) {
+            let modelName = fmod.modelName;
+            return meta.foreignModel = [...this.models.keys()].find(model => model.name == modelName);
+        }
     }
 }

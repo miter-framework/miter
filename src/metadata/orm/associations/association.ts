@@ -1,7 +1,7 @@
 import { StaticModelT, ModelT } from '../../../core';
 
+export type ForeignModelSource = StaticModelT<ModelT<any>> | { (): StaticModelT<ModelT<any>> } | { modelName: string } | { tableName: string };
+
 export interface AssociationMetadata {
-    foreignModel?: StaticModelT<ModelT<any>>;
-    foreignTableName?: string;
-    foreignModelName?: string;
+    foreignModel?: ForeignModelSource;
 };
