@@ -50,7 +50,6 @@ export abstract class CrudController {
     @Post(`/%%PLURAL_NAME%%/create`)
     async create(req: express.Request, res: express.Response) {
         let data = req.body;
-        console.log(data);
         if (!data) {
             res.status(400).send(`You haven't sent any data to create the ${this.modelName} with!`);
             return;

@@ -263,7 +263,6 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     
     private createTransformResult(transforms: TransformValMeta[]) {
         this.transformResult = function<T>(sql: TInstance, result: T): T {
-            console.log("---------- ORIGINAL", result);
             result = _.clone(result);
             for (var q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
@@ -284,7 +283,6 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 }
                 //TODO: deep copy?
             }
-            console.log("---------- TRANSFORMED", result)
             return result;
         }
     }
