@@ -8,6 +8,7 @@ export type LogLevel = 'verbose' | 'warn' | 'info' | 'error';
 
 export type ServerMetadata = {
     port: number | string,
+    name?: string,
     orm?: OrmMetadata,
     jwt?: JwtMetadata,
     path?: string,

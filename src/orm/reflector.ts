@@ -50,6 +50,9 @@ export class OrmReflector {
         this.sql = new Sequelize(db.name, db.user, db.password, {
             host: host,
             dialect: db.dialect || 'mysql',
+            dialectOptions: {
+                charset: 'utf8mb4'
+            },
             port: port
         });
         

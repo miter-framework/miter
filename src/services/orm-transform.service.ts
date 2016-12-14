@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { Service } from '../decorators';
 import { ModelMetadata, PropMetadata, AssociationMetadata } from '../metadata';
 
@@ -6,6 +7,9 @@ export class OrmTransformService {
     constructor() { }
     
     public transformModel(modelMeta: ModelMetadata): ModelMetadata | null {
+        // modelMeta = _.cloneDeep(modelMeta);
+        (<any>modelMeta).charset = 'utf8';
+        (<any>modelMeta).collate = 'utf8_general_ci';
         return modelMeta;
     }
     public transformModelName(className: string): string | null {

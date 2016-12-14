@@ -1,21 +1,29 @@
 import 'reflect-metadata';
 import { CtorT } from './ctor';
 import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata';
+import { Logger } from '../services/logger';
+import { Server } from '../server/server';
 import { clc } from '../util/clc';
 
 export class Injector {
-    constructor() {
+    constructor(private server: Server) {
+        this.cache.set(Server, () => this.server);
+        this.cache.set(Logger, () => this.logger);
     }
-
+    
+    private get logger() {
+        return this.server.logger;
+    }
+    
     private temporaryValue = Symbol.for('recursive-injection');
     private cache: Map<CtorT<any>, any> = new Map<CtorT<any>, any>();
     resolveInjectable<T>(ctorFn: CtorT<T>): T | undefined {
         if (!ctorFn) {
-            console.error(clc.error('Attempted to inject a falsey type.'));
+            this.logger.error('injector', 'Attempted to inject a falsey type.');
             return;
         }
         if (this.cache.get(ctorFn) === this.temporaryValue) {
-            console.error(clc.error(`Recursive injection of type ${ctorFn.name || ctorFn}`));
+            this.logger.error('injector', `Detected circular dependency. Recursive injection of type ${ctorFn.name || ctorFn}`);
             return;
         }
         if (this.cache.has(ctorFn)) {
@@ -40,17 +48,17 @@ export class Injector {
         
         let tFn: { (): T };
         if (this.isClassSource(provideMeta)) {
-            console.log(clc.info(`Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`));
+            this.logger.info('injector', `Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`);
             let t = this.construct(provideMeta.useClass);
             tFn = () => t;
         }
         else if (this.isValueSource(provideMeta)) {
-            console.log(clc.info(`Providing ${ctorFn.name || ctorFn} using value ${provideMeta.useValue}`));
+            this.logger.info('injector', `Providing ${ctorFn.name || ctorFn} using value ${JSON.stringify(provideMeta.useValue)}`);
             let t = provideMeta.useValue;
             tFn = () => t;
         }
         else if (this.isCallbackSource(provideMeta)) {
-            console.log(clc.info(`Providing ${ctorFn.name || ctorFn} using callback ${provideMeta.useCallback.name || provideMeta.useCallback}`));
+            this.logger.info('injector', `Providing ${ctorFn.name || ctorFn} using callback ${provideMeta.useCallback.name || provideMeta.useCallback}`);
             tFn = provideMeta.useCallback;
         }
         else throw new Error(`Could not resolve dependency injection provider source.`);
@@ -58,7 +66,7 @@ export class Injector {
         this.cache.set(ctorFn, tFn);
         return this;
     }
-
+    
     private isClassSource<T>(meta: ProvideMetadata<T>): meta is ProvideMetadataClassSource<T, any> {
         return !!(<ProvideMetadataClassSource<T, any>>meta).useClass;
     }
