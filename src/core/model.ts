@@ -6,7 +6,7 @@ export type PkType = number | string;
 export interface ModelT<T extends PkType> {
     id: T;
 }
-export interface StaticModelT<T extends ModelT<PkType>> extends CtorT<T> {
+export interface StaticModelT<T extends ModelT<any>> extends CtorT<T> {
     db: Db<T>
 }
 

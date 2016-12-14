@@ -4,7 +4,8 @@ import { StaticModelT, ModelT, PkType, Db,
          QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT,
          CountAllResults, CtorT } from '../core';
 import { ModelPropertiesSym, PropMetadata, PropMetadataSym,
-         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata } from '../metadata';
+         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata, 
+         ForeignModelSource } from '../metadata';
 import { Types } from '../decorators';
 
 type CopyValMeta = {
@@ -17,25 +18,26 @@ type BelongsToTransformMeta = {
     columnName: string;
     fieldName: string;
     pkName: string;
+    db: DbImpl<ModelT<any>, any, any>;
 }
 type TransformValMeta = BelongsToTransformMeta;
 
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
     constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>) {
         this.createCopyValsFn();
-        this.createTransformQueryFn();
+        this.createTransformQuery();
     }
     
     async create(t: Object | T | Object[] | T[]): Promise<any> {
         if (t instanceof Array) {
             t = _.cloneDeep(t);
-            (<Object[]>t).forEach((t, idx, arr) => { arr[idx] = this.transformQuery(t) });
+            (<Object[]>t).forEach((t, idx, arr) => { arr[idx] = this.transformQueryWhere(t) });
             let results = await this.model.bulkCreate(<any>t);
             // return this.wrapResults(results);
             return true;
         }
         else {
-            t = this.transformQuery(t);
+            t = this.transformQueryWhere(t);
             let result = await this.model.create(<any>t);
             return this.wrapResult(result);
         }
@@ -46,29 +48,25 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return result && this.wrapResult(result);
     }
     async findOne(query: QueryT) {
-        query = _.clone(query);
-        query.where = this.transformQuery(query.where);
+        query = this.transformQuery(query);
         let result = await this.model.findOne(query);
         return result && this.wrapResult(result);
     }
     async findOrCreate(query: Sql.WhereOptions, defaults?: Object | T): Promise<[T, boolean]> {
-        query = this.transformQuery(query);
-        defaults = this.transformQuery(defaults);
+        query = this.transformQueryWhere(query);
+        defaults = this.transformQueryWhere(defaults);
         let [result, created] = await this.model.findOrCreate({ where: query, defaults: <any>defaults || {} });
         return [result && this.wrapResult(result), created];
     }
     async findAndCountAll(query?: QueryT) {
-        if (query) {
-            query = _.clone(query);
-            query.where = this.transformQuery(query.where);
-        }
+        if (query)
+            query = this.transformQuery(query);
         let results = await this.model.findAndCountAll(query);
         return { count: results.count, results: this.wrapResults(results.rows) };
     }
     async findAll(query?: QueryT) {
         if (query) {
-            query = _.clone(query);
-            query.where = this.transformQuery(query.where);
+            query = this.transformQuery(query);
         }
         let results = await this.model.findAll(query);
         return this.wrapResults(results);
@@ -78,8 +76,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     async count(query?: CountQueryT) {
         if (query) {
-            query = _.clone(query);
-            query.where = this.transformQuery(query.where);
+            query = this.transformQuery(query);
         }
         return await this.model.count(query);
     }
@@ -104,10 +101,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         else if (this.isT(query)) query = { where: { id: query.id } };
         else {
             isId = false;
-            query.where = this.transformQuery(query.where);
+            query = this.transformQuery(query);
         }
-        replace = this.transformQuery(replace);
-        let [affected, results] = await this.model.update(<any>replace, query);
+        replace = this.transformQueryWhere(replace);
+        let [affected, results] = await this.model.update(<any>replace, <UpdateQueryT>query);
         return affected;
     }
     async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T): Promise<[T, boolean]> {
@@ -123,12 +120,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     
     async destroy(query: number | string | T | DestroyQueryT): Promise<any> {
-        if (this.isId(query)) query = { where: { id: query } };
-        else if (this.isT(query)) query = { where: { id: query.id } };
-        else {
-            query = _.cloneDeep(query);
-            query.where = this.transformQuery(query.where);
-        }
+        if (this.isId(query))
+            query = { where: { id: query } };
+        else if (this.isT(query))
+            query = { where: { id: query.id } };
+        else
+            query = this.transformQuery(query);
         return await this.model.destroy(query);
     }
     
@@ -168,9 +165,37 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         //TODO: deep copy?
     }
     
-    private transformQuery: { <T>(query: T): T };
-    private createTransformQueryFn() {
-        let allTransforms: TransformValMeta[] = [];
+    private static getForeignModelDbImpl(foreignModel: ForeignModelSource | undefined) {
+        if (!foreignModel || !("db" in foreignModel))
+            throw new Error("Cannot get DbImpl from ForeignModel that has not been resolved");
+            
+        let staticModel = <StaticModelT<ModelT<any>>>foreignModel;
+        return <DbImpl<ModelT<any>, any, any>>staticModel.db;
+    }
+    
+    private transformQueryWhere: { <T>(query: T): T };
+    private transformQueryInclude: { (aliases: string[]): any };
+    private transformResult: { <T>(sql: TInstance, result: T): T };
+    private includeFields: string[];
+    
+    private createTransformQuery() {
+        let transforms = this.getTransforms();
+        this.createTransformQueryWhere(transforms);
+        this.createTransformQueryInclude(transforms);
+        this.createTransformResult(transforms);
+    }
+    
+    private transformQuery(query: any) {
+        let result = _.clone(query);
+        if (query.where)
+            result.where = this.transformQueryWhere(query.where);
+        if (query.include)
+            result.include = this.transformQueryInclude(query.include);
+        return result;
+    }
+    
+    private getTransforms() {
+        let transforms: TransformValMeta[] = [];
         
         var belongsTo: string[] = Reflect.getOwnMetadata(ModelBelongsToAssociationsSym, this.modelFn.prototype) || [];
         for (var q = 0; q < belongsTo.length; q++) {
@@ -181,19 +206,23 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             let fkey = propMeta.foreignKey;
             if (fkey && typeof fkey !== 'string') fkey = fkey.name;
             if (!fkey) throw new Error(`Could not get foreign key for property ${this.modelFn.name || this.modelFn}.${propName}`);
-            allTransforms.push({
+            transforms.push({
                 type: 'belongs-to',
                 columnName: <string>fkey,
                 fieldName: propName,
-                pkName: 'id' // propMeta.targetKey || 'id'
+                pkName: 'id', // propMeta.targetKey || 'id'
+                db: DbImpl.getForeignModelDbImpl(propMeta.foreignModel)
             });
         }
-        
-        this.transformQuery = function<T>(query: T): T {
+        return transforms;
+    }
+    
+    private createTransformQueryWhere(transforms: TransformValMeta[]) {
+        this.transformQueryWhere = function<T>(query: T): T {
             if (!query) return query;
             query = _.clone(query);
-            for (var q = 0; q < allTransforms.length; q++) {
-                let transform = allTransforms[q];
+            for (var q = 0; q < transforms.length; q++) {
+                let transform = transforms[q];
                 switch (transform.type) {
                 case 'belongs-to':
                     let fieldVal = query[transform.fieldName]; 
@@ -210,17 +239,44 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             }
             return query;
         }
+    }
+    
+    private createTransformQueryInclude(transforms: TransformValMeta[]) {
+        function getFieldModel(field: string) {
+            for (let i = 0; i < transforms.length; i++) {
+                if (field == transforms[i].fieldName)
+                    return transforms[i].db.model;
+            }
+            return null;
+        }
         
-        let oldCopyVals = this.copyVals;
-        this.copyVals = function(sql: TInstance, t: any) {
-            oldCopyVals(sql, t);
-            for (var q = 0; q < allTransforms.length; q++) {
-                let transform = allTransforms[q];
+        this.transformQueryInclude = function(fields: string[]): any {
+            if (!fields) return fields;
+            return fields.map(field => {
+                let model = getFieldModel(field);
+                if (!model)
+                    throw new Error(`Cannot find field ${field} from include query`);
+                return {model: model, as: field};
+            });
+        }
+    }
+    
+    private createTransformResult(transforms: TransformValMeta[]) {
+        this.transformResult = function<T>(sql: TInstance, result: T): T {
+            console.log("---------- ORIGINAL", result);
+            result = _.clone(result);
+            for (var q = 0; q < transforms.length; q++) {
+                let transform = transforms[q];
                 switch (transform.type) {
                 case 'belongs-to':
-                    if (sql[transform.columnName]) {
-                        t[transform.fieldName] = sql[transform.columnName];
-                        delete t[transform.columnName];
+                    if (sql[transform.fieldName]) { // field was included
+                        let t = new transform.db.modelFn();
+                        transform.db.copyVals(sql[transform.fieldName], t);
+                        result[transform.fieldName] = this.transformResult(sql[transform.fieldName], t);
+                    }
+                    else if (sql[transform.columnName]) {
+                        result[transform.fieldName] = sql[transform.columnName];
+                        delete result[transform.columnName];
                     }
                     break;
                 default:
@@ -228,6 +284,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 }
                 //TODO: deep copy?
             }
+            console.log("---------- TRANSFORMED", result)
+            return result;
         }
     }
     
@@ -237,7 +295,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private wrapResult(result: TInstance): T {
         let t = new this.modelFn();
         this.copyVals(result, t);
-        return t;
+        return this.transformResult(result, t);
     }
     private wrapResults(results: TInstance[]): T[] {
         return results.map(result => this.wrapResult(result));

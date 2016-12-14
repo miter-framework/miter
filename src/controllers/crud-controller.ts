@@ -62,15 +62,17 @@ export abstract class CrudController {
     @Get(`/%%PLURAL_NAME%%/find`)
     async find(req: express.Request, res: express.Response) {
         let query: any = {};
+        let include: string[] = [];
         try {
-            let encoded = req.query['query'];
-            let decoded = decodeURIComponent(encoded);
-            if (req.query['query']) query = JSON.parse(decoded) || {};
+            if (req.query['query'])
+                query = JSON.parse(decodeURIComponent(req.query['query'])) || {};
+            if (req.query['include'])
+                include = JSON.parse(decodeURIComponent(req.query['include'])) || [];
             query = this.transformQuery(req, res, query) || query;
             //TODO: test if a response has already been sent
         }
         catch (e) {
-            res.status(400).send(`Invalid parameter for 'query'.`);
+            res.status(400).send(`Could not parse request parameters.`);
             return;
         }
         
@@ -81,6 +83,7 @@ export abstract class CrudController {
         
         let results = await this.staticModel.db.findAndCountAll({
             where: query,
+            include: include,
             offset: perPage * page,
             limit: perPage
         });
