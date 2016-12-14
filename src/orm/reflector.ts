@@ -27,7 +27,7 @@ export class OrmReflector {
         this.ormTransform = ormTransform;
     }
     
-    get logger() {
+    private get logger() {
         return this.server.logger;
     }
     
@@ -50,6 +50,14 @@ export class OrmReflector {
         this.sql = new Sequelize(db.name, db.user, db.password, {
             host: host,
             dialect: db.dialect || 'mysql',
+            dialectOptions: {
+                charset: 'utf8mb4'
+            },
+            define: {
+                charset: 'utf8mb4',
+                collate: 'utf8mb4_general_ci'
+            },
+            logging: (msg: string, ...extras: any[]) => this.logger.info('sql', msg, ...extras),
             port: port
         });
         
@@ -57,11 +65,16 @@ export class OrmReflector {
         this.reflectModels(models);
         this.reflectAssociations(models);
         this.createDbImpls(models);
-        await this.sync();
+        
+        if (orm.recreate) {
+            if ((<string>process.env.NODE_ENV || '') == 'production') throw new Error('Server launched with config value orm.recreate enabled. As a security feature, this causes a crash when NODE_ENV = production.');
+            this.logger.warn('orm', `Warning: recreating database tables. Note: this option should not be enabled in production.`);
+        }
+        await this.sync(orm.recreate);
     }
     
-    async sync() {
-        await this.sql.sync();
+    async sync(recreate?: boolean) {
+        return await this.sql.sync({force: recreate || false});
     }
     
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {

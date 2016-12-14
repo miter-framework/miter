@@ -7,7 +7,7 @@ import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
 import { Server } from '../server';
 import { Logger } from '../services/logger';
-import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise, clc } from '../util';
+import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise } from '../util';
 
 export class RouterReflector {
     constructor(private server: Server, private router: express.Router) {

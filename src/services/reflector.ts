@@ -3,7 +3,6 @@ import * as _ from 'lodash';
 import { CtorT, ServiceT } from '../core';
 import { Server } from '../server';
 import { Logger } from '../services';
-import { clc } from '../util/clc';
 
 export class ServiceReflector {
     constructor(private server: Server) {

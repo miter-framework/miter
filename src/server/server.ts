@@ -9,16 +9,14 @@ import { OrmReflector } from '../orm';
 import { ServiceReflector, Logger } from '../services';
 import { RouterReflector } from '../router';
 import { wrapPromise } from '../util/wrap-promise';
-import { clc } from '../util/clc';
 
 import * as http from 'http';
 var debug = require("debug")("express:server");
 
 export class Server {
     constructor(private _meta: ServerMetadata) {
-        this._injector = new Injector();
-        this._injector.provide({provide: Server, useValue: this});
-        this._injector.provide({provide: Logger, useValue: this._logger = new Logger(this.meta.logLevel)});
+        this._logger = new Logger(this.meta.name || null, this.meta.logLevel);
+        this._injector = new Injector(this);
         if (_meta.inject) {
             for (var q = 0; q < _meta.inject.length; q++) {
                 this._injector.provide(_meta.inject[q]);
