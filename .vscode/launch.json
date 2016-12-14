@@ -8,13 +8,13 @@
             "program": "${workspaceRoot}/src/test/index.ts",
             "cwd": "${workspaceRoot}",
             "env": {
-            "NODE_ENV": "development"
+                "NODE_ENV": "development"
             },
             "console": "externalTerminal",
             "outDir": "${workspaceRoot}/dist",
             "preLaunchTask": "build",
             "runtimeArgs": [
-            "--nolazy"
+                "--nolazy"
             ],
             "runtimeExecutable": null,
             "sourceMaps": true,

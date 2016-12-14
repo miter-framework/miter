@@ -10,5 +10,6 @@ export type DatabaseMetadata = {
 
 export type OrmMetadata = {
     enabled?: boolean,
-    db?: DatabaseMetadata
+    db?: DatabaseMetadata,
+    recreate?: boolean
 }
