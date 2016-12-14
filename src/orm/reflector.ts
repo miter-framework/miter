@@ -27,7 +27,7 @@ export class OrmReflector {
         this.ormTransform = ormTransform;
     }
     
-    get logger() {
+    private get logger() {
         return this.server.logger;
     }
     
@@ -53,6 +53,7 @@ export class OrmReflector {
             dialectOptions: {
                 charset: 'utf8mb4'
             },
+            logging: (msg: string, ...extras: any[]) => this.logger.info('sql', msg, ...extras),
             port: port
         });
         
