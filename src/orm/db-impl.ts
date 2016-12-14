@@ -190,14 +190,16 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         }
         
         this.transformQuery = function<T>(query: T): T {
+            if (!query) return query;
             query = _.clone(query);
             for (var q = 0; q < allTransforms.length; q++) {
                 let transform = allTransforms[q];
                 switch (transform.type) {
                 case 'belongs-to':
-                    if (query[transform.fieldName]) {
-                        if (query[transform.fieldName][transform.pkName]) query[transform.fieldName] = query[transform.fieldName][transform.pkName];
-                        query[transform.columnName] = query[transform.fieldName];
+                    let fieldVal = query[transform.fieldName]; 
+                    if (fieldVal) {
+                        if (fieldVal[transform.pkName]) fieldVal = fieldVal[transform.pkName];
+                        query[transform.columnName] = fieldVal;
                         delete query[transform.fieldName];
                     }
                     break;
@@ -216,8 +218,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 let transform = allTransforms[q];
                 switch (transform.type) {
                 case 'belongs-to':
-                    t[transform.fieldName] = sql[transform.columnName];
-                    delete t[transform.columnName];
+                    if (sql[transform.columnName]) {
+                        t[transform.fieldName] = sql[transform.columnName];
+                        delete t[transform.columnName];
+                    }
                     break;
                 default:
                     throw new Error(`WTF? How did you get here?`);
