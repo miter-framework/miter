@@ -3,8 +3,8 @@ import { StaticModelT, ModelT } from '../core';
 import { Controller, Get, Post, Put, Patch, Delete } from '../decorators';
 import { pluralize } from '../util/pluralize';
 
-export abstract class CrudController {
-    constructor(private staticModel: StaticModelT<ModelT<any>>, private modelName: string, pluralName?: string, singularName?: string) {
+export abstract class CrudController<T extends ModelT<any>> {
+    constructor(private staticModel: StaticModelT<T>, private modelName: string, pluralName?: string, singularName?: string) {
         this.singularName = singularName || this.getSingularPath(modelName);
         this.pluralName = pluralName || this.getPluralPath(modelName);
     }
@@ -43,8 +43,11 @@ export abstract class CrudController {
         return part.replace(/%%PLURAL_NAME%%/, this.pluralName).replace(/%%SINGULAR_NAME%%/, this.singularName);
     }
     
-    transformQuery(req: express.Request, res: express.Response, query: Object) {
+    async transformQuery(req: express.Request, res: express.Response, query: Object) {
         return query;
+    }
+    async transformResult(req: express.Request, res: express.Response, result: T | null) {
+        return result;
     }
     
     @Post(`/%%PLURAL_NAME%%/create`)
@@ -67,13 +70,15 @@ export abstract class CrudController {
                 query = JSON.parse(decodeURIComponent(req.query['query'])) || {};
             if (req.query['include'])
                 include = JSON.parse(decodeURIComponent(req.query['include'])) || [];
-            query = this.transformQuery(req, res, query) || query;
-            //TODO: test if a response has already been sent
         }
         catch (e) {
             res.status(400).send(`Could not parse request parameters.`);
             return;
         }
+        
+        let initialStatusCode = res.statusCode;
+        query = await this.transformQuery(req, res, query) || query;
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         let perPage = req.query['perPage'];
         if (!perPage || !(perPage = parseInt('' + perPage, 10)) || isNaN(perPage) || perPage < 0) perPage = 10;
@@ -102,8 +107,10 @@ export abstract class CrudController {
             return;
         }
         
-        let screencast = await this.staticModel.db.findById(id);
-        res.status(200).json(screencast);
+        let result = await this.staticModel.db.findById(id);
+        let initialStatusCode = res.statusCode;
+        result = await this.transformResult(req, res, result);
+        if (res.statusCode === initialStatusCode && !res.headersSent) res.status(200).json(result);
     }
     
     @Put(`/%%SINGULAR_NAME%%/:id`)
