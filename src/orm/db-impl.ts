@@ -59,15 +59,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return [result && this.wrapResult(result), created];
     }
     async findAndCountAll(query?: QueryT) {
-        if (query)
-            query = this.transformQuery(query);
+        if (query) query = this.transformQuery(query);
         let results = await this.model.findAndCountAll(query);
         return { count: results.count, results: this.wrapResults(results.rows) };
     }
     async findAll(query?: QueryT) {
-        if (query) {
-            query = this.transformQuery(query);
-        }
+        if (query) query = this.transformQuery(query);
         let results = await this.model.findAll(query);
         return this.wrapResults(results);
     }
@@ -75,9 +72,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return this.findAll(query);
     }
     async count(query?: CountQueryT) {
-        if (query) {
-            query = this.transformQuery(query);
-        }
+        if (query) query = this.transformQuery(query);
         return await this.model.count(query);
     }
     
@@ -166,8 +161,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     
     private static getForeignModelDbImpl(foreignModel: ForeignModelSource | undefined) {
-        if (!foreignModel || !("db" in foreignModel))
-            throw new Error("Cannot get DbImpl from ForeignModel that has not been resolved");
+        if (!foreignModel || !("db" in foreignModel)) throw new Error("Cannot get DbImpl from ForeignModel that has not been resolved");
             
         let staticModel = <StaticModelT<ModelT<any>>>foreignModel;
         return <DbImpl<ModelT<any>, any, any>>staticModel.db;
@@ -187,10 +181,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     
     private transformQuery(query: any) {
         let result = _.clone(query);
-        if (query.where)
-            result.where = this.transformQueryWhere(query.where);
-        if (query.include)
-            result.include = this.transformQueryInclude(query.include);
+        if (query.where) result.where = this.transformQueryWhere(query.where);
+        if (query.include) result.include = this.transformQueryInclude(query.include);
         return result;
     }
     
@@ -254,8 +246,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             if (!fields) return fields;
             return fields.map(field => {
                 let model = getFieldModel(field);
-                if (!model)
-                    throw new Error(`Cannot find field ${field} from include query`);
+                if (!model) throw new Error(`Cannot find field ${field} from include query`);
                 return {model: model, as: field};
             });
         }
