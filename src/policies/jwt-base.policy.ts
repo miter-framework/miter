@@ -5,6 +5,8 @@ import { Policy } from '../decorators';
 import { Server } from '../server';
 import { wrapPromise } from '../util/wrap-promise';
 
+type AbstractCtorT<T> = { (...args: any[]): T };
+
 @Policy()
 export class JwtBasePolicy {
     constructor(private server: Server, credentialsRequired: boolean) {
@@ -22,8 +24,21 @@ export class JwtBasePolicy {
     private property: string;
     private jwtHandler: express.RequestHandler;
     
+    private get logger() {
+        return this.server.logger;
+    }
+    
     async handle(req: express.Request, res: express.Response) {
-        if (this.jwtHandler) await wrapPromise<void>(this.jwtHandler, req, res);
+        if (this.jwtHandler) {
+            try {
+                await wrapPromise<void>(this.jwtHandler, req, res);
+            }
+            catch (e) {
+                this.logger.verbose('jwt-policy', `express-jwt failed to parse 'Authorization' header.`);
+                this.logger.verbose('jwt-policy', `'Authorization' header: '${req.header('Authorization')}'`);
+                req[this.property] = undefined;
+            }
+        }
         if (req[this.property]) return req[this.property] = await this.fromJson(req[this.property]);
         return null;
     }
