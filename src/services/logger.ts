@@ -5,7 +5,7 @@ import { clc } from '../util/clc';
 export class Logger {
     constructor(serverName: string | null, logLevel: any) {
         this._serverName = serverName;
-        if (typeof logLevel === 'undefined') logLevel = { default: 'warn' };
+        if (typeof logLevel === 'undefined') logLevel = { default: 'info' };
         if (typeof logLevel === 'string') logLevel = { default: logLevel };
         this.logLevel = logLevel;
     }
@@ -27,10 +27,10 @@ export class Logger {
         switch (allowedLevel) {
         case 'verbose':
             return true;
-        case 'warn':
-            return logLevel !== 'verbose';
         case 'info':
-            return logLevel === 'info' || logLevel === 'error';
+            return logLevel !== 'verbose';
+        case 'warn':
+            return logLevel === 'warn' || logLevel === 'error';
         case 'error':
             return logLevel === 'error';
         }
