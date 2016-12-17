@@ -51,11 +51,11 @@ export class OrmReflector {
             host: host,
             dialect: db.dialect || 'mysql',
             dialectOptions: {
-                charset: 'utf8mb4'
+                charset: 'utf8'
             },
             define: {
-                charset: 'utf8mb4',
-                collate: 'utf8mb4_general_ci'
+                charset: 'utf8',
+                collate: 'utf8_general_ci'
             },
             logging: (msg: string, ...extras: any[]) => this.logger.info('sql', msg, ...extras),
             port: port
