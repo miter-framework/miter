@@ -90,17 +90,25 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let [result, created] = await this.findOrCreate({ id: t.id }, t);
         return result;
     }
-    async update(query: number | string | T | UpdateQueryT, replace: Object): Promise<boolean | number> {
-        let isId = true;
-        if (this.isId(query)) query = { where: { id: query } };
-        else if (this.isT(query)) query = { where: { id: query.id } };
+    async update(query: number | string | T | UpdateQueryT, replace: Object, returning: boolean = false): Promise<[boolean | number, any]> {
+        if (this.isId(query))
+            query = { where: { id: query } };
+        else if (this.isT(query))
+            query = { where: { id: query.id } };
         else {
-            isId = false;
             query = this.transformQuery(query);
+            if (returning) {
+                let results = await this.model.findAll(<QueryT>query);
+                let ids = results.map((result) => (<any>result).id);
+                query = { where: {id: {$in: ids } } };
+            }
         }
         replace = this.transformQueryWhere(replace);
-        let [affected, results] = await this.model.update(<any>replace, <UpdateQueryT>query);
-        return affected;
+        let [affected, results]: [number, any[]] = await this.model.update(<any>replace, <UpdateQueryT>query);
+        
+        if (returning)
+            results = this.wrapResults(await this.model.findAll(<QueryT>query));
+        return [affected, results];
     }
     async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T): Promise<[T, boolean]> {
         let [result, created] = await this.findOrCreate(query, defaults);

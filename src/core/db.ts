@@ -28,9 +28,9 @@ export interface Db<T> {
     sum<T>(field: string): Promise<T>;
     
     save(t: T): Promise<T>;
-    update(id: number | string, replace: Object): Promise<boolean>;
-    update(t: T, replace: Object): Promise<boolean>;
-    update(query: UpdateQueryT, replace: Object): Promise<number>;
+    update(id: number | string, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
+    update(t: T, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
+    update(query: UpdateQueryT, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
     updateOrCreate(query: string | Sql.WhereOptions, defaults: Object | T) : Promise<[T, boolean]>;
     
     destroy(id: string | number): Promise<boolean>;

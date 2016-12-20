@@ -126,12 +126,28 @@ export abstract class CrudController<T extends ModelT<any>> {
             res.status(400).send(`You haven't sent any data to update the ${this.modelName} with!`);
             return;
         }
-        let updated = await this.staticModel.db.update(id, data);
+        let returning = false;
+        let returningParam = req.query['returning'];
+        if (returningParam) {
+            if (returningParam == true || returningParam == 'true')
+                returning = true;
+            else if (returningParam == false || returningParam == 'false')
+                returning = false;
+            else {
+                res.status(400).send(`Invalid ${this.modelName} returning parameter: ${returningParam}; must be boolean`);
+                return;
+            }
+        }
+        
+        let [updated, results] = await this.staticModel.db.update(id, data, returning);
         if (!updated) {
             res.status(400).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
             return;
         }
-        res.status(200).end();
+        if (returning)
+            res.status(200).json(results[0]);
+        else
+            res.status(200).end();
     }
     
     @Delete(`/%%SINGULAR_NAME%%/:id`)
