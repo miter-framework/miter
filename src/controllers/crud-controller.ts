@@ -88,10 +88,6 @@ export abstract class CrudController<T extends ModelT<any>> {
             delete query.order;
         }
         
-        console.log('query', JSON.stringify(query));
-        console.log('include', JSON.stringify(include));
-        console.log('order', JSON.stringify(order));
-        
         let initialStatusCode = res.statusCode;
         query = await this.transformQuery(req, res, query) || query;
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
