@@ -65,16 +65,32 @@ export abstract class CrudController<T extends ModelT<any>> {
     async find(req: express.Request, res: express.Response) {
         let query: any = {};
         let include: string[] = [];
+        let order: [string, string][] = [];
         try {
             if (req.query['query'])
                 query = JSON.parse(decodeURIComponent(req.query['query'])) || {};
             if (req.query['include'])
                 include = JSON.parse(decodeURIComponent(req.query['include'])) || [];
+            if (req.query['order'])
+                order = JSON.parse(decodeURIComponent(req.query['order'])) || [];
         }
         catch (e) {
             res.status(400).send(`Could not parse request parameters.`);
             return;
         }
+        
+        if ((!include || !include.length) && query.include) {
+            include = query.include;
+            delete query.include;
+        }
+        if ((!order || !order.length) && query.order) {
+            order = query.order;
+            delete query.order;
+        }
+        
+        console.log('query', JSON.stringify(query));
+        console.log('include', JSON.stringify(include));
+        console.log('order', JSON.stringify(order));
         
         let initialStatusCode = res.statusCode;
         query = await this.transformQuery(req, res, query) || query;
@@ -88,6 +104,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         let results = await this.staticModel.db.findAndCountAll({
             where: query,
             include: include,
+            order: order,
             offset: perPage * page,
             limit: perPage
         });
