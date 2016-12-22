@@ -4,7 +4,8 @@ import { StaticModelT, ModelT, PkType, Db,
          QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT,
          CountAllResults, CtorT } from '../core';
 import { ModelPropertiesSym, PropMetadata, PropMetadataSym,
-         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata, 
+         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata,
+         ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata,
          ForeignModelSource } from '../metadata';
 import { Types } from '../decorators';
 
@@ -17,10 +18,17 @@ type BelongsToTransformMeta = {
     type: 'belongs-to';
     columnName: string;
     fieldName: string;
-    pkName: string;
-    db: DbImpl<ModelT<any>, any, any>;
+    foreignPkName: string;
+    foreignDb: { (): DbImpl<ModelT<any>, any, any> };
 }
-type TransformValMeta = BelongsToTransformMeta;
+type HasOneTransformMeta = {
+    type: 'has-one';
+    foreignColumnName: string;
+    fieldName: string;
+    pkName: string;
+    foreignDb: { (): DbImpl<ModelT<any>, any, any> };
+}
+type TransformValMeta = BelongsToTransformMeta | HasOneTransformMeta;
 
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
     constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>) {
@@ -170,7 +178,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     
     private static getForeignModelDbImpl(foreignModel: ForeignModelSource | undefined) {
         if (!foreignModel || !("db" in foreignModel)) throw new Error("Cannot get DbImpl from ForeignModel that has not been resolved");
-            
+        
         let staticModel = <StaticModelT<ModelT<any>>>foreignModel;
         return <DbImpl<ModelT<any>, any, any>>staticModel.db;
     }
@@ -197,23 +205,42 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private getTransforms() {
         let transforms: TransformValMeta[] = [];
         
-        var belongsTo: string[] = Reflect.getOwnMetadata(ModelBelongsToAssociationsSym, this.modelFn.prototype) || [];
-        for (var q = 0; q < belongsTo.length; q++) {
-            var propName: string = belongsTo[q];
-            var propMeta: BelongsToMetadata = Reflect.getOwnMetadata(BelongsToMetadataSym, this.modelFn.prototype, propName);
+        let belongsTo: string[] = Reflect.getOwnMetadata(ModelBelongsToAssociationsSym, this.modelFn.prototype) || [];
+        for (let q = 0; q < belongsTo.length; q++) {
+            let propName: string = belongsTo[q];
+            let propMeta: BelongsToMetadata = Reflect.getOwnMetadata(BelongsToMetadataSym, this.modelFn.prototype, propName);
             if (!propMeta) throw new Error(`Could not find model belongs-to metadata for property ${this.modelFn.name || this.modelFn}.${propName}.`);
             
             let fkey = propMeta.foreignKey;
             if (fkey && typeof fkey !== 'string') fkey = fkey.name;
-            if (!fkey) throw new Error(`Could not get foreign key for property ${this.modelFn.name || this.modelFn}.${propName}`);
+            if (!fkey) throw new Error(`Could not get foreign key for belongs-to property ${this.modelFn.name || this.modelFn}.${propName}`);
             transforms.push({
                 type: 'belongs-to',
                 columnName: <string>fkey,
                 fieldName: propName,
-                pkName: 'id', // propMeta.targetKey || 'id'
-                db: DbImpl.getForeignModelDbImpl(propMeta.foreignModel)
+                foreignPkName: 'id', // propMeta.targetKey || 'id'
+                foreignDb: () => DbImpl.getForeignModelDbImpl(propMeta.foreignModel) //Has to be lazy to avoid race conditions
             });
         }
+        
+        let hasOne: string[] = Reflect.getOwnMetadata(ModelHasOneAssociationsSym, this.modelFn.prototype) || [];
+        for (let q = 0; q < hasOne.length; q++) {
+            let propName: string = hasOne[q];
+            let propMeta: HasOneMetadata = Reflect.getOwnMetadata(HasOneMetadataSym, this.modelFn.prototype, propName);
+            if (!propMeta) throw new Error(`Could not find model has-one metadata for property ${this.modelFn.name || this.modelFn}.${propName}.`);
+            
+            let fkey = propMeta.foreignKey;
+            if (fkey && typeof fkey !== 'string') fkey = fkey.name;
+            if (!fkey) throw new Error(`Could not get foreign key for has-one property ${this.modelFn.name || this.modelFn}.${propName}`);
+            transforms.push({
+                type: 'has-one',
+                foreignColumnName: <string>fkey,
+                fieldName: propName,
+                pkName: 'id',
+                foreignDb: () => DbImpl.getForeignModelDbImpl(propMeta.foreignModel) //Has to be lazy to avoid race conditions
+            });
+        }
+        
         return transforms;
     }
     
@@ -223,13 +250,20 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             query = _.clone(query);
             for (var q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
+                let fieldVal: any;
                 switch (transform.type) {
                 case 'belongs-to':
-                    let fieldVal = query[transform.fieldName]; 
+                    fieldVal = query[transform.fieldName]; 
                     if (fieldVal) {
-                        if (fieldVal[transform.pkName]) fieldVal = fieldVal[transform.pkName];
+                        if (fieldVal[transform.foreignPkName]) fieldVal = fieldVal[transform.foreignPkName];
                         query[transform.columnName] = fieldVal;
                         delete query[transform.fieldName];
+                    }
+                    break;
+                case 'has-one':
+                    fieldVal = query[transform.fieldName];
+                    if (fieldVal) {
+                        throw new Error(`Not implemented! Cannot include has-one value in where query`);
                     }
                     break;
                 default:
@@ -245,7 +279,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         function getFieldModel(field: string) {
             for (let i = 0; i < transforms.length; i++) {
                 if (field == transforms[i].fieldName)
-                    return transforms[i].db.model;
+                    return transforms[i].foreignDb().model;
             }
             return null;
         }
@@ -265,16 +299,24 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             result = _.clone(result);
             for (var q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
+                let foreignDb = transform.foreignDb();
                 switch (transform.type) {
                 case 'belongs-to':
                     if (sql[transform.fieldName]) { // field was included
-                        let t = new transform.db.modelFn();
-                        transform.db.copyVals(sql[transform.fieldName], t);
-                        result[transform.fieldName] = this.transformResult(sql[transform.fieldName], t);
+                        let t = new foreignDb.modelFn();
+                        foreignDb.copyVals(sql[transform.fieldName], t);
+                        result[transform.fieldName] = transform.foreignDb().transformResult(sql[transform.fieldName], t);
                     }
                     else if (sql[transform.columnName]) {
                         result[transform.fieldName] = sql[transform.columnName];
                         delete result[transform.columnName];
+                    }
+                    break;
+                case 'has-one':
+                    if (sql[transform.fieldName]) { // field was included
+                        let t = new foreignDb.modelFn();
+                        foreignDb.copyVals(sql[transform.fieldName], t);
+                        result[transform.fieldName] = foreignDb.transformResult(sql[transform.fieldName], t);
                     }
                     break;
                 default:
