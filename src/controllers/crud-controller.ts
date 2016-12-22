@@ -93,7 +93,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         let perPage = req.query['perPage'];
-        if (!perPage || !(perPage = parseInt('' + perPage, 10)) || isNaN(perPage) || perPage < 0) perPage = 10;
+        if (!perPage || !(perPage = parseInt('' + perPage, 10)) || isNaN(perPage) || perPage <= 0) perPage = 10;
         let page = req.query['page'];
         if (!page || !(page = parseInt('' + page, 10)) || isNaN(page) || page < 0) page = 0;
         
