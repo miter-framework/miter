@@ -120,7 +120,17 @@ export abstract class CrudController<T extends ModelT<any>> {
             return;
         }
         
-        let result = await this.staticModel.db.findById(id);
+        let include: string[] = [];
+        try {
+            if (req.query['include'])
+                include = JSON.parse(decodeURIComponent(req.query['include'])) || [];
+        }
+        catch (e) {
+            res.status(400).send(`Could not parse request parameters.`);
+            return;
+        }
+        
+        let result = await this.staticModel.db.findById(id, { include: include });
         let initialStatusCode = res.statusCode;
         result = await this.transformResult(req, res, result);
         if (res.statusCode === initialStatusCode && !res.headersSent) res.status(200).json(result);

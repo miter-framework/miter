@@ -15,7 +15,7 @@ export interface Db<T> {
     create(t: (T | Object)[]): Promise<boolean>;
     create(t: T | Object): Promise<T>;
     
-    findById(id: string | number): Promise<T | null>;
+    findById(id: string | number, options?: QueryT): Promise<T | null>;
     findOne(query: QueryT): Promise<T | null>;
     findOrCreate(query: string | Sql.WhereOptions, defaults?: Object | T): Promise<[T, boolean]>;
     findAndCountAll(query?: QueryT): Promise<CountAllResults<T>>;

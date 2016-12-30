@@ -51,8 +51,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         }
     }
     
-    async findById(id: string | number) {
-        let result = await this.model.findById(id);
+    async findById(id: string | number, options?: QueryT) {
+        if (options) options = this.transformQuery(options);
+        let result = await this.model.findById(id, options);
         return result && this.wrapResult(result);
     }
     async findOne(query: QueryT) {
