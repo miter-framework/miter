@@ -112,6 +112,23 @@ export abstract class CrudController<T extends ModelT<any>> {
         });
     }
     
+    @Get(`/%%PLURAL_NAME%%/count`)
+    async count(req: express.Request, res: express.Response) {
+        let query: any = {};
+        try {
+            if (req.query['query'])
+                query = JSON.parse(decodeURIComponent(req.query['query'])) || {};
+        }
+        catch(e) {
+            res.status(400).send(`Could not parse query parameters`);
+            return;
+        }
+        let count = await this.staticModel.db.count({
+            where: query
+        });
+        res.status(200).send(count);
+    }
+    
     @Get(`/%%SINGULAR_NAME%%/:id`)
     async get(req: express.Request, res: express.Response) {
         let id = parseInt(req.params['id'], 10);
