@@ -1,6 +1,6 @@
 {
   "name": "miter",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "tsc ; node ./dist/test/index.js",
@@ -8,6 +8,9 @@
     "watch": "tsc -w",
     "prepublish": "tsc"
   },
+  "main": "./dist/index.js",
+  "typings": "./dist/index",
+  "devDependencies": {},
   "dependencies": {
     "@types/body-parser": "^0.0.33",
     "@types/cli-color": "^0.3.29",
@@ -39,8 +42,6 @@
     "Brandon Slade <brandonyoyoslade@gmail.com>"
   ],
   "license": "ISC",
-  "typings": "./dist/index",
-  "main": "./dist/index.js",
   "private": false,
   "repository": {
     "type": "git",
