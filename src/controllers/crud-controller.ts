@@ -126,7 +126,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         let count = await this.staticModel.db.count({
             where: query
         });
-        res.status(200).send(count);
+        res.status(200).send(`${count}`);
     }
     
     @Get(`/%%SINGULAR_NAME%%/:id`)
