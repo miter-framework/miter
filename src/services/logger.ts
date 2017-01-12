@@ -1,6 +1,7 @@
 import { Server } from '../server/server';
 import { LogLevel } from '../metadata';
 import { clc } from '../util/clc';
+import * as fs from 'fs';
 
 export class Logger {
     constructor(serverName: string | null, logLevel: any) {
@@ -8,8 +9,19 @@ export class Logger {
         if (typeof logLevel === 'undefined') logLevel = { default: 'info' };
         if (typeof logLevel === 'string') logLevel = { default: logLevel };
         this.logLevel = logLevel;
+        
+        try { fs.mkdirSync(`log`, 'w'); }
+        catch(e) {}
+        this.fd = fs.openSync(`log/${serverName}.${new Date().getTime()}.log`, 'w');
     }
+    
+    private fd: number;
+    
     private logLevel: { [name: string]: LogLevel };
+    
+    public ShutDown() {
+        fs.close(this.fd);
+    }
     
     private _serverName: string | null;
     get serverName(): string | null {
@@ -36,29 +48,39 @@ export class Logger {
         }
     }
     
-    log(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
+    private writeToFile(message: string) {
+        fs.write(this.fd, message + "\n", () => {});
+    }
+    
+    log(subsystem: string | null, message?: any, ...optionalParams: any[]): void { 
         console.log(this.logLabelMessage(subsystem), message, ...optionalParams);
+        this.writeToFile(`[${new Date().toISOString()}:${subsystem}]: ${message}`);
     }
     trace(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         console.trace(this.logLabelMessage(subsystem), message, ...optionalParams);
+        this.writeToFile(`[${new Date().toISOString()}:${subsystem}]: ${message}`);
     }
     
     error(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         // if (typeof message === 'string') message = clc.error(message);
         console.error(this.logLabelMessage(subsystem), clc.error(`error:`), message, ...optionalParams);
+        this.writeToFile(`[${new Date().toISOString()}:${subsystem}] error: ${message}`);
     }
     info(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         if (!this.logLevelCheck(subsystem, 'info')) return;
         // if (typeof message === 'string') message = clc.info(message);
         console.info(this.logLabelMessage(subsystem), clc.info(`info:`), message, ...optionalParams);
+        this.writeToFile(`[${new Date().toISOString()}:${subsystem}] info: ${message}`);
     }
     warn(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         if (!this.logLevelCheck(subsystem, 'warn')) return;
         // if (typeof message === 'string') message = clc.warn(message);
         console.warn(this.logLabelMessage(subsystem), clc.warn(`warn:`), message, ...optionalParams);
+        this.writeToFile(`[${new Date().toISOString()}:${subsystem}] warn: ${message}`);
     }
     verbose(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         if (!this.logLevelCheck(subsystem, 'verbose')) return;
         console.log(this.logLabelMessage(subsystem), 'verbose:', message, ...optionalParams);
+        this.writeToFile(`[${new Date().toISOString()}:${subsystem}] verbose: ${message}`);
     }
 }

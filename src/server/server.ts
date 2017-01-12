@@ -62,9 +62,14 @@ export class Server {
     errorCode: number = 0;
     async shutdown() {
         try {
-            this.logger.info('miter', `Shutting down miter server...`);
-            await this.stopListening();
-            await this.stopServices();
+            try {
+                this.logger.info('miter', `Shutting down miter server...`);
+                await this.stopListening();
+                await this.stopServices();
+            }
+            finally {
+                this.logger.ShutDown();
+            }
         }
         catch (e) {
             this.logger.error('miter', `FATAL ERROR: Failed to gracefully shutdown server.`);
