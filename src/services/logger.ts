@@ -2,6 +2,7 @@ import { Server } from '../server/server';
 import { LogLevel } from '../metadata';
 import { clc } from '../util/clc';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export class Logger {
     constructor(serverName: string | null, logLevel: any) {
@@ -10,9 +11,15 @@ export class Logger {
         if (typeof logLevel === 'string') logLevel = { default: logLevel };
         this.logLevel = logLevel;
         
-        try { fs.mkdirSync(`log`, 'w'); }
-        catch(e) {}
-        this.fd = fs.openSync(`log/${serverName}.${new Date().getTime()}.log`, 'w');
+        let logPath = !!serverName ? `log/${serverName}` : `log`;
+        try {
+            logPath.split('/').forEach((dir, index, splits) => {
+                let partialPath = path.resolve(splits.splice(0, index).join('/'), dir);
+                if (!fs.existsSync(partialPath)) fs.mkdirSync(partialPath);
+            });
+        }
+        catch(e) { console.error(e); }
+        this.fd = fs.openSync(`${logPath}/${serverName}.${new Date().getTime()}.log`, 'w');
     }
     
     private fd: number;
