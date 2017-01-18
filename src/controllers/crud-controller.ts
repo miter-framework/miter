@@ -123,6 +123,11 @@ export abstract class CrudController<T extends ModelT<any>> {
             res.status(400).send(`Could not parse query parameters`);
             return;
         }
+        
+        let initialStatusCode = res.statusCode;
+        query = await this.transformQuery(req, res, query) || query;
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
         let count = await this.staticModel.db.count({
             where: query
         });
