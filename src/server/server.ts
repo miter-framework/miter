@@ -140,13 +140,13 @@ export class Server {
     }
     private async stopListening() {
         this.logger.verbose('miter', `Closing HTTP server...`);
-        await wrapPromise((cb) => {
+        await wrapPromise((cb: Function) => {
             if (!this.httpServer) return cb();
             this.httpServer.close(cb);
         });
         this.logger.info('miter', `Finished closing HTTP server.`);
     }
-    private onError(error) {
+    private onError(error: Error & { syscall?: string, code?: string }) {
         if (error.syscall !== "listen") {
             throw error;
         }

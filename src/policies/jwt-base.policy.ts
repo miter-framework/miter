@@ -36,10 +36,10 @@ export class JwtBasePolicy {
             catch (e) {
                 this.logger.verbose('jwt-policy', `express-jwt failed to parse 'Authorization' header.`);
                 this.logger.verbose('jwt-policy', `'Authorization' header: '${req.header('Authorization')}'`);
-                req[this.property] = undefined;
+                (<any>req)[this.property] = undefined;
             }
         }
-        if (req[this.property]) return req[this.property] = await this.fromJson(req[this.property]);
+        if ((<any>req)[this.property]) return (<any>req)[this.property] = await this.fromJson((<any>req)[this.property]);
         return null;
     }
     

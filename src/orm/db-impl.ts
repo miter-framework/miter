@@ -151,7 +151,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private copyVals: { (sql: TInstance, t: T): void };
     private createCopyValsFn() {
         let allProps: CopyValMeta[] = [];
-        let directTransformFn = (val) => val;
+        let directTransformFn = <T>(val: T) => val;
         
         let props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, this.modelFn.prototype) || [];
         for (let q = 0; q < props.length; q++) {
@@ -170,7 +170,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             for (let q = 0; q < allProps.length; q++) {
                 // console.log(allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
                 // t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].columnName]);
-                t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].propertyName]);
+                let propName = allProps[q].propertyName;
+                t[propName] = allProps[q].transformFn((<any>sql)[propName]);
             }
             // console.log(JSON.stringify(sql));
         }
@@ -254,15 +255,15 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 let fieldVal: any;
                 switch (transform.type) {
                 case 'belongs-to':
-                    fieldVal = query[transform.fieldName]; 
+                    fieldVal = (<any>query)[transform.fieldName];
                     if (fieldVal) {
                         if (fieldVal[transform.foreignPkName]) fieldVal = fieldVal[transform.foreignPkName];
-                        query[transform.columnName] = fieldVal;
-                        delete query[transform.fieldName];
+                        (<any>query)[transform.columnName] = fieldVal;
+                        delete (<any>query)[transform.fieldName];
                     }
                     break;
                 case 'has-one':
-                    fieldVal = query[transform.fieldName];
+                    fieldVal = (<any>query)[transform.fieldName];
                     if (fieldVal) {
                         throw new Error(`Not implemented! Cannot include has-one value in where query`);
                     }
@@ -303,21 +304,21 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 let foreignDb = transform.foreignDb();
                 switch (transform.type) {
                 case 'belongs-to':
-                    if (sql[transform.fieldName]) { // field was included
+                    if ((<any>sql)[transform.fieldName]) { // field was included
                         let t = new foreignDb.modelFn();
-                        foreignDb.copyVals(sql[transform.fieldName], t);
-                        result[transform.fieldName] = transform.foreignDb().transformResult(sql[transform.fieldName], t);
+                        foreignDb.copyVals((<any>sql)[transform.fieldName], t);
+                        (<any>result)[transform.fieldName] = transform.foreignDb().transformResult((<any>sql)[transform.fieldName], t);
                     }
-                    else if (sql[transform.columnName]) {
-                        result[transform.fieldName] = sql[transform.columnName];
-                        delete result[transform.columnName];
+                    else if ((<any>sql)[transform.columnName]) {
+                        (<any>result)[transform.fieldName] = (<any>sql)[transform.columnName];
+                        delete (<any>result)[transform.columnName];
                     }
                     break;
                 case 'has-one':
-                    if (sql[transform.fieldName]) { // field was included
+                    if ((<any>sql)[transform.fieldName]) { // field was included
                         let t = new foreignDb.modelFn();
-                        foreignDb.copyVals(sql[transform.fieldName], t);
-                        result[transform.fieldName] = foreignDb.transformResult(sql[transform.fieldName], t);
+                        foreignDb.copyVals((<any>sql)[transform.fieldName], t);
+                        (<any>result)[transform.fieldName] = foreignDb.transformResult((<any>sql)[transform.fieldName], t);
                     }
                     break;
                 default:

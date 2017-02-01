@@ -43,7 +43,7 @@ export class RouterReflector {
         }
     }
     
-    private reflectRouteMeta(controllerProto): [string, RouteMetadata[]][] {
+    private reflectRouteMeta(controllerProto: any): [string, RouteMetadata[]][] {
         let hierarchy = inhertitanceHierarchy(controllerProto);
         let routeMeta: [string, RouteMetadata[]][] = [];
         for (let r = 0; r < hierarchy.length; r++) {
@@ -80,7 +80,7 @@ export class RouterReflector {
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
-        this.router[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute));
+        (<any>this.router)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute));
     }
     private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][] {
         return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }] => {
@@ -156,7 +156,7 @@ export class RouterReflector {
     }
     private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], allResults: any[]) {
         let keys = policies.map(poli => poli[0]);
-        return function(policyFn) {
+        return function(policyFn: CtorT<PolicyT<any>> | number) {
             if (typeof policyFn === 'number') return allResults[policyFn];
             for (let q = 0; q < keys.length; q++) {
                 if (keys[q] === policyFn) return allResults[q];

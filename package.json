@@ -37,8 +37,7 @@
         "pluralize": "^3.0.0",
         "pre-commit": "^1.2.2",
         "reflect-metadata": "^0.1.8",
-        "sequelize": "^3.24.6",
-        "typescript": "^2.0.10"
+        "sequelize": "^3.24.6"
     },
     "keywords": [
         "miter",

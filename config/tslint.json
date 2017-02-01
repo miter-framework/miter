@@ -13,6 +13,7 @@
         "no-unused-expression": true,
         // "no-unused-parameters": true,
         // "no-unused-locals": true,
-        "no-unused-new": true
+        "no-unused-new": true,
+        "no-switch-case-fall-through": true
     }
 }

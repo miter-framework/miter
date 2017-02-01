@@ -114,7 +114,7 @@ export class OrmReflector {
             (columnMeta as any).field = columnMeta.columnName || this.ormTransform.transformColumnName(propName) || propName;
             // delete columnMeta.columnName;
             
-            columns[propName] = columnMeta;
+            (<any>columns)[propName] = columnMeta;
         }
         
         let model = this.sql.define(modelOptions.tableName, columns, modelOptions);
@@ -183,7 +183,7 @@ export class OrmReflector {
                 sqlMeta = this.ormTransform.transformAssociation(sqlMeta) || sqlMeta;
                 if (def.transform) def.transform(sqlMeta, propName);
                 
-                model[def.sqlName](foreignModel, propMeta);
+                (<any>model)[def.sqlName](foreignModel, propMeta);
             }
         }
     }
