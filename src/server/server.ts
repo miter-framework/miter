@@ -11,7 +11,8 @@ import { RouterReflector } from '../router';
 import { wrapPromise } from '../util/wrap-promise';
 
 import * as http from 'http';
-let debug = require("debug")("express:server");
+import debug_module = require('debug');
+let debug = debug_module('express:server');
 
 export class Server {
     constructor(private _meta: ServerMetadata) {

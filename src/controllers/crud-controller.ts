@@ -2,6 +2,7 @@ import * as express from 'express';
 import { StaticModelT, ModelT } from '../core';
 import { Controller, Get, Post, Put, Patch, Delete } from '../decorators';
 import { pluralize } from '../util/pluralize';
+import { HTTP_STATUS_OK, HTTP_STATUS_ERROR } from '../util/http-status-type';
 
 export abstract class CrudController<T extends ModelT<any>> {
     constructor(private staticModel: StaticModelT<T>, private modelName: string, pluralName?: string, singularName?: string) {
@@ -54,11 +55,11 @@ export abstract class CrudController<T extends ModelT<any>> {
     async create(req: express.Request, res: express.Response) {
         let data = req.body;
         if (!data) {
-            res.status(400).send(`You haven't sent any data to create the ${this.modelName} with!`);
+            res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to create the ${this.modelName} with!`);
             return;
         }
         let result = await this.staticModel.db.create(data);
-        res.status(200).json(result);
+        res.status(HTTP_STATUS_OK).json(result);
     }
     
     @Get(`/%%PLURAL_NAME%%/find`)
@@ -75,7 +76,7 @@ export abstract class CrudController<T extends ModelT<any>> {
                 order = JSON.parse(decodeURIComponent(req.query['order'])) || [];
         }
         catch (e) {
-            res.status(400).send(`Could not parse request parameters.`);
+            res.status(HTTP_STATUS_ERROR).send(`Could not parse request parameters.`);
             return;
         }
         
@@ -104,7 +105,7 @@ export abstract class CrudController<T extends ModelT<any>> {
             offset: perPage * page,
             limit: perPage
         });
-        res.status(200).json({
+        res.status(HTTP_STATUS_OK).json({
             results: results.results,
             page: page,
             perPage: perPage,
@@ -120,7 +121,7 @@ export abstract class CrudController<T extends ModelT<any>> {
                 query = JSON.parse(decodeURIComponent(req.query['query'])) || {};
         }
         catch(e) {
-            res.status(400).send(`Could not parse query parameters`);
+            res.status(HTTP_STATUS_ERROR).send(`Could not parse query parameters`);
             return;
         }
         
@@ -131,14 +132,14 @@ export abstract class CrudController<T extends ModelT<any>> {
         let count = await this.staticModel.db.count({
             where: query
         });
-        res.status(200).send(`${count}`);
+        res.status(HTTP_STATUS_OK).send(`${count}`);
     }
     
     @Get(`/%%SINGULAR_NAME%%/:id`)
     async get(req: express.Request, res: express.Response) {
         let id = parseInt(req.params['id'], 10);
         if (!id || isNaN(id)) {
-            res.status(400).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
+            res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
             return;
         }
         
@@ -148,14 +149,14 @@ export abstract class CrudController<T extends ModelT<any>> {
                 include = JSON.parse(decodeURIComponent(req.query['include'])) || [];
         }
         catch (e) {
-            res.status(400).send(`Could not parse request parameters.`);
+            res.status(HTTP_STATUS_ERROR).send(`Could not parse request parameters.`);
             return;
         }
         
         let result = await this.staticModel.db.findById(id, { include: include });
         let initialStatusCode = res.statusCode;
         result = await this.transformResult(req, res, result);
-        if (res.statusCode === initialStatusCode && !res.headersSent) res.status(200).json(result);
+        if (res.statusCode === initialStatusCode && !res.headersSent) res.status(HTTP_STATUS_OK).json(result);
     }
     
     @Put(`/%%SINGULAR_NAME%%/:id`)
@@ -163,12 +164,12 @@ export abstract class CrudController<T extends ModelT<any>> {
     async update(req: express.Request, res: express.Response) {
         let id = parseInt(req.params['id'], 10);
         if (!id || isNaN(id)) {
-            res.status(400).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
+            res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
             return;
         }
         let data = req.body;
         if (!data) {
-            res.status(400).send(`You haven't sent any data to update the ${this.modelName} with!`);
+            res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to update the ${this.modelName} with!`);
             return;
         }
         let returning = false;
@@ -179,30 +180,30 @@ export abstract class CrudController<T extends ModelT<any>> {
             else if (returningParam == false || returningParam == 'false')
                 returning = false;
             else {
-                res.status(400).send(`Invalid ${this.modelName} returning parameter: ${returningParam}; must be boolean`);
+                res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} returning parameter: ${returningParam}; must be boolean`);
                 return;
             }
         }
         
         let [updated, results] = await this.staticModel.db.update(id, data, returning);
         if (!updated) {
-            res.status(400).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
+            res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
             return;
         }
         if (returning)
-            res.status(200).json(results[0]);
+            res.status(HTTP_STATUS_OK).json(results[0]);
         else
-            res.status(200).end();
+            res.status(HTTP_STATUS_OK).end();
     }
     
     @Delete(`/%%SINGULAR_NAME%%/:id`)
     async destroy(req: express.Request, res: express.Response) {
         let id = parseInt(req.params['id'], 10);
         if (!id || isNaN(id)) {
-            res.status(400).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
+            res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
             return;
         }
         let destroyed = await this.staticModel.db.destroy(id);
-        res.status(200).json({destroyed: destroyed});
+        res.status(HTTP_STATUS_OK).json({destroyed: destroyed});
     }
 }

@@ -7,7 +7,7 @@ import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
 import { Server } from '../server';
 import { Logger } from '../services/logger';
-import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise } from '../util';
+import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../util';
 
 export class RouterReflector {
     constructor(private server: Server, private router: express.Router) {
@@ -129,7 +129,7 @@ export class RouterReflector {
                 catch (e) {
                     self.logger.error('router', 'A policy threw an exception. Serving 500 - Internal server error');
                     self.logger.error('router', e);
-                    res.status(500);
+                    res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                     res.send('Internal server error');
                     return;
                 }
@@ -143,13 +143,13 @@ export class RouterReflector {
             catch (e) {
                 self.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error');
                 self.logger.error('router', e);
-                res.status(500);
+                res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                 res.send('Internal server error');
                 return;
             }
             if (res.statusCode === initialStatusCode && !res.headersSent) {
                 self.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
-                res.status(404);
+                res.status(HTTP_STATUS_NOT_FOUND);
                 res.send(`Not found.`);
             }
         };
