@@ -20,7 +20,7 @@ export function HasMany(propMeta: HasManyMetadata | ForeignModelSource) {
         
         meta.as = propertyName;
         
-        var props: string[] = Reflect.getOwnMetadata(ModelHasManyAssociationsSym, model) || [];
+        let props: string[] = Reflect.getOwnMetadata(ModelHasManyAssociationsSym, model) || [];
         props.push(propertyName);
         Reflect.defineMetadata(ModelHasManyAssociationsSym, props, model);
         

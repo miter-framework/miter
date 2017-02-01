@@ -18,7 +18,7 @@ export class RouterReflector {
     }
     
     reflectRoutes(controllers: any[]) {
-        for (var q = 0; q < controllers.length; q++) {
+        for (let q = 0; q < controllers.length; q++) {
             this.reflectControllerRoutes(controllers[q]);
         }
     }
@@ -26,17 +26,17 @@ export class RouterReflector {
     private controllers: any = {};
     reflectControllerRoutes(controllerFn: any) {
         if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
-        var controllerInst = this.controllers[controllerFn] = this.server.injector.resolveInjectable(controllerFn);
-        var controllerProto = controllerFn.prototype;
+        let controllerInst = this.controllers[controllerFn] = this.server.injector.resolveInjectable(controllerFn);
+        let controllerProto = controllerFn.prototype;
         
-        var meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
+        let meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
         if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerProto}.`);
         this.logger.info('router', `Reflecting routes for controller ${controllerFn.name}`);
         
         let routes = this.reflectRouteMeta(controllerProto);
         for (let q = 0; q < routes.length; q++) {
             let [routeFnName, routeMetaArr] = routes[q];
-            for (var w = 0; w < routeMetaArr.length; w++) {
+            for (let w = 0; w < routeMetaArr.length; w++) {
                 let routeMeta = routeMetaArr[w];
                 this.addRoute(controllerInst, routeFnName, meta, routeMeta);
             }
@@ -49,9 +49,9 @@ export class RouterReflector {
         for (let r = 0; r < hierarchy.length; r++) {
             let fn = hierarchy[r].prototype;
             let routeNames: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, fn) || [];
-            for (var q = 0; q < routeNames.length; q++) {
-                var routeFnName: string = routeNames[q];
-                var routeMetaArr: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, fn, routeFnName) || [];
+            for (let q = 0; q < routeNames.length; q++) {
+                let routeFnName: string = routeNames[q];
+                let routeMetaArr: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, fn, routeFnName) || [];
                 routeMeta.push([routeFnName, routeMetaArr]);
                 //TODO: Ensure routes on parent classes are still accessible
             }
@@ -117,7 +117,7 @@ export class RouterReflector {
             let allResults: any[] = [];
             req.policyResults = self.createPolicyResultsFn(policies, allResults);
             let initialStatusCode = res.statusCode;
-            for (var q = 0; q < policies.length; q++) {
+            for (let q = 0; q < policies.length; q++) {
                 let policy = policies[q];
                 let result: any;
                 try {
@@ -158,7 +158,7 @@ export class RouterReflector {
         let keys = policies.map(poli => poli[0]);
         return function(policyFn) {
             if (typeof policyFn === 'number') return allResults[policyFn];
-            for (var q = 0; q < keys.length; q++) {
+            for (let q = 0; q < keys.length; q++) {
                 if (keys[q] === policyFn) return allResults[q];
             }
             return undefined;

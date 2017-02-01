@@ -22,7 +22,7 @@ export function HasOne(propMeta?: HasOneMetadata | StaticModelT<ModelT<any>> | s
         
         meta.as = propertyName;
         
-        var props: string[] = Reflect.getOwnMetadata(ModelHasOneAssociationsSym, model) || [];
+        let props: string[] = Reflect.getOwnMetadata(ModelHasOneAssociationsSym, model) || [];
         props.push(propertyName);
         Reflect.defineMetadata(ModelHasOneAssociationsSym, props, model);
         

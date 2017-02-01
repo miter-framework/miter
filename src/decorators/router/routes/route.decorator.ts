@@ -16,11 +16,11 @@ export function createRouteDecorator(pathOrMeta: RouteMetadata | string, method?
     let meta = pathOrMeta;
 
     return function(controller: any, routeName: string, routeFn: RouteFuncDescriptor) {
-        var controllerRoutes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controller) || [];
+        let controllerRoutes: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, controller) || [];
         if (!controllerRoutes.find(route => route == routeName)) controllerRoutes.push(routeName);
         Reflect.defineMetadata(ControllerRoutesSym, controllerRoutes, controller);
         
-        var methodRoutes: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controller, routeName) || [];
+        let methodRoutes: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controller, routeName) || [];
         methodRoutes.push(meta);
         Reflect.defineMetadata(RouteMetadataSym, methodRoutes, controller, routeName);
     }

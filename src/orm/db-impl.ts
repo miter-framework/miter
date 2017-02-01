@@ -153,10 +153,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let allProps: CopyValMeta[] = [];
         let directTransformFn = (val) => val;
         
-        var props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, this.modelFn.prototype) || [];
-        for (var q = 0; q < props.length; q++) {
-            var propName: string = props[q];
-            var propMeta: PropMetadata = Reflect.getOwnMetadata(PropMetadataSym, this.modelFn.prototype, propName);
+        let props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, this.modelFn.prototype) || [];
+        for (let q = 0; q < props.length; q++) {
+            let propName: string = props[q];
+            let propMeta: PropMetadata = Reflect.getOwnMetadata(PropMetadataSym, this.modelFn.prototype, propName);
             if (!propMeta) throw new Error(`Could not find model property metadata for property ${this.modelFn.name || this.modelFn}.${propName}.`);
             
             let transformFn: { (val: any): any } = directTransformFn;
@@ -167,7 +167,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         // console.log(this.modelFn.name || this.modelFn, 'allProps:', `[\r\n    ${allProps.map(p => p.propertyName + ': ' + p.columnName).join(',\r\n    ')}\r\n]`);
         
         this.copyVals = function(sql: TInstance, t: any) {
-            for (var q = 0; q < allProps.length; q++) {
+            for (let q = 0; q < allProps.length; q++) {
                 // console.log(allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
                 // t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].columnName]);
                 t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].propertyName]);
@@ -249,7 +249,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         this.transformQueryWhere = function<T>(query: T): T {
             if (!query) return query;
             query = _.clone(query);
-            for (var q = 0; q < transforms.length; q++) {
+            for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
                 let fieldVal: any;
                 switch (transform.type) {
@@ -298,7 +298,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private createTransformResult(transforms: TransformValMeta[]) {
         this.transformResult = function<T>(sql: TInstance, result: T): T {
             result = _.clone(result);
-            for (var q = 0; q < transforms.length; q++) {
+            for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
                 let foreignDb = transform.foreignDb();
                 switch (transform.type) {

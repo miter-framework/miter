@@ -20,7 +20,7 @@ export class Miter {
     }
     
     public static normalizePort(val: any): string | number {
-        var port = parseInt(val, 10);
+        let port = parseInt(val, 10);
         
         if (isNaN(port)) {
             // named pipe

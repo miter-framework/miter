@@ -1,24 +1,24 @@
 import * as sequelize from 'sequelize';
 
-export var STRING = sequelize.STRING;
-export var TEXT = sequelize.TEXT;
-export var INTEGER = sequelize.INTEGER;
-export var BIGINT = sequelize.BIGINT;
-export var FLOAT = sequelize.FLOAT;
-export var REAL = sequelize.REAL;
-export var DOUBLE = sequelize.DOUBLE;
-export var DECIMAL = sequelize.DECIMAL;
-export var DATE = sequelize.DATE;
-export var DATEONLY = sequelize.DATEONLY;
-export var BOOLEAN = sequelize.BOOLEAN;
-export var ENUM = sequelize.ENUM;
-export var UUID = sequelize.UUID;
-export var VIRTUAL = sequelize.VIRTUAL;
+export let STRING = sequelize.STRING;
+export let TEXT = sequelize.TEXT;
+export let INTEGER = sequelize.INTEGER;
+export let BIGINT = sequelize.BIGINT;
+export let FLOAT = sequelize.FLOAT;
+export let REAL = sequelize.REAL;
+export let DOUBLE = sequelize.DOUBLE;
+export let DECIMAL = sequelize.DECIMAL;
+export let DATE = sequelize.DATE;
+export let DATEONLY = sequelize.DATEONLY;
+export let BOOLEAN = sequelize.BOOLEAN;
+export let ENUM = sequelize.ENUM;
+export let UUID = sequelize.UUID;
+export let VIRTUAL = sequelize.VIRTUAL;
 
 //PostgreSQL only:
-export var ARRAY = sequelize.ARRAY;
-export var JSON = sequelize.JSON;
-export var JSONB = sequelize.JSONB;
-export var BLOB = sequelize.BLOB;
-export var RANGE = sequelize.RANGE;
-export var GEOMETRY = sequelize.GEOMETRY;
+export let ARRAY = sequelize.ARRAY;
+export let JSON = sequelize.JSON;
+export let JSONB = sequelize.JSONB;
+export let BLOB = sequelize.BLOB;
+export let RANGE = sequelize.RANGE;
+export let GEOMETRY = sequelize.GEOMETRY;

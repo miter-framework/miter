@@ -22,7 +22,7 @@ export function BelongsTo(propMeta?: BelongsToMetadata | ForeignModelSource) {
         
         meta.as = propertyName;
         
-        var props: string[] = Reflect.getOwnMetadata(ModelBelongsToAssociationsSym, model) || [];
+        let props: string[] = Reflect.getOwnMetadata(ModelBelongsToAssociationsSym, model) || [];
         props.push(propertyName);
         Reflect.defineMetadata(ModelBelongsToAssociationsSym, props, model);
         

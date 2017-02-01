@@ -8,13 +8,13 @@ export function Prop(columnName?: PropMetadata | string) {
     else meta = columnName || {};
     
     return function(model: any, propertyName: string) {
-        var props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, model) || [];
+        let props: string[] = Reflect.getOwnMetadata(ModelPropertiesSym, model) || [];
         props.push(propertyName);
         Reflect.defineMetadata(ModelPropertiesSym, props, model);
         
         if (!meta.type) {
-            var reflectType = Reflect.getMetadata('design:type', model, propertyName);
-            var sequelizeType: any = null;
+            let reflectType = Reflect.getMetadata('design:type', model, propertyName);
+            let sequelizeType: any = null;
             if (reflectType === String) sequelizeType = sequelize.STRING;
             else if (reflectType === Number) {
             if (meta.primaryKey || meta.autoIncrement) sequelizeType = sequelize.INTEGER;

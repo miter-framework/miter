@@ -11,14 +11,14 @@ import { RouterReflector } from '../router';
 import { wrapPromise } from '../util/wrap-promise';
 
 import * as http from 'http';
-var debug = require("debug")("express:server");
+let debug = require("debug")("express:server");
 
 export class Server {
     constructor(private _meta: ServerMetadata) {
         this._logger = new Logger(this.meta.name || null, this.meta.logLevel);
         this._injector = new Injector(this);
         if (_meta.inject) {
-            for (var q = 0; q < _meta.inject.length; q++) {
+            for (let q = 0; q < _meta.inject.length; q++) {
                 this._injector.provide(_meta.inject[q]);
             }
         }
@@ -150,7 +150,7 @@ export class Server {
             throw error;
         }
         
-        var bind = (typeof this.meta.port === "string") ? `pipe ${this.meta.port}` : `port ${this.meta.port}`;
+        let bind = (typeof this.meta.port === "string") ? `pipe ${this.meta.port}` : `port ${this.meta.port}`;
         
         // handle specific listen errors with friendly messages
         switch (error.code) {
@@ -172,8 +172,8 @@ export class Server {
     }
     private onListening() {
         if (!this.httpServer) throw new Error(`onListening called, but there is no httpServer!`);
-        var addr = this.httpServer.address();
-        var bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
+        let addr = this.httpServer.address();
+        let bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
         this.logger.info('miter', `Listening on ${bind}`);
     }
 }

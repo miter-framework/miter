@@ -14,7 +14,7 @@ export class ServiceReflector {
     
     async reflectServices(services: CtorT<ServiceT>[]) {
         let failures = 0;
-        for (var q = 0; q < services.length; q++) {
+        for (let q = 0; q < services.length; q++) {
             let result: boolean;
             try {
                 result = await this.reflectService(services[q]);
@@ -50,7 +50,7 @@ export class ServiceReflector {
         let services = this._startedServices;
         this._startedServices = [];
         let failures = 0;
-        for (var q = 0; q < services.length; q++) {
+        for (let q = 0; q < services.length; q++) {
             let result: boolean;
             try {
                 result = await this.shutdownService(services[q]);
