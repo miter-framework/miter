@@ -118,7 +118,11 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let [result, created] = await this.findOrCreate({ id: t.id }, t, transaction);
         return result;
     }
+
     async update(query: number | string | T | UpdateQueryT, replace: Object, returning: boolean = false, transaction?: TransactionImpl): Promise<[boolean | number, any]> {
+        if (!query) {
+            throw new Error(`Db.update query parameter was falsey: ${query}`);  
+        }
         let sqlTransact = transaction && await transaction.sync();
         if (transaction && returning) {
             throw new Error(`Using a transaction to return records when you update them is not yet implemented.`);
