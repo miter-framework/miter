@@ -5,7 +5,7 @@ import * as bodyParser from 'body-parser';
 
 import { Injector } from '../core';
 import { ServerMetadata } from '../metadata';
-import { OrmReflector } from '../orm';
+import { OrmReflector, Transaction } from '../orm';
 import { ServiceReflector, Logger } from '../services';
 import { RouterReflector } from '../router';
 import { wrapPromise } from '../util/wrap-promise';
@@ -106,6 +106,9 @@ export class Server {
         else if (this.meta.models && this.meta.models.length) {
             this.logger.warn('orm', `Warning: Models included in server metadata, but no orm configuration defined.`);
         }
+    }
+    transaction(transaction?: Transaction): Promise<Transaction> {
+        return this.ormReflector.transaction(transaction);
     }
     
     private serviceReflector: ServiceReflector;

@@ -11,6 +11,7 @@ import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, Prop
 import { Server } from '../server';
 import { OrmTransformService, Logger } from '../services';
 import { DbImpl } from './db-impl';
+import { Transaction } from './transaction';
 
 type AssociationTypeDef = {
     sqlName: string,
@@ -75,6 +76,12 @@ export class OrmReflector {
     
     async sync(recreate?: boolean) {
         return await this.sql.sync({force: recreate || false});
+    }
+    
+    async transaction(transaction?: Transaction): Promise<Transaction> {
+        let sqlTransact = transaction && await transaction.sync();
+        sqlTransact = await this.sql.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
+        return new Transaction(sqlTransact!);
     }
     
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {
@@ -193,7 +200,7 @@ export class OrmReflector {
             let modelFn = models[q];
             let model = this.models.get(modelFn);
             if (!model) throw new Error(`Could not reflect model associations for a model that failed to be reflected: ${modelFn.name || modelFn}.`);
-            let db = new DbImpl(modelFn, model);
+            let db = new DbImpl(modelFn, model, this.sql, this.logger);
             modelFn.db = db;
         }
     }

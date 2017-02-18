@@ -8,6 +8,8 @@ import { ModelPropertiesSym, PropMetadata, PropMetadataSym,
          ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata,
          ForeignModelSource } from '../metadata';
 import { Types } from '../decorators';
+import { Transaction } from './transaction';
+import { Logger } from '../services/logger';
 
 type CopyValMeta = {
     columnName: string,
@@ -31,75 +33,95 @@ type HasOneTransformMeta = {
 type TransformValMeta = BelongsToTransformMeta | HasOneTransformMeta;
 
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
-    constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>) {
+    constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>, private sequelize: Sql.Sequelize, private logger: Logger) {
         this.createCopyValsFn();
         this.createTransformQuery();
     }
     
-    async create(t: Object | T | Object[] | T[]): Promise<any> {
+    async transaction(transaction?: Transaction): Promise<Transaction> {
+        let sqlTransact = transaction && await transaction.sync();
+        sqlTransact = await this.sequelize.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
+        return new Transaction(sqlTransact!);
+    }
+    
+    async create(t: Object | T | Object[] | T[], transaction?: Transaction): Promise<any> {
+        let sqlTransact = transaction && await transaction.sync();
         if (t instanceof Array) {
             t = _.cloneDeep(t);
             (<Object[]>t).forEach((t, idx, arr) => { arr[idx] = this.transformQueryWhere(t) });
-            let results = await this.model.bulkCreate(<any>t);
+            let results = await this.model.bulkCreate(<any>t, { transaction: sqlTransact });
             // return this.wrapResults(results);
             return true;
         }
         else {
             t = this.transformQueryWhere(t);
-            let result = await this.model.create(<any>t);
+            let result = await this.model.create(<any>t, { transaction: sqlTransact });
             return this.wrapResult(result);
         }
     }
     
-    async findById(id: string | number, options?: QueryT) {
+    async findById(id: string | number, options?: QueryT, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
         if (options) options = this.transformQuery(options);
-        let result = await this.model.findById(id, options);
+        let result = await this.model.findById(id, _.merge({ transaction: sqlTransact }, options));
         return result && this.wrapResult(result);
     }
-    async findOne(query: QueryT) {
+    async findOne(query: QueryT, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
         query = this.transformQuery(query);
-        let result = await this.model.findOne(query);
+        let result = await this.model.findOne(_.merge({ transaction: sqlTransact }, query));
         return result && this.wrapResult(result);
     }
-    async findOrCreate(query: Sql.WhereOptions, defaults?: Object | T): Promise<[T, boolean]> {
+    async findOrCreate(query: Sql.WhereOptions, defaults?: Object | T, transaction?: Transaction): Promise<[T, boolean]> {
+        let sqlTransact = transaction && await transaction.sync();
         query = this.transformQueryWhere(query);
         defaults = this.transformQueryWhere(defaults);
-        let [result, created] = await this.model.findOrCreate({ where: query, defaults: <any>defaults || {} });
+        let [result, created] = await this.model.findOrCreate({ where: query, defaults: <any>defaults || {}, transaction: sqlTransact });
         return [result && this.wrapResult(result), created];
     }
-    async findAndCountAll(query?: QueryT) {
+    async findAndCountAll(query?: QueryT, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
         if (query) query = this.transformQuery(query);
-        let results = await this.model.findAndCountAll(query);
+        let results = await this.model.findAndCountAll(_.merge({ transaction: sqlTransact }, query));
         return { count: results.count, results: this.wrapResults(results.rows) };
     }
-    async findAll(query?: QueryT) {
+    async findAll(query?: QueryT, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
         if (query) query = this.transformQuery(query);
-        let results = await this.model.findAll(query);
+        let results = await this.model.findAll(_.merge({ transaction: sqlTransact }, query));
         return this.wrapResults(results);
     }
-    all(query?: QueryT) {
-        return this.findAll(query);
+    all(query?: QueryT, transaction?: Transaction) {
+        return this.findAll(query, transaction);
     }
-    async count(query?: CountQueryT) {
+    async count(query?: CountQueryT, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
         if (query) query = this.transformQuery(query);
-        return await this.model.count(query);
+        return await this.model.count(_.merge({ transaction: sqlTransact }, query));
     }
     
-    async max(field: string) {
-        return await this.model.max(field);
+    async max(field: string, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
+        return await this.model.max(field, { transaction: sqlTransact });
     }
-    async min(field: string) {
-        return await this.model.min(field);
+    async min(field: string, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
+        return await this.model.min(field, { transaction: sqlTransact });
     }
-    async sum(field: string) {
-        return await this.model.sum(field);
+    async sum(field: string, transaction?: Transaction) {
+        let sqlTransact = transaction && await transaction.sync();
+        return await this.model.sum(field, { transaction: sqlTransact });
     }
     
-    async save(t: T) {
-        let [result, created] = await this.findOrCreate({ id: t.id }, t);
+    async save(t: T, transaction?: Transaction) {
+        let [result, created] = await this.findOrCreate({ id: t.id }, t, transaction);
         return result;
     }
-    async update(query: number | string | T | UpdateQueryT, replace: Object, returning: boolean = false): Promise<[boolean | number, any]> {
+    async update(query: number | string | T | UpdateQueryT, replace: Object, returning: boolean = false, transaction?: Transaction): Promise<[boolean | number, any]> {
+        let sqlTransact = transaction && await transaction.sync();
+        if (transaction && returning) {
+            throw new Error(`Using a transaction to return records when you update them is not yet implemented.`);
+        }
         if (this.isId(query))
             query = { where: { id: query } };
         else if (this.isT(query))
@@ -113,32 +135,48 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             }
         }
         replace = this.transformQueryWhere(replace);
-        let [affected, results]: [number, any[]] = await this.model.update(<any>replace, <UpdateQueryT>query);
+        let [affected, results]: [number, any[]] = await this.model.update(<any>replace, _.merge({ transaction: sqlTransact, returning: returning }, <UpdateQueryT>query));
         
         if (returning)
             results = this.wrapResults(await this.model.findAll(<QueryT>query));
         return [affected, results];
     }
-    async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T): Promise<[T, boolean]> {
-        let [result, created] = await this.findOrCreate(query, defaults);
-        if (!created) {
-            let worked = await this.update({ where: query }, defaults);
-            if (!worked) throw new Error("Failed to update or create a model.");
-            let resultOrNull = await this.findOne(query);
-            if (!resultOrNull) throw new Error("Updated row, but could not find it afterwards.");
-            result = resultOrNull;
+    async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T, transaction?: Transaction): Promise<[T, boolean]> {
+        let t = await this.transaction(transaction);
+        let failed = false;
+        try {
+            let [result, created] = await this.findOrCreate(query, defaults, t);
+            if (!created) {
+                let worked = await this.update({ where: query }, defaults, false, t);
+                if (!worked) throw new Error("Failed to update or create a model.");
+                let resultOrNull = await this.findOne(_.merge({}, query, defaults), t);
+                if (!resultOrNull) throw new Error("Updated row, but could not find it afterwards.");
+                result = resultOrNull;
+            }
+            return [result, created];
         }
-        return [result, created];
+        catch (e) {
+            failed = true;
+            this.logger.error('dbimpl', e);
+            await t.rollback();
+            throw e;
+        }
+        finally {
+            if (!failed) {
+                await t.commit();
+            }
+        }
     }
     
-    async destroy(query: number | string | T | DestroyQueryT): Promise<any> {
+    async destroy(query: number | string | T | DestroyQueryT, transaction?: Transaction): Promise<any> {
+        let sqlTransact = transaction && await transaction.sync();
         if (this.isId(query))
             query = { where: { id: query } };
         else if (this.isT(query))
             query = { where: { id: query.id } };
         else
             query = this.transformQuery(query);
-        return await this.model.destroy(query);
+        return await this.model.destroy(_.merge({ transaction: sqlTransact }, query));
     }
     
     private isId(query: any): query is (number | string) {
@@ -164,16 +202,16 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             allProps.push({columnName: propMeta.columnName || propName, propertyName: propName, transformFn: transformFn});
         }
         
-        // console.log(this.modelFn.name || this.modelFn, 'allProps:', `[\r\n    ${allProps.map(p => p.propertyName + ': ' + p.columnName).join(',\r\n    ')}\r\n]`);
+        // logger.log('dbimpl', this.modelFn.name || this.modelFn, 'allProps:', `[\r\n    ${allProps.map(p => p.propertyName + ': ' + p.columnName).join(',\r\n    ')}\r\n]`);
         
         this.copyVals = function(sql: TInstance, t: any) {
             for (let q = 0; q < allProps.length; q++) {
-                // console.log(allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
+                // logger.log('dbimpl', allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
                 // t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].columnName]);
                 let propName = allProps[q].propertyName;
                 t[propName] = allProps[q].transformFn((<any>sql)[propName]);
             }
-            // console.log(JSON.stringify(sql));
+            // logger.log('dbimpl', JSON.stringify(sql));
         }
         //TODO: deep copy?
     }
