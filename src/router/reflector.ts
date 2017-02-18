@@ -137,20 +137,28 @@ export class RouterReflector {
                 if (res.statusCode !== initialStatusCode || res.headersSent) return;
             }
             
+            let t = await self.server.transaction();
+            let failed = false;
             try {
-                await boundRoute(req, res);
+                await boundRoute(req, res, t);
             }
             catch (e) {
-                self.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error');
+                self.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error and rolling back transaction.');
                 self.logger.error('router', e);
                 res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                 res.send('Internal server error');
-                return;
+                await t.rollback();
+                failed = true;
             }
-            if (res.statusCode === initialStatusCode && !res.headersSent) {
-                self.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
-                res.status(HTTP_STATUS_NOT_FOUND);
-                res.send(`Not found.`);
+            finally {
+                if (!failed && res.statusCode === initialStatusCode && !res.headersSent) {
+                    self.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
+                    res.status(HTTP_STATUS_NOT_FOUND);
+                    res.send(`Not found.`);
+                }
+                if (!failed) {
+                    await t.commit();
+                }
             }
         };
     }

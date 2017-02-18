@@ -1,8 +1,10 @@
 import * as express from 'express';
 import { RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from '../../../metadata';
+import { Transaction } from '../../../orm/transaction';
 import 'reflect-metadata';
 
-export type RouteFunc = (req: express.Request, res: express.Response) => void | Promise<void>;
+export type RouteFunc = ((req: express.Request, res: express.Response) => void | Promise<void>)
+                      | ((req: express.Request, res: express.Response, transaction: Transaction) => void | Promise<void>);
 export type RouteFuncDescriptor = TypedPropertyDescriptor<RouteFunc>;
 export type RouteDecoratorFunc = (target: Object, propertyKey: string, propertyDescriptor: RouteFuncDescriptor) => void;
 
