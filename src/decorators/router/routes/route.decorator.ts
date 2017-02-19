@@ -1,6 +1,6 @@
 import * as express from 'express';
 import { RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from '../../../metadata';
-import { Transaction } from '../../../orm/transaction';
+import { Transaction } from '../../../core/transaction';
 import 'reflect-metadata';
 
 export type RouteFunc = ((req: express.Request, res: express.Response) => void | Promise<void>)

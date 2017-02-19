@@ -1,6 +1,7 @@
 import * as Sql from 'sequelize';
+import { Transaction } from '../../core';
 
-export class Transaction {
+export class TransactionImpl implements Transaction {
     constructor(private sqlTransact: Sql.Transaction) {
         this._complete = false;
         this._transaction = sqlTransact;

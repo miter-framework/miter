@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import _ = require('lodash');
 import * as Sequelize from 'sequelize';
 
-import { Injector, StaticModelT, ModelT, PkType } from '../core';
+import { Injector, StaticModelT, ModelT, PkType, Transaction } from '../core';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym,
          ModelHasManyAssociationsSym, HasManyMetadataSym, HasManyMetadata,
          ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata,
@@ -10,8 +10,8 @@ import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, Prop
          AssociationMetadata } from '../metadata';
 import { Server } from '../server';
 import { OrmTransformService, Logger } from '../services';
-import { DbImpl } from './db-impl';
-import { Transaction } from './transaction';
+import { DbImpl } from './impl/db-impl';
+import { TransactionImpl } from './impl/transaction-impl';
 
 type AssociationTypeDef = {
     sqlName: string,
@@ -79,9 +79,9 @@ export class OrmReflector {
     }
     
     async transaction(transaction?: Transaction): Promise<Transaction> {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = transaction && await (transaction as TransactionImpl).sync();
         sqlTransact = await this.sql.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
-        return new Transaction(sqlTransact!);
+        return new TransactionImpl(sqlTransact!);
     }
     
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {

@@ -1,7 +1,7 @@
 import { Service } from '../decorators';
 import { ModelMetadata } from '../metadata';
 import { OrmTransformService } from './orm-transform.service';
-import { pluralize } from '../util/pluralize';
+import { pluralize } from '../util';
 
 @Service()
 export class SnakeCaseOrmTransformService extends OrmTransformService {

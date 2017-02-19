@@ -3,12 +3,12 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 
-import { Injector } from '../core';
+import { Injector, Transaction } from '../core';
 import { ServerMetadata } from '../metadata';
-import { OrmReflector, Transaction } from '../orm';
+import { OrmReflector } from '../orm';
 import { ServiceReflector, Logger } from '../services';
 import { RouterReflector } from '../router';
-import { wrapPromise } from '../util/wrap-promise';
+import { wrapPromise } from '../util';
 
 import * as http from 'http';
 import debug_module = require('debug');

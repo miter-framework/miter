@@ -1,5 +1,5 @@
 import * as Sql from 'sequelize';
-import { Transaction } from '../orm/transaction';
+import { Transaction } from './transaction';
 
 export type QueryT = Sql.FindOptions;
 export type FindOrCreateQueryT = Sql.FindOrInitializeOptions<any>;

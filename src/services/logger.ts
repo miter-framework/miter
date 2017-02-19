@@ -1,6 +1,5 @@
-import { Server } from '../server/server';
 import { LogLevel } from '../metadata';
-import { clc } from '../util/clc';
+import { clc } from '../util';
 import * as fs from 'fs';
 import * as path from 'path';
 

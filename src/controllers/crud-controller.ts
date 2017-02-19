@@ -1,8 +1,7 @@
 import * as express from 'express';
 import { StaticModelT, ModelT } from '../core';
 import { Controller, Get, Post, Put, Patch, Delete } from '../decorators';
-import { pluralize } from '../util/pluralize';
-import { HTTP_STATUS_OK, HTTP_STATUS_ERROR } from '../util/http-status-type';
+import { pluralize, HTTP_STATUS_OK, HTTP_STATUS_ERROR } from '../util';
 
 export abstract class CrudController<T extends ModelT<any>> {
     constructor(private staticModel: StaticModelT<T>, protected readonly modelName: string, pluralName?: string, singularName?: string) {

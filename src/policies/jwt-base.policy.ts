@@ -3,7 +3,7 @@ import * as expressJwt from 'express-jwt';
 
 import { Policy } from '../decorators';
 import { Server } from '../server';
-import { wrapPromise } from '../util/wrap-promise';
+import { wrapPromise } from '../util';
 
 type AbstractCtorT<T> = { (...args: any[]): T };
 

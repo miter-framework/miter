@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 import * as express from 'express';
 
-import './extend-request';
-
 import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
 import { Server } from '../server';
 import { Logger } from '../services/logger';
 import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../util';
+
+import './extend-request';
 
 export class RouterReflector {
     constructor(private server: Server, private router: express.Router) {
