@@ -111,53 +111,68 @@ export class RouterReflector {
         return !!(<PolicyT<any>>desc).handle;
     }
     
+    unfinishedRoutes = 0;
+    requestIndex = 0;
     private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], boundRoute: any) {
         const self = this;
         return async function(req: express.Request, res: express.Response) {
+            let requestIndex = ++self.requestIndex;
+            self.logger.verbose('router', `{${requestIndex}} beginning request: ${req.url}`);
+            self.logger.verbose('router', `{${requestIndex}} unfinishedRoutes: ${++self.unfinishedRoutes}`);
             let allResults: any[] = [];
             req.policyResults = self.createPolicyResultsFn(policies, allResults);
             let initialStatusCode = res.statusCode;
             for (let q = 0; q < policies.length; q++) {
                 let policy = policies[q];
                 let result: any;
+                let policyCtor = policy[0];
+                let policyName = (policyCtor && (policyCtor.name || policyCtor)) || '(undefined)';
                 try {
+                    self.logger.verbose('router', `{${requestIndex}} awaiting policy ${q+1}/${policies.length} (${policyName})`);
                     result = await policy[1](req, res);
-                    let policyCtor = policy[0];
-                    let policyName = (policyCtor && (policyCtor.name || policyCtor)) || '(undefined)';
-                    self.logger.verbose('router', `Policy ${policyName} returned with result ${JSON.stringify(result)}`);
+                    self.logger.verbose('router', `{${requestIndex}} policy ${policyName} returned with result ${JSON.stringify(result)}`);
                 }
                 catch (e) {
-                    self.logger.error('router', 'A policy threw an exception. Serving 500 - Internal server error');
+                    self.logger.error('router', `{${requestIndex}} policy (${policyName}) threw an exception. Serving 500 - Internal server error`);
                     self.logger.error('router', e);
                     res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                     res.send('Internal server error');
+                    self.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                     return;
                 }
                 allResults.push(result);
                 if (res.statusCode !== initialStatusCode || res.headersSent) return;
             }
             
+            self.logger.verbose('router', `{${requestIndex}} policies complete, creating transaction`);
             let t = await self.server.transaction();
             let failed = false;
             try {
+                self.logger.verbose('router', `{${requestIndex}} calling route`);
                 await boundRoute(req, res, t);
+                self.logger.verbose('router', `{${requestIndex}} route complete`);
             }
             catch (e) {
-                self.logger.error('router', 'A route threw an exception. Serving 500 - Internal server error and rolling back transaction.');
+                self.logger.error('router', `{${requestIndex}} route threw an exception. Serving 500 - Internal server error and rolling back transaction.`);
                 self.logger.error('router', e);
                 res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                 res.send('Internal server error');
-                await t.rollback();
+                self.logger.verbose('router', `{${requestIndex}} rolling back transaction.`);
+                if (t) await t.rollback();
+                self.logger.verbose('router', `{${requestIndex}} transaction rolled back. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                 failed = true;
             }
             finally {
                 if (!failed && res.statusCode === initialStatusCode && !res.headersSent) {
-                    self.logger.error('router', `A route failed to send a response. Serving 404 - Not Found`);
+                    self.logger.error('router', `{${requestIndex}} route failed to send a response. Serving 404 - Not Found`);
                     res.status(HTTP_STATUS_NOT_FOUND);
                     res.send(`Not found.`);
+                    self.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                 }
                 if (!failed) {
-                    await t.commit();
+                    self.logger.verbose('router', `{${requestIndex}} committing transaction`);
+                    if (t) await t.commit();
+                    self.logger.verbose('router', `{${requestIndex}} transaction committed. ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                 }
             }
         };
