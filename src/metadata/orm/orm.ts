@@ -5,7 +5,12 @@ export type DatabaseMetadata = {
     user: string,
     password: string,
     host: string | { domain: string, port: number },
-    dialect?: string
+    dialect?: string,
+    pool?: {
+        max?: number,
+        min?: number,
+        idle?: number
+    }
 }
 
 export type OrmMetadata = {

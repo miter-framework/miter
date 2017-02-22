@@ -54,6 +54,7 @@ export class OrmReflector {
             dialectOptions: {
                 charset: 'utf8'
             },
+            pool: db.pool,
             define: {
                 charset: 'utf8',
                 collate: 'utf8_general_ci'
