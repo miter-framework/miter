@@ -1,6 +1,6 @@
 {
   "name": "miter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
   "scripts": {
     "test": "tsc ; node ./dist/test/index.js",
