@@ -19,5 +19,6 @@ export type ServerMetadata = {
     policies?: PolicyDescriptor[],
     middleware?: express.Handler[],
     allowCrossOrigin?: boolean,
-    logLevel?: LogLevel | { [name: string]: LogLevel }
+    logLevel?: LogLevel | { [name: string]: LogLevel },
+    debugBreakpoint?: () => void; 
 }

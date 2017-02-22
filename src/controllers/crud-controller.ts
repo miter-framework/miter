@@ -49,16 +49,47 @@ export abstract class CrudController<T extends ModelT<any>> {
     async transformResult(req: express.Request, res: express.Response, result: T | null) {
         return result;
     }
+    async transformCreateQuery(req: express.Request, res: express.Response, query: Object) {
+        return query;
+    }
+    async transformCreateResult(req: express.Request, res: express.Response, result: T) {
+        return result;
+    }
     
     @Post(`/%%PLURAL_NAME%%/create`)
     async create(req: express.Request, res: express.Response) {
-        let data = req.body;
+        let initialStatusCode = res.statusCode;
+        let data = await this.transformCreateQuery(req, res, req.body);
+        if (res.statusCode !== initialStatusCode || res.headersSent) {
+            return;
+        }
+        
         if (!data) {
             res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to create the ${this.modelName} with!`);
             return;
         }
-        let result = await this.staticModel.db.create(data);
+        if (data.constructor == Array) {
+            throw new Error("createMany not supported");
+        }
+        
+        let result: T = await this.staticModel.db.create(data);
+
+        initialStatusCode = res.statusCode;
+        result = await this.transformCreateResult(req, res, result);
+        if (res.statusCode !== initialStatusCode || res.headersSent) {
+            return;
+        }
+        
+        initialStatusCode = res.statusCode;
+        this.afterCreate(req, res, result);
+        if (res.statusCode !== initialStatusCode || res.headersSent) {
+            return;
+        }
+        
         res.status(HTTP_STATUS_OK).json(result);
+    }
+    
+    protected async afterCreate(req: express.Request, res: express.Response, result: T) {
     }
     
     @Get(`/%%PLURAL_NAME%%/find`)
