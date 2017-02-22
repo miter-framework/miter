@@ -80,7 +80,7 @@ export class RouterReflector {
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
-        (<any>this.router)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute));
+        (<any>this.router)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, routeMeta));
     }
     private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][] {
         return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }] => {
@@ -113,7 +113,7 @@ export class RouterReflector {
     
     unfinishedRoutes = 0;
     requestIndex = 0;
-    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], boundRoute: any) {
+    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], boundRoute: any, meta: RouteMetadata) {
         const self = this;
         return async function(req: express.Request, res: express.Response) {
             let requestIndex = ++self.requestIndex;
@@ -145,7 +145,7 @@ export class RouterReflector {
             }
             
             self.logger.verbose('router', `{${requestIndex}} policies complete, creating transaction`);
-            let t = await self.server.transaction();
+            let t = meta.transaction && await self.server.transaction();
             let failed = false;
             try {
                 self.logger.verbose('router', `{${requestIndex}} calling route`);
