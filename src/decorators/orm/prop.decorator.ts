@@ -17,8 +17,8 @@ export function Prop(columnName?: PropMetadata | string) {
             let sequelizeType: any = null;
             if (reflectType === String) sequelizeType = sequelize.STRING;
             else if (reflectType === Number) {
-            if (meta.primaryKey || meta.autoIncrement) sequelizeType = sequelize.INTEGER;
-            else sequelizeType = sequelize.FLOAT;
+                if (meta.primaryKey || meta.autoIncrement) sequelizeType = sequelize.INTEGER;
+                else sequelizeType = sequelize.FLOAT;
             }
             else if (reflectType === Date) sequelizeType = sequelize.DATE;
             else if (reflectType === Boolean) sequelizeType = sequelize.BOOLEAN;
