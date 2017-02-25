@@ -5,7 +5,7 @@ export class Miter {
     public static async launch(meta: ServerMetadata): Promise<Server> {
         if (!meta.debugBreakpoint)
             meta.debugBreakpoint = () => {};
-        global['debugBreakpoint'] = meta.debugBreakpoint;
+        (<any>global)['debugBreakpoint'] = meta.debugBreakpoint;
         
         let serverInst = new Server(meta);
         let initPromise = serverInst.init();
