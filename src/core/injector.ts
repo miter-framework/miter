@@ -37,7 +37,8 @@ export class Injector {
     }
     private construct<T>(ctorFn: CtorT<T>): T {
         let types: any[] = Reflect.getOwnMetadata('design:paramtypes', ctorFn);
-        if (!types) throw new Error(`Could not dependency inject ${ctorFn.name || ctorFn}. No design-time metadata could be reflected.`);
+        if (!types) types = [];
+        if (types.find(type => type == Object)) throw new Error(`Could not dependency inject ${ctorFn.name || ctorFn}. Failed to resolve constructor types. Reflected: [${types.map(type => type.name || type).join(', ')}]`);
         let values = types.map(type => this.resolveInjectable(type));
         return new ctorFn(...values);
     }
