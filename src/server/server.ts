@@ -18,6 +18,7 @@ import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
 
 import * as http from 'http';
+import * as https from 'https';
 import debug_module = require('debug');
 let debug = debug_module('express:server');
 
@@ -141,18 +142,24 @@ export class Server {
         this.logger.info('router', `Finished loading routes.`);
     }
     
-    private httpServer: http.Server | undefined;
+    private webServer: http.Server | https.Server| undefined;
     private listen() {
         this.logger.info('miter', `Serving`);
         
-        this.httpServer = this.app.listen(this.meta.port, () => this.onListening());
-        this.httpServer.on("error", (err) => this.onError(err));
+        if (this._meta.sslEnabled) {
+            this.webServer = https.createServer({key: this._meta.sslPrivateKey, cert: this._meta.sslCertificate}, this.app);
+        }
+        else {
+            this.webServer = http.createServer(this.app);
+        }
+        this.webServer.listen(this.meta.port, () => this.onListening());
+        this.webServer.on("error", (err: any) => this.onError(err));
     }
     private async stopListening() {
         this.logger.verbose('miter', `Closing HTTP server...`);
         await wrapPromise((cb: Function) => {
-            if (!this.httpServer) return cb();
-            this.httpServer.close(cb);
+            if (!this.webServer) return cb();
+            (<any>this.webServer).close(cb);
         });
         this.logger.info('miter', `Finished closing HTTP server.`);
     }
@@ -168,13 +175,13 @@ export class Server {
         case "EACCES":
             this.logger.error('miter', `${bind} requires elevated privileges`);
             this.errorCode = 1;
-            this.httpServer = undefined;
+            this.webServer = undefined;
             this.shutdown();
             break;
         case "EADDRINUSE":
             this.logger.error('miter', `${bind} is already in use`);
             this.errorCode = 1;
-            this.httpServer = undefined;
+            this.webServer = undefined;
             this.shutdown();
             break;
         default:
@@ -182,8 +189,8 @@ export class Server {
         }
     }
     private onListening() {
-        if (!this.httpServer) throw new Error(`onListening called, but there is no httpServer!`);
-        let addr = this.httpServer.address();
+        if (!this.webServer) throw new Error(`onListening called, but there is no httpServer!`);
+        let addr = this.webServer.address();
         let bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
         this.logger.info('miter', `Listening on ${bind}`);
     }
