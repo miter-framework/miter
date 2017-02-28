@@ -1,8 +1,14 @@
 import * as express from 'express';
-import { CtorT, ControllerT, StaticModelT, ModelT, PkType, ServiceT, PolicyDescriptor } from '../../core';
+
+import { CtorT } from '../../core/ctor';
+import { ControllerT } from '../../core/controller';
+import { StaticModelT, ModelT, PkType } from '../../core/model';
+import { ServiceT } from '../../core/service';
+import { PolicyDescriptor } from '../../core/policy';
+
 import { ProvideMetadata } from './provide';
-import { OrmMetadata } from '../orm';
-import { JwtMetadata } from '../policies';
+import { OrmMetadata } from '../orm/orm';
+import { JwtMetadata } from '../policies/jwt';
 
 export type LogLevel = 'verbose' | 'warn' | 'info' | 'error';
 

@@ -1,5 +1,7 @@
-import { Service } from '../decorators';
-import { ModelMetadata, PropMetadata, AssociationMetadata } from '../metadata';
+import { Service } from '../decorators/services/service.decorator';
+import { ModelMetadata } from '../metadata/orm/model';
+import { PropMetadata } from '../metadata/orm/prop';
+import { AssociationMetadata } from '../metadata/orm/associations/association';
 
 @Service()
 export class OrmTransformService {

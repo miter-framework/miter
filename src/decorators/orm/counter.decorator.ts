@@ -1,4 +1,4 @@
-import { PropMetadata } from '../../metadata';
+import { PropMetadata } from '../../metadata/orm/prop';
 import { Prop } from './prop.decorator';
 import * as Types from './types';
 import * as _ from 'lodash';

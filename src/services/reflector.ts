@@ -1,8 +1,9 @@
 import * as _ from 'lodash';
 
-import { CtorT, ServiceT } from '../core';
-import { Server } from '../server';
-import { Logger } from '../services';
+import { CtorT } from '../core/ctor';
+import { ServiceT } from '../core/service';
+import { Server } from '../server/server';
+import { Logger } from '../services/logger';
 
 export class ServiceReflector {
     constructor(private server: Server) {

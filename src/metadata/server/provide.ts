@@ -1,4 +1,4 @@
-import { CtorT } from '../../core';
+import { CtorT } from '../../core/ctor';
 
 export type ProvideMetadataCallbackSource<T> = { provide: CtorT<T>, useCallback: { (): T } };
 export type ProvideMetadataValueSource<T> = { provide: CtorT<T>, useValue: T };

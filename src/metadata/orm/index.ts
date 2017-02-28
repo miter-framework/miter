@@ -1,6 +1,6 @@
 
 
 export * from './associations';
-export * from './orm';
 export * from './model';
+export * from './orm';
 export * from './prop';

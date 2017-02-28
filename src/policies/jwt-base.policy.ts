@@ -1,9 +1,9 @@
 import * as express from 'express';
 import * as expressJwt from 'express-jwt';
 
-import { Policy } from '../decorators';
-import { Server } from '../server';
-import { wrapPromise } from '../util';
+import { Policy } from '../decorators/policies/policy.decorator';
+import { Server } from '../server/server';
+import { wrapPromise } from '../util/wrap-promise';
 
 type AbstractCtorT<T> = { (...args: any[]): T };
 

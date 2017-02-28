@@ -1,4 +1,5 @@
-import { CtorT, PolicyT } from '../core';
+import { CtorT } from '../core/ctor';
+import { PolicyT } from '../core/policy';
 
 declare module 'express' {
     interface Request {

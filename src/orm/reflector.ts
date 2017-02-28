@@ -2,14 +2,22 @@ import 'reflect-metadata';
 import _ = require('lodash');
 import * as Sequelize from 'sequelize';
 
-import { Injector, StaticModelT, ModelT, PkType, Transaction } from '../core';
-import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym, PropMetadata, PropMetadataSym,
-         ModelHasManyAssociationsSym, HasManyMetadataSym, HasManyMetadata,
-         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata,
-         ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata,
-         AssociationMetadata } from '../metadata';
-import { Server } from '../server';
-import { OrmTransformService, Logger } from '../services';
+import { Injector } from '../core/injector';
+import { StaticModelT, ModelT, PkType } from '../core/model';
+import { Transaction } from '../core/transaction';
+
+import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../metadata/orm/model';
+import { PropMetadata, PropMetadataSym } from '../metadata/orm/prop';
+import { AssociationMetadata } from '../metadata/orm/associations/association';
+import { ModelHasManyAssociationsSym, HasManyMetadataSym, HasManyMetadata } from '../metadata/orm/associations/has-many';
+import { ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata } from '../metadata/orm/associations/belongs-to';
+import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '../metadata/orm/associations/has-one';
+
+import { Server } from '../server/server';
+
+import { Logger } from '../services/logger';
+import { OrmTransformService } from '../services/orm-transform.service';
+
 import { DbImpl } from './impl/db-impl';
 import { TransactionImpl } from './impl/transaction-impl';
 

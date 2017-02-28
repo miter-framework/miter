@@ -1,4 +1,5 @@
-import { CtorT, ControllerT } from '../../core';
+import { CtorT } from '../../core/ctor';
+import { ControllerT } from '../../core/controller';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../../metadata';
 
 export function Controller(meta?: ControllerMetadata) {

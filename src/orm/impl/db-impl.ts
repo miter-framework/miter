@@ -1,14 +1,19 @@
 import * as Sql from 'sequelize';
 import * as _ from 'lodash';
-import { StaticModelT, ModelT, PkType, Db,
-         QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT,
-         CountAllResults, CtorT, Transaction } from '../../core';
-import { ModelPropertiesSym, PropMetadata, PropMetadataSym,
-         ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata,
-         ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata,
-         ForeignModelSource } from '../../metadata';
-import { Types } from '../../decorators';
-import { Logger } from '../../services';
+
+import { StaticModelT, ModelT, PkType, Db } from '../../core/model';
+import { QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT, CountAllResults } from '../../core/db';
+import { CtorT } from '../../core/ctor';
+import { Transaction } from '../../core/transaction';
+
+import { PropMetadata, PropMetadataSym } from '../../metadata/orm/prop';
+import { ModelPropertiesSym } from '../../metadata/orm/model';
+import { ForeignModelSource } from '../../metadata/orm/associations/association';
+import { ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata } from '../../metadata/orm/associations/belongs-to';
+import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '../../metadata/orm/associations/has-one';
+
+import { Types } from '../../decorators/orm';
+import { Logger } from '../../services/logger';
 
 import { TransactionImpl } from './transaction-impl';
 

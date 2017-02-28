@@ -1,4 +1,4 @@
-import { PolicyDescriptor } from '../../core';
+import { PolicyDescriptor } from '../../core/policy';
 
 export type RouteMethod = 'get' | 'post' | 'put' | 'head' | 'delete' | 'options' | 'trace' | 'copy' | 'lock' | 'mkcol' |
                           'move' | 'purge' | 'propfind' | 'proppatch' | 'unlock' | 'report' | 'mkactivity' | 'checkout' |

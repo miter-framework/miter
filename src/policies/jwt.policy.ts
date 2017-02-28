@@ -1,5 +1,5 @@
-import { Policy } from '../decorators';
-import { Server } from '../server';
+import { Policy } from '../decorators/policies/policy.decorator';
+import { Server } from '../server/server';
 import { JwtBasePolicy } from './jwt-base.policy';
 
 @Policy()

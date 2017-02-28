@@ -1,4 +1,4 @@
-import { StaticModelT, ModelT } from '../../../core';
+import { StaticModelT, ModelT } from '../../../core/model';
 
 export type ForeignModelSource = StaticModelT<ModelT<any>>
                                | { (): StaticModelT<ModelT<any>> }

@@ -1,5 +1,6 @@
 import * as express from 'express';
-import { RouteMetadata, RouteMethod, ControllerRoutesSym, RouteMetadataSym } from '../../../metadata';
+import { ControllerRoutesSym } from '../../../metadata/router/controller';
+import { RouteMetadata, RouteMethod, RouteMetadataSym } from '../../../metadata/router/route';
 import { Transaction } from '../../../core/transaction';
 import 'reflect-metadata';
 import * as _ from 'lodash';

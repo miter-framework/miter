@@ -1,4 +1,4 @@
-import { ServerMetadata } from '../metadata';
+import { ServerMetadata } from '../metadata/server/server';
 import { Server } from './server';
 
 export class Miter {

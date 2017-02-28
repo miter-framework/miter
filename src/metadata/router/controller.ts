@@ -1,4 +1,4 @@
-import { PolicyDescriptor } from '../../core';
+import { PolicyDescriptor } from '../../core/policy';
 
 export type ControllerMetadata = {
     path?: string,

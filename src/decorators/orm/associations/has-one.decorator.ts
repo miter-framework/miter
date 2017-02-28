@@ -1,5 +1,6 @@
-import { StaticModelT, ModelT } from '../../../core';
-import { ModelHasOneAssociationsSym, HasOneMetadata, HasOneMetadataSym, ForeignModelSource } from '../../../metadata';
+import { StaticModelT, ModelT } from '../../../core/model';
+import { ForeignModelSource } from '../../../metadata/orm/associations/association';
+import { ModelHasOneAssociationsSym, HasOneMetadata, HasOneMetadataSym } from '../../../metadata/orm/associations/has-one';
 
 function isStaticModelT(test: any): test is StaticModelT<ModelT<any>> {
     return test && !!(<any>test).db;

@@ -3,12 +3,19 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 
-import { Injector, Transaction } from '../core';
-import { ServerMetadata } from '../metadata';
-import { OrmReflector } from '../orm';
-import { ServiceReflector, Logger } from '../services';
-import { RouterReflector } from '../router';
-import { wrapPromise } from '../util';
+import { Injector } from '../core/injector';
+import { Transaction } from '../core/transaction';
+
+import { ServerMetadata } from '../metadata/server/server';
+
+import { OrmReflector } from '../orm/reflector';
+
+import { ServiceReflector } from '../services/reflector';
+import { Logger } from '../services/logger';
+
+import { RouterReflector } from '../router/reflector';
+
+import { wrapPromise } from '../util/wrap-promise';
 
 import * as http from 'http';
 import debug_module = require('debug');

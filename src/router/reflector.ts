@@ -1,11 +1,23 @@
 import 'reflect-metadata';
 import * as express from 'express';
 
-import { Injector, PolicyDescriptor, CtorT, PolicyT } from '../core';
-import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym, RouteMetadata, RouteMetadataSym } from '../metadata';
-import { Server } from '../server';
+import { Injector } from '../core/injector';
+import { PolicyDescriptor } from '../core/policy';
+import { CtorT } from '../core/ctor';
+import { PolicyT } from '../core/policy';
+
+import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../metadata/router/controller';
+import { RouteMetadata, RouteMetadataSym } from '../metadata/router/route';
+
+import { Server } from '../server/server';
+
 import { Logger } from '../services/logger';
-import { inhertitanceHierarchy, hasNoUndefined, joinRoutePaths, wrapPromise, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../util';
+
+import { inhertitanceHierarchy } from '../util/inheritance-hierarchy';
+import { hasNoUndefined } from '../util/has-no-undefined';
+import { joinRoutePaths } from '../util/join-route-paths';
+import { wrapPromise } from '../util/wrap-promise';
+import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../util/http-status-type';
 
 import './extend-request';
 

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { CtorT } from './ctor';
-import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata';
+import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata/server/provide';
 import { Logger } from '../services/logger';
 import { Server } from '../server/server';
 import { clc } from '../util/clc';
