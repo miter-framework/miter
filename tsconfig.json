@@ -12,6 +12,7 @@
         "noImplicitThis": true,
         "moduleResolution": "node",
         "strictNullChecks": true,
+        "skipLibCheck": true,
         "alwaysStrict": true,
         "noImplicitAny": true,
         "pretty": true,

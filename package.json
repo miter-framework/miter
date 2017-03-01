@@ -15,9 +15,6 @@
   ],
   "main": "./dist/index.js",
   "typings": "./dist/index",
-  "devDependencies": {
-    "tslint": "^4.4.2"
-  },
   "dependencies": {
     "@types/body-parser": "^0.0.33",
     "@types/cli-color": "^0.3.29",
