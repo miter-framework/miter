@@ -56,16 +56,19 @@ export class OrmReflector {
             host = host.domain;
         }
         
+        let charset = orm.db.charset || 'utf8mb4';
+        let charsetCollate = `${charset}_general_ci`;
+        
         this.sql = new Sequelize(db.name, db.user, db.password, {
             host: host,
             dialect: db.dialect || 'mysql',
             dialectOptions: {
-                charset: 'utf8'
+                charset: charset
             },
             pool: db.pool,
             define: {
-                charset: 'utf8',
-                collate: 'utf8_general_ci'
+                charset: charset,
+                collate: charsetCollate
             },
             logging: (msg: string, ...extras: any[]) => this.logger.info('sql', msg, ...extras),
             port: port
