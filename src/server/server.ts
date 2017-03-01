@@ -54,10 +54,10 @@ export class Server {
     async init() {
         try {
             this.logger.info('miter', `Initializing miter server...`);
-            await this.createExpressApp();
+            if (typeof this.meta.port !== 'undefined') await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();
-            this.reflectRoutes();
+            if (typeof this.meta.port !== 'undefined') this.reflectRoutes();
         }
         catch (e) {
             this.logger.error('miter', `FATAL ERROR: Failed to launch server.`);
@@ -65,14 +65,14 @@ export class Server {
             return;
         }
         
-        this.listen();
+        if (typeof this.meta.port !== 'undefined') this.listen();
     }
     errorCode: number = 0;
     async shutdown() {
         try {
             try {
                 this.logger.info('miter', `Shutting down miter server...`);
-                await this.stopListening();
+                if (typeof this.meta.port !== 'undefined') await this.stopListening();
                 await this.stopServices();
             }
             finally {
