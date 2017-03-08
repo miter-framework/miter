@@ -1,8 +1,14 @@
 #!/bin/bash
 
-set -e
+git stash -k -u -q
 
-#yarn test-once
-yarn lint
+(
+    set -e
+    
+    #yarn test-once
+    yarn lint
+)
 
-exit 0
+__RET=$?
+git stash pop -q
+exit $__RET
