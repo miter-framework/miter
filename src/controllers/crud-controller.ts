@@ -60,6 +60,12 @@ export abstract class CrudController<T extends ModelT<any>> {
     async transformCreateResult(req: express.Request, res: express.Response, result: T) {
         return result;
     }
+    async transformUpdateQuery(req: express.Request, res: express.Response, query: Object) {
+        return query;
+    }
+    async transformUpdateResult(req: express.Request, res: express.Response, result: T) {
+        return result;
+    }
     
     @Post(`/%%PLURAL_NAME%%/create`)
     async create(req: express.Request, res: express.Response) {
@@ -197,7 +203,12 @@ export abstract class CrudController<T extends ModelT<any>> {
             res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
             return;
         }
-        let data = req.body;
+        let initialStatusCode = res.statusCode;
+        let data = await this.transformUpdateQuery(req, res, req.body);
+        if (res.statusCode !== initialStatusCode || res.headersSent) {
+            return;
+        }
+
         if (!data) {
             res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to update the ${this.modelName} with!`);
             return;
@@ -216,6 +227,13 @@ export abstract class CrudController<T extends ModelT<any>> {
         }
         
         let [updated, results] = await this.staticModel.db.update(id, data, returning);
+        
+        initialStatusCode = res.statusCode;
+        results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
+        if (res.statusCode !== initialStatusCode || res.headersSent) {
+            return;
+        }
+        
         if (!updated) {
             res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
             return;
