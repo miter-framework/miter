@@ -295,9 +295,16 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     
     private createTransformQueryWhere(transforms: TransformValMeta[]) {
-        this.transformQueryWhere = function<T>(query: T): T {
+        this.transformQueryWhere = function<U>(this: DbImpl<T, TInstance, TAttributes>, query: U): U {
             if (!query) return query;
             query = _.clone(query);
+            (<any>query)['$and'] = this.transformQueryWhere((<any>query)['$and']);
+            let orVal = (<any>query)['$or'];
+            if (orVal && orVal.length) {
+                for (let q = 0; q < orVal.length; q++) {
+                    orVal[q] = this.transformQueryWhere(orVal[q]);
+                }
+            }
             for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
                 let fieldVal: any;
