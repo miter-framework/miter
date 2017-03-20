@@ -1,12 +1,21 @@
 import * as express from 'express';
 
 import { StaticModelT, ModelT } from '../core/model';
+import { CountAllResults } from '../core/db';
 
 import { Controller } from '../decorators/router/controller.decorator';
 import { Get, Post, Put, Patch, Delete } from '../decorators/router/routes';
 
 import { pluralize } from '../util/pluralize';
 import { HTTP_STATUS_OK, HTTP_STATUS_ERROR } from '../util/http-status-type';
+
+export type PerformQueryT = {
+    where: Object,
+    include: string[],
+    order: [string, string][],
+    offset: number,
+    limit: number
+};
 
 export abstract class CrudController<T extends ModelT<any>> {
     constructor(private staticModel: StaticModelT<T>, protected readonly modelName: string, pluralName?: string, singularName?: string) {
@@ -48,22 +57,41 @@ export abstract class CrudController<T extends ModelT<any>> {
         return part.replace(/%%PLURAL_NAME%%/, this.pluralName).replace(/%%SINGULAR_NAME%%/, this.singularName);
     }
     
-    async transformQuery(req: express.Request, res: express.Response, query: Object) {
+    protected async transformQuery(req: express.Request, res: express.Response, query: Object) {
         return query;
     }
-    async transformResult(req: express.Request, res: express.Response, result: T | null) {
+    protected async performQuery(req: express.Request, res: express.Response, query: PerformQueryT) {
+        return await this.staticModel.db.findAndCountAll(<any>query);
+    }
+    protected async transformQueryResults(req: express.Request, res:express.Response, results: CountAllResults<T>) {
+        let initialStatusCode = res.statusCode;
+        let oldResults = results.results;
+        let newResults: T[] = [];
+        
+        for (let q = 0; q < oldResults.length; q++) {
+            let transformed = await this.transformResult(req, res, oldResults[q]);
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            if (transformed) newResults.push(transformed);
+        }
+        return {
+            results: newResults,
+            count: results.count
+        };
+    }
+    
+    protected async transformResult(req: express.Request, res: express.Response, result: T | null) {
         return result;
     }
-    async transformCreateQuery(req: express.Request, res: express.Response, query: Object) {
+    protected async transformCreateQuery(req: express.Request, res: express.Response, query: Object) {
         return query;
     }
-    async transformCreateResult(req: express.Request, res: express.Response, result: T) {
+    protected async transformCreateResult(req: express.Request, res: express.Response, result: T) {
         return result;
     }
-    async transformUpdateQuery(req: express.Request, res: express.Response, query: Object) {
+    protected async transformUpdateQuery(req: express.Request, res: express.Response, query: Object) {
         return query;
     }
-    async transformUpdateResult(req: express.Request, res: express.Response, result: T) {
+    protected async transformUpdateResult(req: express.Request, res: express.Response, result: T) {
         return result;
     }
     
@@ -71,9 +99,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     async create(req: express.Request, res: express.Response) {
         let initialStatusCode = res.statusCode;
         let data = await this.transformCreateQuery(req, res, req.body);
-        if (res.statusCode !== initialStatusCode || res.headersSent) {
-            return;
-        }
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         if (!data) {
             res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to create the ${this.modelName} with!`);
@@ -84,18 +110,12 @@ export abstract class CrudController<T extends ModelT<any>> {
         }
         
         let result: T = await this.staticModel.db.create(data);
-
-        initialStatusCode = res.statusCode;
-        result = await this.transformCreateResult(req, res, result);
-        if (res.statusCode !== initialStatusCode || res.headersSent) {
-            return;
-        }
         
-        initialStatusCode = res.statusCode;
+        result = await this.transformCreateResult(req, res, result);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
         this.afterCreate(req, res, result);
-        if (res.statusCode !== initialStatusCode || res.headersSent) {
-            return;
-        }
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         res.status(HTTP_STATUS_OK).json(result);
     }
@@ -136,13 +156,18 @@ export abstract class CrudController<T extends ModelT<any>> {
         let page = req.query['page'];
         if (!page || !(page = parseInt('' + page, 10)) || isNaN(page) || page < 0) page = 0;
         
-        let results = await this.staticModel.db.findAndCountAll({
+        let results = await this.performQuery(req, res, {
             where: query,
             include: include,
             order: order,
-            offset: perPage * page,
+            offset: page * perPage,
             limit: perPage
         });
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
+        results = (await this.transformQueryResults(req, res, results))!;
+        if (res.statusCode !== initialStatusCode || res.headersSent || !results) return;
+        
         res.status(HTTP_STATUS_OK).json({
             results: results.results,
             page: page,
