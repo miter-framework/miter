@@ -170,7 +170,10 @@ export class RouterReflector {
                 res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                 res.send('Internal server error');
                 self.logger.verbose('router', `{${requestIndex}} rolling back transaction.`);
-                if (t) await t.rollback();
+                if (t) {
+                    if (t.isComplete) self.logger.warn('router', `{${requestIndex}} request transaction committed or rolled back inside route. Cannot roll back.`);
+                    else await t.rollback();
+                }
                 self.logger.verbose('router', `{${requestIndex}} transaction rolled back. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                 failed = true;
             }
@@ -183,7 +186,10 @@ export class RouterReflector {
                 }
                 if (!failed) {
                     self.logger.verbose('router', `{${requestIndex}} committing transaction`);
-                    if (t) await t.commit();
+                    if (t) {
+                        if (t.isComplete) self.logger.warn('router', `{${requestIndex}} request transaction committed or rolled back inside route. Cannot commit.`);
+                        else await t.commit();
+                    }
                     self.logger.verbose('router', `{${requestIndex}} transaction committed. ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                 }
             }
