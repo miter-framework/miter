@@ -1,6 +1,7 @@
 "use strict";
 
-import * as express from 'express';
+import * as createExpressApp from 'express';
+import { Request, Response, Application as ExpressApp, Router as ExpressRouter } from 'express';
 import * as bodyParser from 'body-parser';
 
 import { Injector } from '../core/injector';
@@ -38,8 +39,8 @@ export class Server {
         return this._logger;
     }
     
-    private _app: express.Application;
-    get app(): express.Application {
+    private _app: ExpressApp;
+    get app(): ExpressApp {
         return this._app;
     }
     
@@ -87,11 +88,11 @@ export class Server {
     }
     
     createExpressApp() {
-        this._app = express();
+        this._app = createExpressApp();
         this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
         if (this.meta.allowCrossOrigin) {
             this.logger.warn('miter', `Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`);
-            this._app.use(function(req: express.Request, res: express.Response, next) {
+            this._app.use(function(req: Request, res: Response, next) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", req.header("Access-Control-Request-Headers"));
                 next();
@@ -135,7 +136,7 @@ export class Server {
     private routerReflector: RouterReflector;
     private reflectRoutes() {
         this.logger.verbose('router', `Loading routes...`);
-        let router = express.Router();
+        let router = ExpressRouter();
         this.routerReflector = new RouterReflector(this, router);
         this.routerReflector.reflectRoutes(this.meta.controllers || []);
         this.app.use(router);

@@ -1,4 +1,4 @@
-import * as express from 'express';
+import { Request, Response, RequestHandler } from 'express';
 import * as expressJwt from 'express-jwt';
 
 import { Policy } from '../decorators/policies/policy.decorator';
@@ -22,13 +22,13 @@ export class JwtBasePolicy {
     }
     
     private property: string;
-    private jwtHandler: express.RequestHandler;
+    private jwtHandler: RequestHandler;
     
     private get logger() {
         return this.server.logger;
     }
     
-    async handle(req: express.Request, res: express.Response) {
+    async handle(req: Request, res: Response) {
         if (this.jwtHandler) {
             try {
                 await wrapPromise<void>(this.jwtHandler, req, res);

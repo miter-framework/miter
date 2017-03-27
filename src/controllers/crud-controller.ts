@@ -1,4 +1,4 @@
-import * as express from 'express';
+import { Request, Response } from 'express';
 
 import { StaticModelT, ModelT } from '../core/model';
 import { CountAllResults } from '../core/db';
@@ -57,13 +57,13 @@ export abstract class CrudController<T extends ModelT<any>> {
         return part.replace(/%%PLURAL_NAME%%/, this.pluralName).replace(/%%SINGULAR_NAME%%/, this.singularName);
     }
     
-    protected async transformQuery(req: express.Request, res: express.Response, query: Object) {
+    protected async transformQuery(req: Request, res: Response, query: Object) {
         return query;
     }
-    protected async performQuery(req: express.Request, res: express.Response, query: PerformQueryT) {
+    protected async performQuery(req: Request, res: Response, query: PerformQueryT) {
         return await this.staticModel.db.findAndCountAll(<any>query);
     }
-    protected async transformQueryResults(req: express.Request, res:express.Response, results: CountAllResults<T>) {
+    protected async transformQueryResults(req: Request, res:Response, results: CountAllResults<T>) {
         let initialStatusCode = res.statusCode;
         let oldResults = results.results;
         let newResults: T[] = [];
@@ -79,24 +79,24 @@ export abstract class CrudController<T extends ModelT<any>> {
         };
     }
     
-    protected async transformResult(req: express.Request, res: express.Response, result: T | null) {
+    protected async transformResult(req: Request, res: Response, result: T | null) {
         return result;
     }
-    protected async transformCreateQuery(req: express.Request, res: express.Response, query: Object) {
+    protected async transformCreateQuery(req: Request, res: Response, query: Object) {
         return query;
     }
-    protected async transformCreateResult(req: express.Request, res: express.Response, result: T) {
+    protected async transformCreateResult(req: Request, res: Response, result: T) {
         return result;
     }
-    protected async transformUpdateQuery(req: express.Request, res: express.Response, query: Object) {
+    protected async transformUpdateQuery(req: Request, res: Response, query: Object) {
         return query;
     }
-    protected async transformUpdateResult(req: express.Request, res: express.Response, result: T) {
+    protected async transformUpdateResult(req: Request, res: Response, result: T) {
         return result;
     }
     
     @Post(`/%%PLURAL_NAME%%/create`)
-    async create(req: express.Request, res: express.Response) {
+    async create(req: Request, res: Response) {
         let initialStatusCode = res.statusCode;
         let data = await this.transformCreateQuery(req, res, req.body);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
@@ -120,11 +120,11 @@ export abstract class CrudController<T extends ModelT<any>> {
         res.status(HTTP_STATUS_OK).json(result);
     }
     
-    protected async afterCreate(req: express.Request, res: express.Response, result: T) {
+    protected async afterCreate(req: Request, res: Response, result: T) {
     }
     
     @Get(`/%%PLURAL_NAME%%/find`)
-    async find(req: express.Request, res: express.Response) {
+    async find(req: Request, res: Response) {
         let query: any = {};
         let include: string[] = [];
         let order: [string, string][] = [];
@@ -177,7 +177,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     }
     
     @Get(`/%%PLURAL_NAME%%/count`)
-    async count(req: express.Request, res: express.Response) {
+    async count(req: Request, res: Response) {
         let query: any = {};
         try {
             if (req.query['query']) query = JSON.parse(req.query['query'] || '{}');
@@ -198,7 +198,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     }
     
     @Get(`/%%SINGULAR_NAME%%/:id`)
-    async get(req: express.Request, res: express.Response) {
+    async get(req: Request, res: Response) {
         let id = parseInt(req.params['id'], 10);
         if (!id || isNaN(id)) {
             res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
@@ -222,7 +222,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     
     @Put(`/%%SINGULAR_NAME%%/:id`)
     @Patch(`/%%SINGULAR_NAME%%/:id`)
-    async update(req: express.Request, res: express.Response) {
+    async update(req: Request, res: Response) {
         let id = parseInt(req.params['id'], 10);
         if (!id || isNaN(id)) {
             res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
@@ -270,7 +270,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     }
     
     @Delete(`/%%SINGULAR_NAME%%/:id`)
-    async destroy(req: express.Request, res: express.Response) {
+    async destroy(req: Request, res: Response) {
         let id = parseInt(req.params['id'], 10);
         if (!id || isNaN(id)) {
             res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);

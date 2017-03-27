@@ -1,4 +1,4 @@
-import * as express from 'express';
+import { Handler } from 'express';
 
 import { CtorT } from '../../core/ctor';
 import { ControllerT } from '../../core/controller';
@@ -23,7 +23,7 @@ export type ServerMetadata = {
     models?: StaticModelT<ModelT<PkType>>[],
     services?: CtorT<ServiceT>[],
     policies?: PolicyDescriptor[],
-    middleware?: express.Handler[],
+    middleware?: Handler[],
     allowCrossOrigin?: boolean,
     sslEnabled?: boolean,
     sslPrivateKey?: string,

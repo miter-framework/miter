@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import * as express from 'express';
+import { Request, Response, Router as ExpressRouter } from 'express';
 
 import { Injector } from '../core/injector';
 import { PolicyDescriptor } from '../core/policy';
@@ -22,7 +22,7 @@ import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../uti
 import './extend-request';
 
 export class RouterReflector {
-    constructor(private server: Server, private router: express.Router) {
+    constructor(private server: Server, private router: ExpressRouter) {
     }
     
     get logger() {
@@ -94,10 +94,10 @@ export class RouterReflector {
         
         (<any>this.router)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, routeMeta));
     }
-    private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][] {
-        return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }] => {
+    private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][] {
+        return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }] => {
             let key: undefined | CtorT<PolicyT<any>>;
-            let fn: { (req: express.Request, res: express.Response): Promise<any> };
+            let fn: { (req: Request, res: Response): Promise<any> };
             if (this.isPolicyCtor(desc)) {
                 key = desc;
                 let val = this.server.injector.resolveInjectable(desc);
@@ -109,7 +109,7 @@ export class RouterReflector {
             }
             else {
                 let handler = desc;
-                fn = async function(req: express.Request, res: express.Response) {
+                fn = async function(req: Request, res: Response) {
                     await wrapPromise(handler, req, res);
                 }
             }
@@ -125,9 +125,9 @@ export class RouterReflector {
     
     unfinishedRoutes = 0;
     requestIndex = 0;
-    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], boundRoute: any, meta: RouteMetadata) {
+    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, meta: RouteMetadata) {
         const self = this;
-        return async function(req: express.Request, res: express.Response) {
+        return async function(req: Request, res: Response) {
             let requestIndex = ++self.requestIndex;
             self.logger.verbose('router', `{${requestIndex}} beginning request: ${req.url}`);
             self.logger.verbose('router', `{${requestIndex}} unfinishedRoutes: ${++self.unfinishedRoutes}`);
@@ -189,7 +189,7 @@ export class RouterReflector {
             }
         };
     }
-    private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: express.Request, res: express.Response): Promise<any> }][], allResults: any[]) {
+    private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], allResults: any[]) {
         let keys = policies.map(poli => poli[0]);
         return function(policyFn: CtorT<PolicyT<any>> | number) {
             if (typeof policyFn === 'number') return allResults[policyFn];
