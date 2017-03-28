@@ -307,19 +307,17 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             }
             for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
-                let fieldVal: any;
+                let fieldVal: any = (<any>query)[transform.fieldName];
                 switch (transform.type) {
                 case 'belongs-to':
-                    fieldVal = (<any>query)[transform.fieldName];
-                    if (fieldVal) {
-                        if (fieldVal[transform.foreignPkName]) fieldVal = fieldVal[transform.foreignPkName];
+                    if (typeof fieldVal !== 'undefined') {
+                        if (fieldVal && fieldVal[transform.foreignPkName]) fieldVal = fieldVal[transform.foreignPkName];
                         (<any>query)[transform.columnName] = fieldVal;
                         delete (<any>query)[transform.fieldName];
                     }
                     break;
                 case 'has-one':
-                    fieldVal = (<any>query)[transform.fieldName];
-                    if (fieldVal) {
+                    if (typeof fieldVal !== 'undefined') {
                         throw new Error(`Not implemented! Cannot include has-one value in where query`);
                     }
                     break;
@@ -353,33 +351,42 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     
     private createTransformResult(transforms: TransformValMeta[]) {
         this.transformResult = function<T>(sql: TInstance, result: T): T {
+            if (result === null) return result;
+            else if (typeof result === 'undefined') throw new Error(`Result was undefined in DbImpl#transformResult!`);
             result = _.clone(result);
             for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
                 let foreignDb = transform.foreignDb();
+                let fieldVal = (<any>sql)[transform.fieldName];
                 switch (transform.type) {
                 case 'belongs-to':
-                    if ((<any>sql)[transform.fieldName]) { // field was included
-                        let t = new foreignDb.modelFn();
-                        foreignDb.copyVals((<any>sql)[transform.fieldName], t);
-                        (<any>result)[transform.fieldName] = transform.foreignDb().transformResult((<any>sql)[transform.fieldName], t);
+                    if (typeof fieldVal !== 'undefined') {
+                        let t: ModelT<any> | null = null;
+                        if (fieldVal) {
+                            t = new foreignDb.modelFn();
+                            foreignDb.copyVals(fieldVal, t);
+                        }
+                        (<any>result)[transform.fieldName] = transform.foreignDb().transformResult(fieldVal, t);
                     }
-                    else if ((<any>sql)[transform.columnName]) {
+                    else if (typeof (<any>sql)[transform.columnName] !== 'undefined') {
                         (<any>result)[transform.fieldName] = (<any>sql)[transform.columnName];
                         delete (<any>result)[transform.columnName];
                     }
                     break;
                 case 'has-one':
-                    if ((<any>sql)[transform.fieldName]) { // field was included
-                        let t = new foreignDb.modelFn();
-                        foreignDb.copyVals((<any>sql)[transform.fieldName], t);
-                        (<any>result)[transform.fieldName] = foreignDb.transformResult((<any>sql)[transform.fieldName], t);
+                    if (typeof fieldVal !== 'undefined') {
+                        let t: ModelT<any> | null = null;
+                        if (fieldVal) {
+                            t = new foreignDb.modelFn();
+                            foreignDb.copyVals(fieldVal, t);
+                        }
+                        (<any>result)[transform.fieldName] = foreignDb.transformResult(fieldVal, t);
                     }
                     break;
                 default:
                     throw new Error(`WTF? How did you get here?`);
                 }
-                //TODO: deep copy?
+                //TODO: has-many?
             }
             return result;
         }
