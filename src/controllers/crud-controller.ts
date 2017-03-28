@@ -83,6 +83,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         return result;
     }
     protected async transformCreateQuery(req: Request, res: Response, query: Object) {
+        console.log('create query:', query);
         return query;
     }
     protected async transformCreateResult(req: Request, res: Response, result: T) {
@@ -95,10 +96,23 @@ export abstract class CrudController<T extends ModelT<any>> {
         return result;
     }
     
+    protected async beforeCreate(req: Request, res: Response, data: Object) {
+    }
+    protected async afterCreate(req: Request, res: Response, result: T) {
+    }
+    
+    protected async beforeDestroy(req: Request, res: Response, destroyId: number) {
+    }
+    protected async afterDestroy(req: Request, res: Response, destroyId: number) {
+    }
+    
     @Post(`/%%PLURAL_NAME%%/create`)
     async create(req: Request, res: Response) {
         let initialStatusCode = res.statusCode;
         let data = await this.transformCreateQuery(req, res, req.body);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
+        await this.beforeCreate(req, res, data);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         if (!data) {
@@ -118,9 +132,6 @@ export abstract class CrudController<T extends ModelT<any>> {
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         res.status(HTTP_STATUS_OK).json(result);
-    }
-    
-    protected async afterCreate(req: Request, res: Response, result: T) {
     }
     
     @Get(`/%%PLURAL_NAME%%/find`)
@@ -233,7 +244,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         if (res.statusCode !== initialStatusCode || res.headersSent) {
             return;
         }
-
+        
         if (!data) {
             res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to update the ${this.modelName} with!`);
             return;
@@ -255,18 +266,13 @@ export abstract class CrudController<T extends ModelT<any>> {
         
         initialStatusCode = res.statusCode;
         results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
-        if (res.statusCode !== initialStatusCode || res.headersSent) {
-            return;
-        }
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         if (!updated) {
             res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
             return;
         }
-        if (returning)
-            res.status(HTTP_STATUS_OK).json(results[0]);
-        else
-            res.status(HTTP_STATUS_OK).end();
+        res.status(HTTP_STATUS_OK).json(returning ? results[0] : undefined);
     }
     
     @Delete(`/%%SINGULAR_NAME%%/:id`)
@@ -276,7 +282,20 @@ export abstract class CrudController<T extends ModelT<any>> {
             res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} id: ${req.params['id']}`);
             return;
         }
+        
+        let initialStatusCode = res.statusCode;
+        await this.beforeDestroy(req, res, id);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
         let destroyed = await this.staticModel.db.destroy(id);
-        res.status(HTTP_STATUS_OK).json({destroyed: destroyed});
+        
+        if (destroyed) {
+            await this.afterDestroy(req, res, id);
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            res.status(HTTP_STATUS_OK).end();
+        }
+        else {
+            res.status(HTTP_STATUS_ERROR).send({ msg: `Failed to delete ${this.singularName} with ID ${id}.` });
+        }
     }
 }
