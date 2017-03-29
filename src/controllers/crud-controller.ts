@@ -101,6 +101,11 @@ export abstract class CrudController<T extends ModelT<any>> {
     protected async afterCreate(req: Request, res: Response, result: T) {
     }
     
+    protected async beforeUpdate(req: Request, res: Response, updateId: number, data: Object) {
+    }
+    protected async afterUpdate(req: Request, res: Response, updateId: number, result?: T | null) {
+    }
+    
     protected async beforeDestroy(req: Request, res: Response, destroyId: number) {
     }
     protected async afterDestroy(req: Request, res: Response, destroyId: number) {
@@ -262,6 +267,9 @@ export abstract class CrudController<T extends ModelT<any>> {
             }
         }
         
+        await this.beforeUpdate(req, res, id, data);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
         let [updated, results] = await this.staticModel.db.update(id, data, returning);
         
         initialStatusCode = res.statusCode;
@@ -272,7 +280,13 @@ export abstract class CrudController<T extends ModelT<any>> {
             res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
             return;
         }
-        res.status(HTTP_STATUS_OK).json(returning ? results[0] : undefined);
+        else {
+            let result = returning ? results[0] : undefined;
+            await this.afterUpdate(req, res, id, result);
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            
+            res.status(HTTP_STATUS_OK).json(result);
+        }
     }
     
     @Delete(`/%%SINGULAR_NAME%%/:id`)
