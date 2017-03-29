@@ -1,18 +1,15 @@
 import 'reflect-metadata';
 import { CtorT } from './ctor';
+import { Injectable } from '../decorators/services/injectable.decorator';
 import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata/server/provide';
 import { Logger } from '../services/logger';
-import { Server } from '../server/server';
 import { clc } from '../util/clc';
 
+@Injectable()
 export class Injector {
-    constructor(private server: Server) {
-        this.cache.set(Server, () => this.server);
+    constructor(private logger: Logger) {
         this.cache.set(Logger, () => this.logger);
-    }
-    
-    private get logger() {
-        return this.server.logger;
+        this.cache.set(Injector, () => this);
     }
     
     private temporaryValue = Symbol.for('recursive-injection');
@@ -22,6 +19,7 @@ export class Injector {
             this.logger.error('injector', 'Attempted to inject a falsey type.');
             return;
         }
+        this.logger.verbose('injector', `Resolving ${ctorFn.name || ctorFn}`);
         if (this.cache.get(ctorFn) === this.temporaryValue) {
             this.logger.error('injector', `Detected circular dependency. Recursive injection of type ${ctorFn.name || ctorFn}`);
             return;
@@ -38,7 +36,9 @@ export class Injector {
     private construct<T>(ctorFn: CtorT<T>): T {
         let types: any[] = Reflect.getOwnMetadata('design:paramtypes', ctorFn);
         if (!types) types = [];
-        if (types.find(type => type == Object)) throw new Error(`Could not dependency inject ${ctorFn.name || ctorFn}. Failed to resolve constructor types. Reflected: [${types.map(type => type.name || type).join(', ')}]`);
+        let typesStr = `[${types.map(type => (type && type.name) || type).join(', ')}]`;
+        this.logger.verbose('injector', `Constructing ${ctorFn.name || ctorFn} with types ${typesStr}`);
+        if (types.find(type => type == Object)) throw new Error(`Could not dependency inject ${ctorFn.name || ctorFn}. Failed to resolve constructor types. Reflected: ${typesStr}`);
         let values = types.map(type => this.resolveInjectable(type));
         return new ctorFn(...values);
     }
@@ -49,17 +49,17 @@ export class Injector {
         
         let tFn: { (): T };
         if (this.isClassSource(provideMeta)) {
-            this.logger.info('injector', `Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`);
+            this.logger.verbose('injector', `Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`);
             let t = this.construct(provideMeta.useClass);
             tFn = () => t;
         }
         else if (this.isValueSource(provideMeta)) {
-            this.logger.info('injector', `Providing ${ctorFn.name || ctorFn} using value ${JSON.stringify(provideMeta.useValue)}`);
+            this.logger.verbose('injector', `Providing ${ctorFn.name || ctorFn} using value ${JSON.stringify(provideMeta.useValue)}`);
             let t = provideMeta.useValue;
             tFn = () => t;
         }
         else if (this.isCallbackSource(provideMeta)) {
-            this.logger.info('injector', `Providing ${ctorFn.name || ctorFn} using callback ${provideMeta.useCallback.name || provideMeta.useCallback}`);
+            this.logger.verbose('injector', `Providing ${ctorFn.name || ctorFn} using callback ${provideMeta.useCallback.name || provideMeta.useCallback}`);
             tFn = provideMeta.useCallback;
         }
         else throw new Error(`Could not resolve dependency injection provider source.`);

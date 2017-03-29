@@ -13,7 +13,7 @@ import { LogLevel } from './server';
 
 export type Task = (server: Server, ...args: string[]) => Promise<void>;
 
-export type TaskMetadata = {
+export type TaskMetadataT = {
     task: Task,
     name?: string,
     orm?: OrmMetadata,

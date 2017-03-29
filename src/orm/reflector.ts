@@ -6,14 +6,15 @@ import { Injector } from '../core/injector';
 import { StaticModelT, ModelT, PkType } from '../core/model';
 import { Transaction } from '../core/transaction';
 
+import { Injectable } from '../decorators/services/injectable.decorator';
+
+import { ServerMetadata } from '../metadata/server/server';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../metadata/orm/model';
 import { PropMetadata, PropMetadataSym } from '../metadata/orm/prop';
 import { AssociationMetadata } from '../metadata/orm/associations/association';
 import { ModelHasManyAssociationsSym, HasManyMetadataSym, HasManyMetadata } from '../metadata/orm/associations/has-many';
 import { ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata } from '../metadata/orm/associations/belongs-to';
 import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '../metadata/orm/associations/has-one';
-
-import { Server } from '../server/server';
 
 import { Logger } from '../services/logger';
 import { OrmTransformService } from '../services/orm-transform.service';
@@ -29,15 +30,16 @@ type AssociationTypeDef = {
     transform?: (propMeta: AssociationMetadata, propName: string) => void
 };
 
+@Injectable()
 export class OrmReflector {
-    constructor(private server: Server) {
-        let ormTransform = server.injector.resolveInjectable(OrmTransformService);
+    constructor(
+        private injector: Injector,
+        private logger: Logger,
+        private serverMeta: ServerMetadata
+    ) {
+        let ormTransform = this.injector.resolveInjectable(OrmTransformService);
         if (!ormTransform) throw new Error(`Failed to resolve OrmTransformService. Can't reflect ORM models`);
         this.ormTransform = ormTransform;
-    }
-    
-    private get logger() {
-        return this.server.logger;
     }
     
     private ormTransform: OrmTransformService;
@@ -45,7 +47,7 @@ export class OrmReflector {
     private sql: Sequelize.Sequelize;
     
     async init() {
-        let orm = this.server.meta.orm;
+        let orm = this.serverMeta.orm;
         if (!orm || (typeof orm.enabled !== 'undefined' && !orm.enabled) || !orm.db) return;
         let db = orm.db;
         
@@ -74,7 +76,7 @@ export class OrmReflector {
             port: port
         });
         
-        let models = this.server.meta.models || [];
+        let models = this.serverMeta.models;
         this.reflectModels(models);
         this.reflectAssociations(models);
         this.createDbImpls(models);

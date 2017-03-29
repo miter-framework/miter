@@ -1,13 +1,15 @@
 "use strict";
 
 import * as createExpressApp from 'express';
-import { Request, Response, Application as ExpressApp, Router as ExpressRouter } from 'express';
+import { Request, Response, Application as ExpressApp } from 'express';
 import * as bodyParser from 'body-parser';
 
 import { Injector } from '../core/injector';
 import { Transaction } from '../core/transaction';
 
-import { ServerMetadata } from '../metadata/server/server';
+import { Injectable } from '../decorators/services/injectable.decorator';
+
+import { ServerMetadataT, ServerMetadata } from '../metadata/server/server';
 
 import { OrmReflector } from '../orm/reflector';
 
@@ -23,15 +25,22 @@ import * as https from 'https';
 import debug_module = require('debug');
 let debug = debug_module('express:server');
 
+@Injectable()
 export class Server {
-    constructor(private _meta: ServerMetadata) {
-        this._logger = new Logger(this.meta.name || null, this.meta.logLevel);
-        this._injector = new Injector(this);
-        if (_meta.inject) {
-            for (let q = 0; q < _meta.inject.length; q++) {
-                this._injector.provide(_meta.inject[q]);
-            }
+    constructor(meta: ServerMetadataT) {
+        this._logger = new Logger(meta.name || null, meta.logLevel);
+        this._injector = new Injector(this._logger);
+        this._injector.provide({ provide: Server, useValue: this });
+        this._injector.provide({ provide: ServerMetadata, useValue: new ServerMetadata(meta) });
+        this._meta = this._injector.resolveInjectable(ServerMetadata)!;
+        for (let q = 0; q < this.meta.inject.length; q++) {
+            this._injector.provide(this.meta.inject[q]);
         }
+    }
+    
+    private _meta: ServerMetadata;
+    get meta() {
+        return this._meta;
     }
     
     private _logger: Logger;
@@ -47,10 +56,6 @@ export class Server {
     private _injector: Injector;
     get injector(): Injector {
         return this._injector;
-    }
-    
-    get meta(): ServerMetadata {
-        return this._meta;
     }
     
     async init() {
@@ -108,7 +113,7 @@ export class Server {
         let orm = this.meta.orm;
         if (orm && (typeof orm.enabled === 'undefined' || orm.enabled) && orm.db) {
             this.logger.verbose('orm', `Initializing ORM...`);
-            this.ormReflector = new OrmReflector(this);
+            this.ormReflector = this._injector.resolveInjectable(OrmReflector)!;
             await this.ormReflector.init();
             this.logger.info('orm', `Finished initializing ORM.`);
         }
@@ -123,7 +128,7 @@ export class Server {
     private serviceReflector: ServiceReflector;
     private async startServices() {
         this.logger.verbose('services', `Starting services...`);
-        this.serviceReflector = new ServiceReflector(this);
+        this.serviceReflector = this._injector.resolveInjectable(ServiceReflector)!;
         await this.serviceReflector.reflectServices(this.meta.services || []);
         this.logger.info('services', `Finished starting services.`);
     }
@@ -136,10 +141,10 @@ export class Server {
     private routerReflector: RouterReflector;
     private reflectRoutes() {
         this.logger.verbose('router', `Loading routes...`);
-        let router = ExpressRouter();
-        this.routerReflector = new RouterReflector(this, router);
+        // let router = ExpressRouter();
+        this.routerReflector = this._injector.resolveInjectable(RouterReflector)!;// new RouterReflector(this, router);
         this.routerReflector.reflectRoutes(this.meta.controllers || []);
-        this.app.use(router);
+        this.app.use(this.routerReflector.router.expressRouter);
         this.logger.info('router', `Finished loading routes.`);
     }
     

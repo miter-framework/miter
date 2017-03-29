@@ -6,7 +6,6 @@ export type RouteMethod = 'get' | 'post' | 'put' | 'head' | 'delete' | 'options'
 
 export type RouteMetadata = {
     path: string,
-    transaction?: boolean,
     method?: RouteMethod,
     policies?: PolicyDescriptor[]
 };

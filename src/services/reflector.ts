@@ -2,16 +2,17 @@ import * as _ from 'lodash';
 
 import { CtorT } from '../core/ctor';
 import { ServiceT } from '../core/service';
+import { Injector } from '../core/injector';
+import { Injectable } from '../decorators/services/injectable.decorator';
 import { Server } from '../server/server';
 import { Logger } from '../services/logger';
 
+@Injectable()
 export class ServiceReflector {
-    constructor(private server: Server) {
-    }
-    
-    get logger() {
-        return this.server.logger;
-    }
+    constructor(
+        private injector: Injector,
+        private logger: Logger
+    ) { }
     
     async reflectServices(services: CtorT<ServiceT>[]) {
         let failures = 0;
@@ -37,7 +38,7 @@ export class ServiceReflector {
     
     private _startedServices: ServiceT[] = [];
     async reflectService(serviceFn: CtorT<ServiceT>): Promise<boolean> {
-        let service = this.server.injector.resolveInjectable(serviceFn);
+        let service = this.injector.resolveInjectable(serviceFn);
         if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceFn.name || serviceFn}`);
         this._startedServices.push(service);
         if (typeof service.start !== 'undefined') {

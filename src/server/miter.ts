@@ -1,14 +1,10 @@
-import { ServerMetadata, LogLevel } from '../metadata/server/server';
-import { Task, TaskMetadata } from '../metadata/server/task';
+import { ServerMetadataT, LogLevel } from '../metadata/server/server';
+import { Task, TaskMetadataT } from '../metadata/server/task';
 import { Server } from './server';
 import { Service } from '../decorators/services/service.decorator';
 
 export class Miter {
-    public static async launch(meta: ServerMetadata): Promise<Server> {
-        if (!meta.debugBreakpoint)
-            meta.debugBreakpoint = () => {};
-        (<any>global)['debugBreakpoint'] = meta.debugBreakpoint;
-        
+    public static async launch(meta: ServerMetadataT): Promise<Server> {
         let serverInst = new Server(meta);
         let initPromise = serverInst.init();
         process.on('SIGINT', async () => {
@@ -25,10 +21,10 @@ export class Miter {
         return serverInst;
     }
     
-    public static task(meta: Task | TaskMetadata): (...args: string[]) => Promise<void> {
+    public static task(meta: Task | TaskMetadataT): (...args: string[]) => Promise<void> {
         return async (...args: string[]) => {
             let metaFn = (typeof meta === 'function' ? meta : meta.task);
-            let launchMeta: ServerMetadata = <any>(typeof meta === 'function' ? {} : meta);
+            let launchMeta: ServerMetadataT = <any>(typeof meta === 'function' ? {} : meta);
             
             delete (launchMeta as any).task;
             delete launchMeta.port;

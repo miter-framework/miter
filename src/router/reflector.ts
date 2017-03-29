@@ -1,17 +1,20 @@
 import 'reflect-metadata';
-import { Request, Response, Router as ExpressRouter } from 'express';
+import { Request, Response } from 'express';
 
 import { Injector } from '../core/injector';
 import { PolicyDescriptor } from '../core/policy';
 import { CtorT } from '../core/ctor';
 import { PolicyT } from '../core/policy';
 
+import { Injectable } from '../decorators/services/injectable.decorator';
+
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../metadata/router/controller';
 import { RouteMetadata, RouteMetadataSym } from '../metadata/router/route';
-
-import { Server } from '../server/server';
+import { ServerMetadata } from '../metadata/server/server';
 
 import { Logger } from '../services/logger';
+import { TransactionService } from '../services/transaction.service';
+import { RouterService } from '../services/router.service';
 
 import { inhertitanceHierarchy } from '../util/inheritance-hierarchy';
 import { hasNoUndefined } from '../util/has-no-undefined';
@@ -21,12 +24,18 @@ import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../uti
 
 import './extend-request';
 
+@Injectable()
 export class RouterReflector {
-    constructor(private server: Server, private router: ExpressRouter) {
-    }
+    constructor(
+        private injector: Injector,
+        private logger: Logger,
+        private serverMeta: ServerMetadata,
+        private _router: RouterService,
+        private transactionService: TransactionService
+    ) { }
     
-    get logger() {
-        return this.server.logger;
+    get router() {
+        return this._router;
     }
     
     reflectRoutes(controllers: any[]) {
@@ -38,7 +47,7 @@ export class RouterReflector {
     private controllers: any = {};
     reflectControllerRoutes(controllerFn: any) {
         if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
-        let controllerInst = this.controllers[controllerFn] = this.server.injector.resolveInjectable(controllerFn);
+        let controllerInst = this.controllers[controllerFn] = this.injector.resolveInjectable(controllerFn);
         let controllerProto = controllerFn.prototype;
         
         let meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
@@ -73,7 +82,7 @@ export class RouterReflector {
     
     private addRoute(controller: any, routeFnName: string, controllerMeta: ControllerMetadata, routeMeta: RouteMetadata) {
         let policyDescriptors = [
-            ...(this.server.meta.policies || []),
+            ...(this.serverMeta.policies),
             ...(controllerMeta.policies || []),
             ...(routeMeta.policies || [])
         ];
@@ -83,7 +92,7 @@ export class RouterReflector {
         let pathPart = routeMeta.path;
         if (controller.transformPathPart) pathPart = controller.transformPathPart(pathPart) || pathPart;
         let fullPath = joinRoutePaths(...[
-            this.server.meta.path || '',
+            this.serverMeta.path,
             controllerMeta.path || '',
             pathPart
         ]);
@@ -92,7 +101,7 @@ export class RouterReflector {
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
-        (<any>this.router)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, routeMeta));
+        (<any>this.router.expressRouter)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, routeMeta));
     }
     private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][] {
         return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }] => {
@@ -100,7 +109,7 @@ export class RouterReflector {
             let fn: { (req: Request, res: Response): Promise<any> };
             if (this.isPolicyCtor(desc)) {
                 key = desc;
-                let val = this.server.injector.resolveInjectable(desc);
+                let val = this.injector.resolveInjectable(desc);
                 if (!val) throw new Error(`Could not resolve dependency for policy: ${desc}`);
                 desc = val;
             }
@@ -126,13 +135,12 @@ export class RouterReflector {
     unfinishedRoutes = 0;
     requestIndex = 0;
     private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, meta: RouteMetadata) {
-        const self = this;
-        return async function(req: Request, res: Response) {
-            let requestIndex = ++self.requestIndex;
-            self.logger.verbose('router', `{${requestIndex}} beginning request: ${req.url}`);
-            self.logger.verbose('router', `{${requestIndex}} unfinishedRoutes: ${++self.unfinishedRoutes}`);
+        let fullRouterFn = async function(this: RouterReflector, req: Request, res: Response) {
+            let requestIndex = ++this.requestIndex;
+            this.logger.info('router', `{${requestIndex}} beginning request: ${req.url}`);
+            this.logger.verbose('router', `{${requestIndex}} unfinishedRoutes: ${++this.unfinishedRoutes}`);
             let allResults: any[] = [];
-            req.policyResults = self.createPolicyResultsFn(policies, allResults);
+            req.policyResults = this.createPolicyResultsFn(policies, allResults);
             let initialStatusCode = res.statusCode;
             for (let q = 0; q < policies.length; q++) {
                 let policy = policies[q];
@@ -140,60 +148,57 @@ export class RouterReflector {
                 let policyCtor = policy[0];
                 let policyName = (policyCtor && (policyCtor.name || policyCtor)) || '(undefined)';
                 try {
-                    self.logger.verbose('router', `{${requestIndex}} awaiting policy ${q+1}/${policies.length} (${policyName})`);
+                    this.logger.verbose('router', `{${requestIndex}} awaiting policy ${q+1}/${policies.length} (${policyName})`);
                     result = await policy[1](req, res);
-                    self.logger.verbose('router', `{${requestIndex}} policy ${policyName} returned with result ${JSON.stringify(result)}`);
+                    this.logger.verbose('router', `{${requestIndex}} policy ${policyName} returned with result ${JSON.stringify(result)}`);
                 }
                 catch (e) {
-                    self.logger.error('router', `{${requestIndex}} policy (${policyName}) threw an exception. Serving 500 - Internal server error`);
-                    self.logger.error('router', e);
+                    this.logger.error('router', `{${requestIndex}} policy (${policyName}) threw an exception. Serving 500 - Internal server error`);
+                    this.logger.error('router', e);
                     res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                     res.send('Internal server error');
-                    self.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
+                    this.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                     return;
                 }
                 allResults.push(result);
                 if (res.statusCode !== initialStatusCode || res.headersSent) return;
             }
             
-            self.logger.verbose('router', `{${requestIndex}} policies complete, creating transaction`);
-            let t = meta.transaction && await self.server.transaction();
+            this.logger.verbose('router', `{${requestIndex}} policies complete`);
             let failed = false;
             try {
-                self.logger.verbose('router', `{${requestIndex}} calling route`);
-                await boundRoute(req, res, t);
-                self.logger.verbose('router', `{${requestIndex}} route complete`);
+                this.logger.verbose('router', `{${requestIndex}} calling route`);
+                await boundRoute(req, res);
+                this.logger.verbose('router', `{${requestIndex}} route complete`);
             }
             catch (e) {
-                self.logger.error('router', `{${requestIndex}} route threw an exception. Serving 500 - Internal server error and rolling back transaction.`);
-                self.logger.error('router', e);
+                this.logger.error('router', `{${requestIndex}} route threw an exception. Serving 500 - Internal server error. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                 res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                 res.send('Internal server error');
-                self.logger.verbose('router', `{${requestIndex}} rolling back transaction.`);
-                if (t) {
-                    if (t.isComplete) self.logger.warn('router', `{${requestIndex}} request transaction committed or rolled back inside route. Cannot roll back.`);
-                    else await t.rollback();
-                }
-                self.logger.verbose('router', `{${requestIndex}} transaction rolled back. unfinishedRoutes: ${--self.unfinishedRoutes}`);
                 failed = true;
+                throw e; //This ensures that the transaction is rolled back
             }
             finally {
                 if (!failed && res.statusCode === initialStatusCode && !res.headersSent) {
-                    self.logger.error('router', `{${requestIndex}} route failed to send a response. Serving 404 - Not Found`);
+                    this.logger.error('router', `{${requestIndex}} route failed to send a response. Serving 404 - Not Found`);
                     res.status(HTTP_STATUS_NOT_FOUND);
                     res.send(`Not found.`);
-                    self.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
-                }
-                if (!failed) {
-                    self.logger.verbose('router', `{${requestIndex}} committing transaction`);
-                    if (t) {
-                        if (t.isComplete) self.logger.warn('router', `{${requestIndex}} request transaction committed or rolled back inside route. Cannot commit.`);
-                        else await t.commit();
-                    }
-                    self.logger.verbose('router', `{${requestIndex}} transaction committed. ending request. unfinishedRoutes: ${--self.unfinishedRoutes}`);
+                    this.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                 }
             }
         };
+        
+        let self = this;
+        return async function(req: Request, res: Response) {
+            try {
+                await self.transactionService.run(async () => {
+                    await fullRouterFn.call(self, req, res);
+                });
+            }
+            catch (e) {
+                self.logger.error('router', e);
+            }
+        }
     }
     private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], allResults: any[]) {
         let keys = policies.map(poli => poli[0]);

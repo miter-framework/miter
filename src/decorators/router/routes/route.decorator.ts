@@ -5,8 +5,7 @@ import { Transaction } from '../../../core/transaction';
 import 'reflect-metadata';
 import * as _ from 'lodash';
 
-export type RouteFunc = ((req: Request, res: Response) => void | Promise<void>)
-                      | ((req: Request, res: Response, transaction: Transaction) => void | Promise<void>);
+export type RouteFunc = ((req: Request, res: Response) => void | Promise<void>);
 export type RouteFuncDescriptor = TypedPropertyDescriptor<RouteFunc>;
 export type RouteDecoratorFunc = (target: Object, propertyKey: string, propertyDescriptor: RouteFuncDescriptor) => void;
 
@@ -24,15 +23,8 @@ export function createRouteDecorator(pathOrMeta: RouteMetadata | string, method?
         if (!controllerRoutes.find(route => route == routeName)) controllerRoutes.push(routeName);
         Reflect.defineMetadata(ControllerRoutesSym, controllerRoutes, controller);
         
-        let myMeta = _.merge({}, meta);
-        let types: any[] = Reflect.getOwnMetadata('design:paramtypes', controller, routeName);
-        if (typeof myMeta.transaction != 'boolean') {
-            // tslint:disable-next-line:no-magic-numbers
-            myMeta.transaction = types && types.length == 3;
-        }
-        
         let methodRoutes: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controller, routeName) || [];
-        methodRoutes.push(myMeta);
+        methodRoutes.push(_.merge({}, meta));
         Reflect.defineMetadata(RouteMetadataSym, methodRoutes, controller, routeName);
     }
 }

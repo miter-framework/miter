@@ -8,3 +8,9 @@ export * from './orm-transform.service';
 export * from './snake-case-orm-transform.service';
 
 export * from './repl.service';
+
+export * from './cls-namespace.service';
+
+export * from './router.service';
+
+export * from './transaction.service';
