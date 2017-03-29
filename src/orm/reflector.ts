@@ -72,7 +72,7 @@ export class OrmReflector {
                 charset: charset,
                 collate: charsetCollate
             },
-            logging: (msg: string, ...extras: any[]) => this.logger.info('sql', msg, ...extras),
+            logging: (msg: string, ...extras: any[]) => this.logger.verbose('sql', msg, ...extras),
             port: port
         });
         
