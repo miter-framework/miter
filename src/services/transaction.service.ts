@@ -1,5 +1,5 @@
 import { ClsNamespaceService } from './cls-namespace.service';
-import { Transaction } from '../core/transaction';
+import { TransactionT } from '../core/transaction';
 import { Service } from '../decorators/services/service.decorator';
 import { OrmReflector } from '../orm/reflector';
 import { Logger } from './logger';
@@ -9,13 +9,14 @@ export class TransactionService {
     constructor(private ormReflector: OrmReflector, private logger: Logger, private namespace: ClsNamespaceService) {
     }
     
-    get current(): Transaction | undefined {
+    get current(): TransactionT | undefined {
         return this.namespace.get('transaction');
     }
     
     async run(fn: () => Promise<void>): Promise<void>;
     async run<T>(fn: () => Promise<T>): Promise<T> {
         return await this.namespace.runAndReturn(async () => {
+            this.logger.verbose('transactions', `creating transaction`);
             let t = await this.ormReflector.transaction(this.current);
             this.namespace.set('transaction', t);
             let failed = false;

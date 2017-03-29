@@ -4,7 +4,7 @@ import * as Sequelize from 'sequelize';
 
 import { Injector } from '../core/injector';
 import { StaticModelT, ModelT, PkType } from '../core/model';
-import { Transaction } from '../core/transaction';
+import { TransactionT } from '../core/transaction';
 
 import { Injectable } from '../decorators/services/injectable.decorator';
 
@@ -92,7 +92,7 @@ export class OrmReflector {
         return await this.sql.sync({force: recreate || false});
     }
     
-    async transaction(transaction?: Transaction): Promise<Transaction> {
+    async transaction(transaction?: TransactionT): Promise<TransactionT> {
         let sqlTransact = transaction && await (transaction as TransactionImpl).sync();
         sqlTransact = await this.sql.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
         return new TransactionImpl(sqlTransact!);

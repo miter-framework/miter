@@ -5,7 +5,6 @@ import { Request, Response, Application as ExpressApp } from 'express';
 import * as bodyParser from 'body-parser';
 
 import { Injector } from '../core/injector';
-import { Transaction } from '../core/transaction';
 
 import { Injectable } from '../decorators/services/injectable.decorator';
 
@@ -120,9 +119,6 @@ export class Server {
         else if (this.meta.models && this.meta.models.length) {
             this.logger.warn('orm', `Warning: Models included in server metadata, but no orm configuration defined.`);
         }
-    }
-    transaction(transaction?: Transaction): Promise<Transaction> {
-        return this.ormReflector.transaction(transaction);
     }
     
     private serviceReflector: ServiceReflector;

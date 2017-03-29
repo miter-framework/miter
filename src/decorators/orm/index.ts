@@ -9,3 +9,5 @@ export * from './prop.decorator';
 
 import * as Types from './types';
 export { Types };
+
+export * from './transaction.decorator';

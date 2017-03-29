@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import { StaticModelT, ModelT, PkType, Db } from '../../core/model';
 import { QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT, CountAllResults } from '../../core/db';
 import { CtorT } from '../../core/ctor';
-import { Transaction } from '../../core/transaction';
+import { TransactionT } from '../../core/transaction';
 
 import { PropMetadata, PropMetadataSym } from '../../metadata/orm/prop';
 import { ModelPropertiesSym } from '../../metadata/orm/model';
@@ -44,7 +44,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         this.createTransformQuery();
     }
     
-    async transaction(transaction?: TransactionImpl): Promise<Transaction> {
+    async transaction(transaction?: TransactionImpl): Promise<TransactionImpl> {
         let sqlTransact = transaction && await transaction.sync();
         sqlTransact = await this.sequelize.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
         return new TransactionImpl(sqlTransact!);
