@@ -101,7 +101,7 @@ export class RouterReflector {
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
-        (<any>this.router.expressRouter)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, routeMeta));
+        (<any>this.router.expressRouter)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, routeFnName, routeMeta));
     }
     private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][] {
         return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }] => {
@@ -134,7 +134,7 @@ export class RouterReflector {
     
     unfinishedRoutes = 0;
     requestIndex = 0;
-    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, meta: RouteMetadata) {
+    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, routeName: string, meta: RouteMetadata) {
         let fullRouterFn = async function(this: RouterReflector, req: Request, res: Response) {
             let requestIndex = ++this.requestIndex;
             this.logger.info('router', `{${requestIndex}} beginning request: ${req.url}`);
@@ -191,7 +191,7 @@ export class RouterReflector {
         let self = this;
         return async function(req: Request, res: Response) {
             try {
-                await self.transactionService.run(async () => {
+                await self.transactionService.run(routeName, async () => {
                     await fullRouterFn.call(self, req, res);
                 });
             }

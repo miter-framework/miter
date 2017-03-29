@@ -2,9 +2,19 @@ import * as Sql from 'sequelize';
 import { TransactionT } from '../../core/transaction';
 
 export class TransactionImpl implements TransactionT {
-    constructor(private sqlTransact: Sql.Transaction) {
+    constructor(name: string, private sqlTransact: Sql.Transaction, private parentTransaction?: TransactionT) {
+        this._name = name;
         this._complete = false;
         this._transaction = sqlTransact;
+    }
+    
+    private _name: string;
+    get name(): string {
+        return this._name;
+    }
+    get fullName(): string {
+        if (!this.parentTransaction) return this.name;
+        else return `${this.parentTransaction.fullName}.${this.name}`;
     }
     
     get isComplete() {
@@ -14,7 +24,7 @@ export class TransactionImpl implements TransactionT {
     private _complete: boolean;
     private _transaction: Sql.Transaction;
     
-    async sync() {
+    sync() {
         if (this.isComplete) {
             throw new Error(`Cannot sync a transaction that has completed!`);
         }
@@ -22,12 +32,12 @@ export class TransactionImpl implements TransactionT {
     }
     
     async rollback() {
-        let t = await this.sync();
+        let t = this.sync();
         this._complete = true;
         await t.rollback();
     }
     async commit() {
-        let t = await this.sync();
+        let t = this.sync();
         this._complete = true;
         await t.commit();
     }

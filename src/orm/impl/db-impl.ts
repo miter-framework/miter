@@ -14,6 +14,8 @@ import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '.
 
 import { Types } from '../../decorators/orm';
 import { Logger } from '../../services/logger';
+import { Sequelize } from '../sequelize';
+import { TransactionService } from '../../services/transaction.service';
 
 import { TransactionImpl } from './transaction-impl';
 
@@ -39,19 +41,29 @@ type HasOneTransformMeta = {
 type TransformValMeta = BelongsToTransformMeta | HasOneTransformMeta;
 
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
-    constructor(private modelFn: StaticModelT<T>, private model: Sql.Model<TInstance, TAttributes>, private sequelize: Sql.Sequelize, private logger: Logger) {
+    constructor(
+        private modelFn: StaticModelT<T>,
+        private model: Sql.Model<TInstance, TAttributes>,
+        private sequelize: Sequelize,
+        private logger: Logger,
+        private transactionService: TransactionService
+    ) {
         this.createCopyValsFn();
         this.createTransformQuery();
     }
     
-    async transaction(transaction?: TransactionImpl): Promise<TransactionImpl> {
-        let sqlTransact = transaction && await transaction.sync();
-        sqlTransact = await this.sequelize.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
-        return new TransactionImpl(sqlTransact!);
+    private getSqlTransact(transaction?: TransactionT) {
+        transaction = transaction || this.transactionService.current;
+        if (transaction) this.logger.verbose('dbimpl', `Using transaction: ${transaction.fullName}`);
+        return transaction && (<TransactionImpl>transaction).sync();
+    }
+    
+    private async transaction(name: string, transaction?: TransactionImpl): Promise<TransactionImpl> {
+        return <TransactionImpl>await this.sequelize.transaction(name, transaction);
     }
     
     async create(t: Object | T | Object[] | T[], transaction?: TransactionImpl): Promise<any> {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (t instanceof Array) {
             t = _.cloneDeep(t);
             (<Object[]>t).forEach((t, idx, arr) => { arr[idx] = this.transformQueryWhere(t) });
@@ -67,32 +79,32 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     
     async findById(id: string | number, options?: QueryT, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (options) options = this.transformQuery(options);
         let result = await this.model.findById(id, _.merge({}, { transaction: sqlTransact }, options));
         return result && this.wrapResult(result);
     }
     async findOne(query: QueryT, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         query = this.transformQuery(query);
         let result = await this.model.findOne(_.merge({}, { transaction: sqlTransact }, query));
         return result && this.wrapResult(result);
     }
     async findOrCreate(query: Sql.WhereOptions, defaults?: Object | T, transaction?: TransactionImpl): Promise<[T, boolean]> {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         query = this.transformQueryWhere(query);
         defaults = this.transformQueryWhere(defaults);
         let [result, created] = await this.model.findOrCreate(_.merge({}, { where: query, defaults: <any>defaults || {}, transaction: sqlTransact }));
         return [result && this.wrapResult(result), created];
     }
     async findAndCountAll(query?: QueryT, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (query) query = this.transformQuery(query);
         let results = await this.model.findAndCountAll(_.merge({}, { transaction: sqlTransact }, query));
         return { count: results.count, results: this.wrapResults(results.rows) };
     }
     async findAll(query?: QueryT, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (query) query = this.transformQuery(query);
         let results = await this.model.findAll(_.merge({}, { transaction: sqlTransact }, query));
         return this.wrapResults(results);
@@ -101,21 +113,21 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return this.findAll(query, transaction);
     }
     async count(query?: CountQueryT, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (query) query = this.transformQuery(query);
         return await this.model.count(_.merge({}, { transaction: sqlTransact }, query));
     }
     
     async max(field: string, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         return await this.model.max(field, _.merge({}, { transaction: sqlTransact }));
     }
     async min(field: string, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         return await this.model.min(field, _.merge({}, { transaction: sqlTransact }));
     }
     async sum(field: string, transaction?: TransactionImpl) {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         return await this.model.sum(field, _.merge({}, { transaction: sqlTransact }));
     }
     
@@ -128,7 +140,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         if (!query) {
             throw new Error(`Db.update query parameter was falsey: ${query}`);
         }
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (transaction && returning) {
             throw new Error(`Using a transaction to return records when you update them is not yet implemented.`);
         }
@@ -152,7 +164,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return [affected, results];
     }
     async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T, transaction?: TransactionImpl): Promise<[T, boolean]> {
-        let t = <TransactionImpl>await this.transaction(transaction);
+        let t = <TransactionImpl>await this.transaction('updateOrCreate', transaction);
         let failed = false;
         try {
             let [result, created] = await this.findOrCreate(query, defaults, t);
@@ -179,7 +191,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     
     async destroy(query: number | string | T | DestroyQueryT, transaction?: TransactionImpl): Promise<any> {
-        let sqlTransact = transaction && await transaction.sync();
+        let sqlTransact = this.getSqlTransact(transaction);
         if (this.isId(query))
             query = { where: { id: query } };
         else if (this.isT(query))

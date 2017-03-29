@@ -8,7 +8,7 @@ export type TransactionFunc = ((...args: any[]) => Promise<any>);
 export type TransactionFuncDescriptor = TypedPropertyDescriptor<TransactionFunc>;
 export type TransactionDecoratorFunc = (target: Object, propertyKey: string, propertyDescriptor: TransactionFuncDescriptor) => void;
 
-export function Transaction(): TransactionDecoratorFunc {
+export function Transaction(transactionName?: string): TransactionDecoratorFunc {
     return function(prototype: any, methodName: string, routeFn: TransactionFuncDescriptor) {
         let transactionFns: string[] = Reflect.getOwnMetadata(TransactionFunctionsSym, prototype) || [];
         if (!transactionFns.find(name => name == methodName)) transactionFns.push(methodName);
@@ -22,7 +22,7 @@ export function Transaction(): TransactionDecoratorFunc {
                 console.error(`${clc.red('ERROR')}: Failed to wrap call to ${protoName}.${methodName} in a transaction. You need to dependency inject the TransactionService and call it 'transactionService'.`);
                 return await originalMethod.call(this, ...args);
             }
-            return await transactionService.run(async () => {
+            return await transactionService.run(transactionName || methodName, async () => {
                 return await originalMethod.call(this, ...args);
             });
         };

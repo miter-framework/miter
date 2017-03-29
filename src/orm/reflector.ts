@@ -1,8 +1,7 @@
 import 'reflect-metadata';
 import _ = require('lodash');
-import * as Sequelize from 'sequelize';
+import { Model as SqlModel } from 'sequelize';
 
-import { Injector } from '../core/injector';
 import { StaticModelT, ModelT, PkType } from '../core/model';
 import { TransactionT } from '../core/transaction';
 
@@ -17,10 +16,11 @@ import { ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata 
 import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '../metadata/orm/associations/has-one';
 
 import { Logger } from '../services/logger';
+import { Sequelize } from './sequelize';
 import { OrmTransformService } from '../services/orm-transform.service';
+import { TransactionService } from '../services/transaction.service';
 
 import { DbImpl } from './impl/db-impl';
-import { TransactionImpl } from './impl/transaction-impl';
 
 type AssociationTypeDef = {
     sqlName: string,
@@ -33,69 +33,22 @@ type AssociationTypeDef = {
 @Injectable()
 export class OrmReflector {
     constructor(
-        private injector: Injector,
         private logger: Logger,
-        private serverMeta: ServerMetadata
-    ) {
-        let ormTransform = this.injector.resolveInjectable(OrmTransformService);
-        if (!ormTransform) throw new Error(`Failed to resolve OrmTransformService. Can't reflect ORM models`);
-        this.ormTransform = ormTransform;
-    }
-    
-    private ormTransform: OrmTransformService;
-    
-    private sql: Sequelize.Sequelize;
+        private serverMeta: ServerMetadata,
+        private transactionService: TransactionService,
+        private ormTransform: OrmTransformService,
+        private sql: Sequelize
+    ) { }
     
     async init() {
-        let orm = this.serverMeta.orm;
-        if (!orm || (typeof orm.enabled !== 'undefined' && !orm.enabled) || !orm.db) return;
-        let db = orm.db;
-        
-        let host = db.host;
-        let port: number | undefined = undefined;
-        if (typeof host !== 'string') {
-            port = host.port;
-            host = host.domain;
-        }
-        
-        let charset = orm.db.charset || 'utf8mb4';
-        let charsetCollate = `${charset}_general_ci`;
-        
-        this.sql = new Sequelize(db.name, db.user, db.password, {
-            host: host,
-            dialect: db.dialect || 'mysql',
-            dialectOptions: {
-                charset: charset
-            },
-            pool: db.pool,
-            define: {
-                charset: charset,
-                collate: charsetCollate
-            },
-            logging: (msg: string, ...extras: any[]) => this.logger.verbose('sql', msg, ...extras),
-            port: port
-        });
+        await this.sql.init();
         
         let models = this.serverMeta.models;
         this.reflectModels(models);
         this.reflectAssociations(models);
         this.createDbImpls(models);
         
-        if (orm.recreate) {
-            if ((<string>process.env.NODE_ENV || '') == 'production') throw new Error('Server launched with config value orm.recreate enabled. As a security feature, this causes a crash when NODE_ENV = production.');
-            this.logger.warn('orm', `Warning: recreating database tables. Note: this option should not be enabled in production.`);
-        }
-        await this.sync(orm.recreate);
-    }
-    
-    async sync(recreate?: boolean) {
-        return await this.sql.sync({force: recreate || false});
-    }
-    
-    async transaction(transaction?: TransactionT): Promise<TransactionT> {
-        let sqlTransact = transaction && await (transaction as TransactionImpl).sync();
-        sqlTransact = await this.sql.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
-        return new TransactionImpl(sqlTransact!);
+        await this.sql.sync();
     }
     
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {
@@ -104,7 +57,7 @@ export class OrmReflector {
         }
     }
     
-    private models = new Map<StaticModelT<ModelT<PkType>>, Sequelize.Model<{}, {}>>();
+    private models = new Map<StaticModelT<ModelT<PkType>>, SqlModel<{}, {}>>();
     private modelsByTableName = new Map<string, StaticModelT<ModelT<PkType>>>();
     reflectModel(modelFn: StaticModelT<ModelT<PkType>>) {
         if (this.models.has(modelFn)) throw new Error(`A model was passed to the orm-reflector twice: ${modelFn.name || modelFn}.`);
@@ -139,7 +92,7 @@ export class OrmReflector {
         }
         
         let model = this.sql.define(modelOptions.tableName, columns, modelOptions);
-        this.models.set(modelFn, model);
+        this.models.set(modelFn, <any>model);
     }
     
     private reflectAssociations(models: StaticModelT<ModelT<PkType>>[]) {
@@ -214,7 +167,7 @@ export class OrmReflector {
             let modelFn = models[q];
             let model = this.models.get(modelFn);
             if (!model) throw new Error(`Could not reflect model associations for a model that failed to be reflected: ${modelFn.name || modelFn}.`);
-            let db = new DbImpl(modelFn, model, this.sql, this.logger);
+            let db = new DbImpl(modelFn, model, this.sql, this.logger, this.transactionService);
             modelFn.db = db;
         }
     }
