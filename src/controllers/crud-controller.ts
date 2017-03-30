@@ -18,7 +18,12 @@ export type PerformQueryT = {
 };
 
 export abstract class CrudController<T extends ModelT<any>> {
-    constructor(private staticModel: StaticModelT<T>, protected readonly modelName: string, pluralName?: string, singularName?: string) {
+    constructor(
+        private staticModel: StaticModelT<T>,
+        protected readonly modelName: string,
+        pluralName?: string,
+        singularName?: string
+    ) {
         this.singularName = singularName || this.getSingularPath(modelName);
         this.pluralName = pluralName || this.getPluralPath(modelName);
     }
