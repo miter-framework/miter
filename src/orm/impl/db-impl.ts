@@ -137,19 +137,14 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let [result, created] = await this.findOrCreate({ id: t.id }, t, transaction);
         return result;
     }
-
+    
     async update(query: number | string | T | UpdateQueryT, replace: Object, returning: boolean = false, transaction?: TransactionImpl): Promise<[boolean | number, any]> {
         if (!query) {
             throw new Error(`Db.update query parameter was falsey: ${query}`);
         }
         let sqlTransact = this.getSqlTransact(transaction);
-        if (transaction && returning) {
-            throw new Error(`Using a transaction to return records when you update them is not yet implemented.`);
-        }
-        if (this.isId(query))
-            query = { where: { id: query } };
-        else if (this.isT(query))
-            query = { where: { id: query.id } };
+        if (this.isId(query)) query = { where: { id: query } };
+        else if (this.isT(query)) query = { where: { id: query.id } };
         else {
             query = this.transformQuery(query);
             if (returning) {
@@ -161,8 +156,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         replace = this.transformQueryWhere(replace);
         let [affected, results]: [number, any[]] = await this.model.update(<any>replace, _.merge({}, { transaction: sqlTransact }, <UpdateQueryT>query));
         
-        if (returning)
-            results = this.wrapResults(await this.model.findAll(<QueryT>query));
+        if (returning) {
+            results = this.wrapResults(await this.model.findAll(_.merge({}, { transaction: sqlTransact }, <QueryT>query)));
+        }
         return [affected, results];
     }
     @Transaction()
@@ -298,7 +294,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         this.transformQueryWhere = function<U>(this: DbImpl<T, TInstance, TAttributes>, query: U): U {
             if (!query) return query;
             query = _.clone(query);
-            (<any>query)['$and'] = this.transformQueryWhere((<any>query)['$and']);
+            if ((<any>query)['$and']) {
+                (<any>query)['$and'] = this.transformQueryWhere((<any>query)['$and']);
+            }
             let orVal = (<any>query)['$or'];
             if (orVal && orVal.length) {
                 for (let q = 0; q < orVal.length; q++) {
