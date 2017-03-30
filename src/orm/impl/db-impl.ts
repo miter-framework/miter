@@ -6,6 +6,8 @@ import { QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT, C
 import { CtorT } from '../../core/ctor';
 import { TransactionT } from '../../core/transaction';
 
+import { Transaction } from '../../decorators/orm/transaction.decorator';
+
 import { PropMetadata, PropMetadataSym } from '../../metadata/orm/prop';
 import { ModelPropertiesSym } from '../../metadata/orm/model';
 import { ForeignModelSource } from '../../metadata/orm/associations/association';
@@ -163,31 +165,17 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             results = this.wrapResults(await this.model.findAll(<QueryT>query));
         return [affected, results];
     }
+    @Transaction()
     async updateOrCreate(query: Sql.WhereOptions, defaults: Object | T, transaction?: TransactionImpl): Promise<[T, boolean]> {
-        let t = <TransactionImpl>await this.transaction('updateOrCreate', transaction);
-        let failed = false;
-        try {
-            let [result, created] = await this.findOrCreate(query, defaults, t);
-            if (!created) {
-                let worked = await this.update({ where: query }, defaults, false, t);
-                if (!worked) throw new Error("Failed to update or create a model.");
-                let resultOrNull = await this.findOne(_.merge({}, query, defaults), t);
-                if (!resultOrNull) throw new Error("Updated row, but could not find it afterwards.");
-                result = resultOrNull;
-            }
-            return [result, created];
+        let [result, created] = await this.findOrCreate(query, defaults);
+        if (!created) {
+            let worked = await this.update({ where: query }, defaults, false);
+            if (!worked) throw new Error("Failed to update or create a model.");
+            let resultOrNull = await this.findOne(_.merge({}, query, defaults));
+            if (!resultOrNull) throw new Error("Updated row, but could not find it afterwards.");
+            result = resultOrNull;
         }
-        catch (e) {
-            failed = true;
-            this.logger.error('dbimpl', e);
-            await t.rollback();
-            throw e;
-        }
-        finally {
-            if (!failed) {
-                await t.commit();
-            }
-        }
+        return [result, created];
     }
     
     async destroy(query: number | string | T | DestroyQueryT, transaction?: TransactionImpl): Promise<any> {
