@@ -1,10 +1,11 @@
 import { Policy } from '../decorators/policies/policy.decorator';
-import { Server } from '../server/server';
+import { JwtMetadata } from '../metadata/server/jwt';
+import { Logger } from '../services/logger';
 import { JwtBasePolicy } from './jwt-base.policy';
 
 @Policy()
 export class JwtPolicy extends JwtBasePolicy {
-    constructor(server: Server) {
-        super(server, false);
+    constructor(jwtMeta: JwtMetadata, logger: Logger) {
+        super(jwtMeta, logger, false);
     }
 }

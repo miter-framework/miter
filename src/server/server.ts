@@ -30,8 +30,7 @@ export class Server {
         this._logger = new Logger(meta.name || null, meta.logLevel);
         this._injector = new Injector(this._logger);
         this._injector.provide({ provide: Server, useValue: this });
-        this._injector.provide({ provide: ServerMetadata, useValue: new ServerMetadata(meta) });
-        this._meta = this._injector.resolveInjectable(ServerMetadata)!;
+        this._meta = new ServerMetadata(meta, this._injector);
         for (let q = 0; q < this.meta.inject.length; q++) {
             this._injector.provide(this.meta.inject[q]);
         }
@@ -95,16 +94,14 @@ export class Server {
         this._app = createExpressApp();
         this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
         if (this.meta.allowCrossOrigin) {
-            this.logger.warn('miter', `Warning: server starting with cross-origin policy enabled. This should not be enabled in production.`);
+            this.logger.warn('miter', `Server starting with cross-origin policy enabled. This should not be enabled in production.`);
             this._app.use(function(req: Request, res: Response, next) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", req.header("Access-Control-Request-Headers"));
                 next();
             });
         }
-        if (this.meta.middleware && this.meta.middleware.length) {
-            this._app.use(...this.meta.middleware);
-        }
+        this._app.use(...this.meta.router.middleware);
     }
     
     private ormReflector: OrmReflector;
@@ -116,8 +113,8 @@ export class Server {
             await this.ormReflector.init();
             this.logger.info('orm', `Finished initializing ORM.`);
         }
-        else if (this.meta.models && this.meta.models.length) {
-            this.logger.warn('orm', `Warning: Models included in server metadata, but no orm configuration defined.`);
+        else if (this.meta.orm.models.length) {
+            this.logger.warn('orm', `Models included in server metadata, but no orm configuration defined.`);
         }
     }
     
@@ -139,7 +136,7 @@ export class Server {
         this.logger.verbose('router', `Loading routes...`);
         // let router = ExpressRouter();
         this.routerReflector = this._injector.resolveInjectable(RouterReflector)!;// new RouterReflector(this, router);
-        this.routerReflector.reflectRoutes(this.meta.controllers || []);
+        this.routerReflector.reflectRoutes();
         this.app.use(this.routerReflector.router.expressRouter);
         this.logger.info('router', `Finished loading routes.`);
     }
@@ -148,8 +145,8 @@ export class Server {
     private listen() {
         this.logger.info('miter', `Serving`);
         
-        if (this._meta.sslEnabled) {
-            this.webServer = https.createServer({key: this._meta.sslPrivateKey, cert: this._meta.sslCertificate}, this.app);
+        if (this.meta.ssl.enabled) {
+            this.webServer = https.createServer({key: this._meta.ssl.privateKey, cert: this._meta.ssl.certificate}, this.app);
         }
         else {
             this.webServer = http.createServer(this.app);

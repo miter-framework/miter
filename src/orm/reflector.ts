@@ -7,7 +7,7 @@ import { TransactionT } from '../core/transaction';
 
 import { Injectable } from '../decorators/services/injectable.decorator';
 
-import { ServerMetadata } from '../metadata/server/server';
+import { OrmMetadata } from '../metadata/server/orm';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../metadata/orm/model';
 import { PropMetadata, PropMetadataSym } from '../metadata/orm/prop';
 import { AssociationMetadata } from '../metadata/orm/associations/association';
@@ -34,7 +34,7 @@ type AssociationTypeDef = {
 export class OrmReflector {
     constructor(
         private logger: Logger,
-        private serverMeta: ServerMetadata,
+        private ormMeta: OrmMetadata,
         private transactionService: TransactionService,
         private ormTransform: OrmTransformService,
         private sql: Sequelize
@@ -43,7 +43,7 @@ export class OrmReflector {
     async init() {
         await this.sql.init();
         
-        let models = this.serverMeta.models;
+        let models = this.ormMeta.models;
         this.reflectModels(models);
         this.reflectAssociations(models);
         this.createDbImpls(models);

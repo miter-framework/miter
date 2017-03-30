@@ -10,7 +10,7 @@ import { Injectable } from '../decorators/services/injectable.decorator';
 
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../metadata/router/controller';
 import { RouteMetadata, RouteMetadataSym } from '../metadata/router/route';
-import { ServerMetadata } from '../metadata/server/server';
+import { RouterMetadata } from '../metadata/server/router';
 
 import { Logger } from '../services/logger';
 import { TransactionService } from '../services/transaction.service';
@@ -29,7 +29,7 @@ export class RouterReflector {
     constructor(
         private injector: Injector,
         private logger: Logger,
-        private serverMeta: ServerMetadata,
+        private routerMeta: RouterMetadata,
         private _router: RouterService,
         private transactionService: TransactionService
     ) { }
@@ -38,7 +38,8 @@ export class RouterReflector {
         return this._router;
     }
     
-    reflectRoutes(controllers: any[]) {
+    reflectRoutes(controllers?: any[]) {
+        controllers = controllers || this.routerMeta.controllers;
         for (let q = 0; q < controllers.length; q++) {
             this.reflectControllerRoutes(controllers[q]);
         }
@@ -85,7 +86,7 @@ export class RouterReflector {
         let transactionName = `${controllerName}#${routeFnName}`;
         
         let policyDescriptors = [
-            ...(this.serverMeta.policies),
+            ...(this.routerMeta.policies),
             ...(controllerMeta.policies || []),
             ...(routeMeta.policies || [])
         ];
@@ -95,7 +96,7 @@ export class RouterReflector {
         let pathPart = routeMeta.path;
         if (controller.transformPathPart) pathPart = controller.transformPathPart(pathPart) || pathPart;
         let fullPath = joinRoutePaths(...[
-            this.serverMeta.path,
+            this.routerMeta.path,
             controllerMeta.path || '',
             pathPart
         ]);

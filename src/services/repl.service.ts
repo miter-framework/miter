@@ -42,7 +42,7 @@ export class ReplService {
     }
     private makeContext() {
         this.context = vm.createContext();
-        let models = this.server.meta.models;
+        let models = this.server.meta.orm.models;
         if (models) {
             for (let q = 0; q < models.length; q++) {
                 (<any>this.context)[models[q].name] = this.proxyModel(models[q]);

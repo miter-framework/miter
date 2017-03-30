@@ -2,31 +2,32 @@ import { Request, Response, RequestHandler } from 'express';
 import * as expressJwt from 'express-jwt';
 
 import { Policy } from '../decorators/policies/policy.decorator';
-import { Server } from '../server/server';
+import { JwtMetadata } from '../metadata/server/jwt';
+import { Logger } from '../services/logger';
 import { wrapPromise } from '../util/wrap-promise';
 
 type AbstractCtorT<T> = { (...args: any[]): T };
 
 @Policy()
 export class JwtBasePolicy {
-    constructor(private server: Server, credentialsRequired: boolean) {
-        let jwt = server.meta.jwt;
-        if (typeof jwt === 'undefined') return;
+    constructor(
+        private jwtMeta: JwtMetadata,
+        protected readonly logger: Logger,
+        credentialsRequired: boolean
+    ) {
+        if (!jwtMeta) return;
         
-        this.property = jwt.tokenProperty || 'jwt';
         this.jwtHandler = expressJwt({
-            secret: jwt.secret,
+            secret: jwtMeta.secret,
             userProperty: this.property,
             credentialsRequired: credentialsRequired
         });
     }
     
-    private property: string;
-    private jwtHandler: RequestHandler;
-    
-    private get logger() {
-        return this.server.logger;
+    get property() {
+        return this.jwtMeta.tokenProperty;
     }
+    private jwtHandler: RequestHandler;
     
     async handle(req: Request, res: Response) {
         if (this.jwtHandler) {

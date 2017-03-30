@@ -29,10 +29,7 @@ export class Miter {
             delete (launchMeta as any).task;
             delete launchMeta.port;
             delete launchMeta.jwt;
-            delete launchMeta.path;
-            delete launchMeta.controllers;
-            delete launchMeta.policies;
-            delete launchMeta.middleware;
+            delete launchMeta.router;
             delete launchMeta.allowCrossOrigin;
             
             if (!launchMeta.logLevel) launchMeta.logLevel = 'warn';
