@@ -7,7 +7,7 @@ import { TransactionImpl } from './impl/transaction-impl';
 import * as __Sequelize from 'sequelize';
 
 @Injectable()
-export class Sequelize { 
+export class Sequelize {
     constructor(
         private ormMeta: OrmMetadata,
         private logger: Logger,

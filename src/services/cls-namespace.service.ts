@@ -3,7 +3,7 @@ import { ServerMetadata } from '../metadata/server/server';
 import { Service } from '../decorators/services/service.decorator';
 
 @Service()
-export class ClsNamespaceService implements Namespace {
+export class ClsNamespaceService {
     constructor(private meta: ServerMetadata) {
         let _name = `miter-cls-(${meta.name || ''})-${ClsNamespaceService.namespaceNum++}`;
         this._namespace = createNamespace(_name);

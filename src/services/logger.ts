@@ -4,12 +4,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class Logger {
-    constructor(serverName: string | null, logLevel: any) {
+    constructor(serverName: string | null, logLevel: any, createFile: boolean = true) {
         this._serverName = serverName;
         if (typeof logLevel === 'undefined') logLevel = { default: 'info' };
         if (typeof logLevel === 'string') logLevel = { default: logLevel };
         this.logLevel = logLevel;
         
+        console.log('In Logger.ctor');
+        
+        if (!createFile) return;
         let logPath = !!serverName ? `log/${serverName}` : `log`;
         try {
             logPath.split('/').forEach((dir, index, splits) => {

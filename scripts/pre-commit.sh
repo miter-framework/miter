@@ -5,7 +5,7 @@ git stash -k -u -q
 (
     set -e
     
-    #yarn test-once
+    yarn test-once
     yarn lint
 )
 
