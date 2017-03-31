@@ -18,8 +18,10 @@
     "typings": "./dist/index",
     "devDependencies": {
         "@types/chai": "^3.4.35",
+        "@types/chai-spies": "^0.0.0",
         "@types/mocha": "^2.2.40",
         "chai": "^3.5.0",
+        "chai-spies": "^0.7.1",
         "mocha": "^3.2.0",
         "mocha-typescript": "^1.0.23",
         "pre-commit": "^1.2.2",

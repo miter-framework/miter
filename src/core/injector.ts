@@ -43,6 +43,7 @@ export class Injector {
         return new ctorFn(...values);
     }
     provide<T>(provideMeta: ProvideMetadata<any>): this {
+        if (!provideMeta) throw new Error(`Invalid ProvideMetadata: ${provideMeta}`);
         let ctorFn = provideMeta.provide;
         if (!ctorFn) throw new Error('Attempted to provide a value for a falsey type.');
         if (this.cache.has(ctorFn)) throw new Error(`Duplicate value provided for ${ctorFn.name || ctorFn}.`);
@@ -72,7 +73,7 @@ export class Injector {
         return !!(<ProvideMetadataClassSource<T, any>>meta).useClass;
     }
     private isValueSource<T>(meta: ProvideMetadata<T>): meta is ProvideMetadataValueSource<T> {
-        return !!(<ProvideMetadataValueSource<T>>meta).useValue;
+        return typeof (<ProvideMetadataValueSource<T>>meta).useValue !== 'undefined';
     }
     private isCallbackSource<T>(meta: ProvideMetadata<T>): meta is ProvideMetadataCallbackSource<T> {
         return !!(<ProvideMetadataCallbackSource<T>>meta).useCallback;
