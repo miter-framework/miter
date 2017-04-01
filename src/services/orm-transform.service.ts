@@ -25,6 +25,7 @@ export class OrmTransformService {
         return assocMeta;
     }
     public transformAssociationColumnName(fieldName: string): string | null {
+        if (!fieldName) return null;
         return fieldName + 'Id';
     }
 }

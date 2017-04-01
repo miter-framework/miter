@@ -22,7 +22,6 @@ export class SnakeCaseOrmTransformService extends OrmTransformService {
     public transformColumnName(fieldName: string): string | null {
         let parts = [...this.splitOnWords(fieldName)].filter(Boolean);
         if (!parts.length) return null;
-        // parts[parts.length - 1] = pluralize(parts[parts.length - 1], false);
         return parts.map(pt => pt.toLowerCase()).join('_');
     }
     public transformAssociationColumnName(fieldName: string): string | null {
@@ -30,6 +29,7 @@ export class SnakeCaseOrmTransformService extends OrmTransformService {
     }
     
     private *splitOnWords(name: string) {
+        if (!name) return;
         let currentWord = '';
         for (let q = 0; q < name.length; q++) {
             let chr = name[q];
