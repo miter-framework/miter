@@ -1,16 +1,15 @@
 import { LogLevel } from '../metadata/server/server';
 import { clc } from '../util/clc';
+import { directLogger } from '../util/direct-logger';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export class Logger {
-    constructor(serverName: string | null, logLevel: any, createFile: boolean = true) {
+    constructor(serverName: string | null, logLevel: any, private createFile: boolean = true) {
         this._serverName = serverName;
         if (typeof logLevel === 'undefined') logLevel = { default: 'info' };
         if (typeof logLevel === 'string') logLevel = { default: logLevel };
         this.logLevel = logLevel;
-        
-        console.log('In Logger.ctor');
         
         if (!createFile) return;
         let logPath = !!serverName ? `log/${serverName}` : `log`;
@@ -19,9 +18,9 @@ export class Logger {
                 let partialPath = path.resolve(splits.splice(0, index).join('/'), dir);
                 if (!fs.existsSync(partialPath)) fs.mkdirSync(partialPath);
             });
+            this.fd = fs.openSync(`${logPath}/${serverName}.${new Date().getTime()}.log`, 'w');
         }
-        catch(e) { console.error(e); }
-        this.fd = fs.openSync(`${logPath}/${serverName}.${new Date().getTime()}.log`, 'w');
+        catch(e) { this.createFile = false; this.error(e); }
     }
     
     private fd: number;
@@ -29,7 +28,7 @@ export class Logger {
     private logLevel: { [name: string]: LogLevel };
     
     public ShutDown() {
-        fs.close(this.fd);
+        if (this.createFile) fs.close(this.fd);
     }
     
     private _serverName: string | null;
@@ -58,35 +57,35 @@ export class Logger {
     }
     
     private writeToFile(message: string) {
-        fs.write(this.fd, message + "\n", () => {});
+        if (this.createFile) fs.write(this.fd, message + "\n", () => {});
     }
     
     log(subsystem: string | null, message?: any, ...optionalParams: any[]): void { 
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}]: ${message}`);
-        console.log(this.logLabelMessage(subsystem), message, ...optionalParams);
+        directLogger.log(this.logLabelMessage(subsystem), message, ...optionalParams);
     }
     trace(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}]: ${message}`);
-        console.trace(this.logLabelMessage(subsystem), message, ...optionalParams);
+        directLogger.trace(this.logLabelMessage(subsystem), message, ...optionalParams);
     }
     
     error(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] error: ${message}`);
-        console.error(this.logLabelMessage(subsystem), clc.error(`error:`), message, ...optionalParams);
+        directLogger.error(this.logLabelMessage(subsystem), clc.error(`error:`), message, ...optionalParams);
     }
     info(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] info: ${message}`);
         if (!this.logLevelCheck(subsystem, 'info')) return;
-        console.info(this.logLabelMessage(subsystem), clc.info(`info:`), message, ...optionalParams);
+        directLogger.info(this.logLabelMessage(subsystem), clc.info(`info:`), message, ...optionalParams);
     }
     warn(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] warn: ${message}`);
         if (!this.logLevelCheck(subsystem, 'warn')) return;
-        console.warn(this.logLabelMessage(subsystem), clc.warn(`warn:`), message, ...optionalParams);
+        directLogger.warn(this.logLabelMessage(subsystem), clc.warn(`warn:`), message, ...optionalParams);
     }
     verbose(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] verbose: ${message}`);
         if (!this.logLevelCheck(subsystem, 'verbose')) return;
-        console.log(this.logLabelMessage(subsystem), 'verbose:', message, ...optionalParams);
+        directLogger.log(this.logLabelMessage(subsystem), 'verbose:', message, ...optionalParams);
     }
 }

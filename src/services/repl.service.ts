@@ -3,6 +3,7 @@ import { Server } from '../server/server';
 import { Logger } from './logger';
 import { cin } from '../util/cin';
 import { cout } from '../util/cout';
+import { directLogger } from '../util/direct-logger';
 import vm = require('vm');
 
 const ELLIPSIS_CHANGE_MILLIS = 50;
@@ -95,7 +96,7 @@ export class ReplService {
             let script = new vm.Script(code);
             let result = script.runInContext(this.context);
             if (result && result.then) result = await this.resolvePromise(result);
-            console.log(result);
+            directLogger.log(result);
         }
         catch (e) {
             this.logger.error('repl', e && (e.message || e));

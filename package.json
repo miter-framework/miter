@@ -18,13 +18,13 @@
     "typings": "./dist/index",
     "devDependencies": {
         "@types/chai": "^3.4.35",
-        "@types/chai-spies": "^0.0.0",
         "@types/mocha": "^2.2.40",
+        "@types/sinon": "^2.1.1",
         "chai": "^3.5.0",
-        "chai-spies": "^0.7.1",
         "mocha": "^3.2.0",
         "mocha-typescript": "^1.0.23",
         "pre-commit": "^1.2.2",
+        "sinon": "^2.1.0",
         "ts-node": "^3.0.2",
         "tslint": "^4.5.1",
         "typemoq": "^1.4.1"
@@ -39,6 +39,7 @@
         "@types/node": "^7.0.0",
         "@types/pluralize": "^0.0.27",
         "@types/sequelize": "^4.0.38",
+        "@types/sinon-chai": "^2.7.27",
         "body-parser": "^1.15.2",
         "cli-color": "^1.1.0",
         "continuation-local-storage": "^3.2.0",
@@ -50,6 +51,7 @@
         "pluralize": "^3.0.0",
         "reflect-metadata": "^0.1.8",
         "sequelize": "^3.24.6",
+        "sinon-chai": "^2.9.0",
         "typescript": "^2.2.1"
     },
     "keywords": [

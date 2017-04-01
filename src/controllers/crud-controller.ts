@@ -88,7 +88,6 @@ export abstract class CrudController<T extends ModelT<any>> {
         return result;
     }
     protected async transformCreateQuery(req: Request, res: Response, query: Object) {
-        console.log('create query:', query);
         return query;
     }
     protected async transformCreateResult(req: Request, res: Response, result: T) {

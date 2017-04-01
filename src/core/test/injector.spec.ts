@@ -1,8 +1,6 @@
 /// <reference types="mocha" />
 
 import { expect, use } from 'chai';
-import * as spies from 'chai-spies';
-use(spies);
 
 import { Injector } from '../injector';
 import { Logger } from '../../services/logger';
