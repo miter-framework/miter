@@ -7,7 +7,6 @@ use(sinonChai);
 
 import { stubDirectLogger } from '../../util/test/stub-direct-logger';
 import { Logger } from '../logger';
-import { Mock } from 'typemoq';
 
 const testServerName = 'abc-xyz';
 const logLevels = {

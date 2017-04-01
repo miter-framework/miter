@@ -7,7 +7,6 @@ use(sinonChai);
 
 import { ClsNamespaceService } from '../cls-namespace.service';
 import { ServerMetadata } from '../../metadata/server/server';
-import { Mock } from 'typemoq';
 
 const testServerMeta = new ServerMetadata({ name: 'abc-xyz' }, <any>null);
 

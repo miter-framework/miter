@@ -4,18 +4,20 @@ import { expect, use } from 'chai';
 
 import { Injector } from '../injector';
 import { Logger } from '../../services/logger';
-import { Mock } from 'typemoq';
 
 import { Injectable } from '../../decorators/services/injectable.decorator';
 
 describe('Injector', () => {
-    let mockLogger = Mock.ofType<Logger>().object;
+    let logger: Logger;
     let instance: Injector;
-    before(() => instance = new Injector(<any>mockLogger));
+    before(() => {
+        logger = new Logger('abc-xyz', 'default', false);
+        instance = new Injector(logger);
+    });
     
     describe('.resolveInjectable', () => {
         it('should provide the logger when requested', () => {
-            expect(instance.resolveInjectable(Logger)).to.equal(mockLogger);
+            expect(instance.resolveInjectable(Logger)).to.equal(logger);
         });
         it('should provide itself when requested', () => {
             expect(instance.resolveInjectable(Injector)).to.equal(instance);
