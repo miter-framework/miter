@@ -38,14 +38,14 @@ export type ServerMetadataT = {
 @Injectable()
 export class ServerMetadata implements ServerMetadataT {
     constructor(private _meta: ServerMetadataT, injector: Injector) {
-        injector.provide({ provide: ServerMetadata, useValue: this });
+        if (injector) injector.provide({ provide: ServerMetadata, useValue: this });
         
         this._ssl = new SSLMetadata(this._meta.ssl || {}, injector);
         this._router = new RouterMetadata(this._meta.router || {}, injector);
         this._orm = new OrmMetadata(this._meta.orm || {}, injector);
         
         if (this._meta.jwt) this._jwt = new JwtMetadata(this._meta.jwt, injector);
-        else injector.provide({ provide: JwtMetadata, useValue: this._jwt });
+        else if (injector) injector.provide({ provide: JwtMetadata, useValue: this._jwt });
     }
     
     get name() {

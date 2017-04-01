@@ -10,7 +10,7 @@ export type SSLMetadataT = {
 @Injectable()
 export class SSLMetadata implements SSLMetadataT {
     constructor(private _meta: SSLMetadataT, injector: Injector) {
-        injector.provide({ provide: SSLMetadata, useValue: this });
+        if (injector) injector.provide({ provide: SSLMetadata, useValue: this });
     }
     
     get enabled() {

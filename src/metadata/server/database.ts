@@ -20,7 +20,7 @@ export type DatabaseMetadataT = {
 @Injectable()
 export class DatabaseMetadata implements DatabaseMetadataT {
     constructor(private _meta: DatabaseMetadataT, injector: Injector) {
-        injector.provide({ provide: DatabaseMetadata, useValue: this });
+        if (injector) injector.provide({ provide: DatabaseMetadata, useValue: this });
         
         if (typeof _meta.host === 'string') this._domain = _meta.host;
         else {

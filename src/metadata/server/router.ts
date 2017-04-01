@@ -15,7 +15,7 @@ export type RouterMetadataT = {
 @Injectable()
 export class RouterMetadata implements RouterMetadataT {
     constructor(private _meta: RouterMetadataT, injector: Injector) {
-        injector.provide({ provide: RouterMetadata, useValue: this });
+        if (injector) injector.provide({ provide: RouterMetadata, useValue: this });
     }
     
     get path() {

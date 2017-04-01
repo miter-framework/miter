@@ -13,9 +13,9 @@ export type OrmMetadataT = {
 @Injectable()
 export class OrmMetadata implements OrmMetadataT {
     constructor(private _meta: OrmMetadataT, injector: Injector) {
-        injector.provide({ provide: OrmMetadata, useValue: this });
+        if (injector) injector.provide({ provide: OrmMetadata, useValue: this });
         if (this._meta.db) this._db = new DatabaseMetadata(this._meta.db, injector);
-        else injector.provide({ provide: DatabaseMetadata, useValue: null });
+        else if (injector) injector.provide({ provide: DatabaseMetadata, useValue: null });
     }
     
     get enabled() {

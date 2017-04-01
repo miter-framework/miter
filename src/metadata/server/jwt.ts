@@ -9,7 +9,7 @@ export type JwtMetadataT = {
 @Injectable()
 export class JwtMetadata implements JwtMetadataT {
     constructor(private _meta: JwtMetadataT, injector: Injector) {
-        injector.provide({ provide: JwtMetadata, useValue: this });
+        if (injector) injector.provide({ provide: JwtMetadata, useValue: this });
     }
     
     get secret() {
