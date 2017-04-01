@@ -2,11 +2,10 @@
 
 export function inhertitanceHierarchy(target: Function): Function[] {
     let hierarchy: Function[] = [];
-    if (target.constructor) target = target.constructor;
     while (target) {
         hierarchy = [target, ...hierarchy];
-        let proto = Object.getPrototypeOf(target.prototype);
-        target = proto && proto.constructor;
+        target = Object.getPrototypeOf(target);
     }
+    hierarchy.splice(0, 1);
     return hierarchy;
 }

@@ -17,7 +17,6 @@ import { TransactionService } from '../services/transaction.service';
 import { RouterService } from '../services/router.service';
 
 import { inhertitanceHierarchy } from '../util/inheritance-hierarchy';
-import { hasNoUndefined } from '../util/has-no-undefined';
 import { joinRoutePaths } from '../util/join-route-paths';
 import { wrapPromise } from '../util/wrap-promise';
 import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../util/http-status-type';
@@ -67,9 +66,10 @@ export class RouterReflector {
     
     private reflectRouteMeta(controllerProto: any): [string, RouteMetadata[]][] {
         let hierarchy = inhertitanceHierarchy(controllerProto);
+        this.logger.verbose('router', 'reflecting routes for inheritance hierarchy:', hierarchy.map(fn => fn.name || fn));
         let routeMeta: [string, RouteMetadata[]][] = [];
         for (let r = 0; r < hierarchy.length; r++) {
-            let fn = hierarchy[r].prototype;
+            let fn = hierarchy[r];
             let routeNames: string[] = Reflect.getOwnMetadata(ControllerRoutesSym, fn) || [];
             for (let q = 0; q < routeNames.length; q++) {
                 let routeFnName: string = routeNames[q];
