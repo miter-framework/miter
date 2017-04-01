@@ -137,7 +137,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         result = await this.transformCreateResult(req, res, result);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        this.afterCreate(req, res, result);
+        await this.afterCreate(req, res, result);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         res.status(HTTP_STATUS_OK).json(result);
