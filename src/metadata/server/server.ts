@@ -21,7 +21,7 @@ export type ServerMetadataT = {
     port?: number | string,
     allowCrossOrigin?: boolean,
     ssl?: SSLMetadataT,
-    router?: RouterMetadataT,
+    router?: RouterMetadataT | null,
     
     orm?: OrmMetadataT,
     
@@ -41,8 +41,10 @@ export class ServerMetadata implements ServerMetadataT {
         if (injector) injector.provide({ provide: ServerMetadata, useValue: this });
         
         this._ssl = new SSLMetadata(this._meta.ssl || {}, injector);
-        this._router = new RouterMetadata(this._meta.router || {}, injector);
         this._orm = new OrmMetadata(this._meta.orm || {}, injector);
+        
+        if (this._meta.router) this._router = new RouterMetadata(this._meta.router || {}, injector);
+        else if (injector) injector.provide({ provide: RouterMetadata, useValue: this._router });
         
         if (this._meta.jwt) this._jwt = new JwtMetadata(this._meta.jwt, injector);
         else if (injector) injector.provide({ provide: JwtMetadata, useValue: this._jwt });
@@ -64,7 +66,7 @@ export class ServerMetadata implements ServerMetadataT {
         return this._ssl;
     }
     
-    private _router: RouterMetadata;
+    private _router: RouterMetadata | null = null;
     get router() {
         return this._router;
     }

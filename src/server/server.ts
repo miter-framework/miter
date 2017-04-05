@@ -34,6 +34,7 @@ export class Server {
         for (let q = 0; q < this.meta.inject.length; q++) {
             this._injector.provide(this.meta.inject[q]);
         }
+        if (!this._meta.router) this._injector.provide({ provide: RouterReflector, useValue: null });
     }
     
     private _meta: ServerMetadata;
@@ -59,10 +60,10 @@ export class Server {
     async init() {
         try {
             this.logger.info('miter', `Initializing miter server...`);
-            if (typeof this.meta.port !== 'undefined') await this.createExpressApp();
+            if (this.meta.router) await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();
-            if (typeof this.meta.port !== 'undefined') this.reflectRoutes();
+            if (this.meta.router) this.reflectRoutes();
         }
         catch (e) {
             this.logger.error('miter', `FATAL ERROR: Failed to launch server.`);
@@ -70,14 +71,14 @@ export class Server {
             return;
         }
         
-        if (typeof this.meta.port !== 'undefined') this.listen();
+        if (this.meta.router) this.listen();
     }
     errorCode: number = 0;
     async shutdown() {
         try {
             try {
                 this.logger.info('miter', `Shutting down miter server...`);
-                if (typeof this.meta.port !== 'undefined') await this.stopListening();
+                if (this.meta.router) await this.stopListening();
                 await this.stopServices();
             }
             finally {
@@ -101,7 +102,7 @@ export class Server {
                 next();
             });
         }
-        this._app.use(...this.meta.router.middleware);
+        if (this.meta.router) this._app.use(...this.meta.router.middleware);
     }
     
     private ormReflector: OrmReflector;
@@ -134,8 +135,7 @@ export class Server {
     private routerReflector: RouterReflector;
     private reflectRoutes() {
         this.logger.verbose('router', `Loading routes...`);
-        // let router = ExpressRouter();
-        this.routerReflector = this._injector.resolveInjectable(RouterReflector)!;// new RouterReflector(this, router);
+        this.routerReflector = this._injector.resolveInjectable(RouterReflector)!;
         this.routerReflector.reflectRoutes();
         this.app.use(this.routerReflector.router.expressRouter);
         this.logger.info('router', `Finished loading routes.`);

@@ -10,9 +10,12 @@ import { Logger } from '../services/logger';
 @Injectable()
 export class ServiceReflector {
     constructor(
-        private injector: Injector,
-        private logger: Logger
-    ) { }
+        private injector: Injector
+    ) {
+        this.logger = injector.resolveInjectable(Logger)!;
+    }
+    
+    private logger: Logger;
     
     async reflectServices(services: CtorT<ServiceT>[]) {
         let failures = 0;
