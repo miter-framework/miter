@@ -167,7 +167,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         if (!created) {
             let worked = await this.update({ where: query }, defaults, false);
             if (!worked) throw new Error("Failed to update or create a model.");
-            let resultOrNull = await this.findOne(_.merge({}, query, defaults));
+            let resultOrNull = await this.findOne(_.merge({}, { where: query }, defaults));
             if (!resultOrNull) throw new Error("Updated row, but could not find it afterwards.");
             result = resultOrNull;
         }
