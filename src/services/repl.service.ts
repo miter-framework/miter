@@ -21,7 +21,8 @@ export class ReplService {
     private loopPromise: Promise<void>;
     
     async start() {
-        this.makeContext();        
+        this.makeContext();
+        cin.getNative();
         this.loopPromise = this.repl();
     }
     
@@ -59,6 +60,7 @@ export class ReplService {
         (<any>this.context)['Injector'] = this.server.injector;
         (<any>this.context)['logger'] = this.server.logger;
         (<any>this.context)['delay'] = this.delay;
+        (<any>this.context)['require'] = require;
     }
     private delay(millis: number) {
         return new Promise((resolve, reject) => {
