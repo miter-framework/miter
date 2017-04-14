@@ -102,7 +102,9 @@ export class Server {
                 next();
             });
         }
-        if (this.meta.router) this._app.use(...this.meta.router.middleware);
+        if (this.meta.router && this.meta.router.middleware && this.meta.router.middleware.length) {
+            this._app.use(...this.meta.router.middleware);
+        }
     }
     
     private ormReflector: OrmReflector;
