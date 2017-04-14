@@ -5,6 +5,5 @@
     "editor.renderWhitespace": "all",
     "editor.trimAutoWhitespace": false,
     "files.insertFinalNewline": true,
-    "vsicons.presets.angular": false,
-    "workbench.colorTheme": "Solarized Dark"
+    "vsicons.presets.angular": false
 }
