@@ -14,9 +14,9 @@ describe('util/inhertitanceHierarchy', () => {
         class C extends B {}
         class D extends C {}
         
-        expect(inhertitanceHierarchy(A)).to.be.deep.eq([A]);
-        expect(inhertitanceHierarchy(B)).to.be.deep.eq([A, B]);
-        expect(inhertitanceHierarchy(C)).to.be.deep.eq([A, B, C]);
-        expect(inhertitanceHierarchy(D)).to.be.deep.eq([A, B, C, D]);
+        expect(inhertitanceHierarchy(A).splice(1)).to.be.deep.eq([A]);
+        expect(inhertitanceHierarchy(B).splice(1)).to.be.deep.eq([A, B]);
+        expect(inhertitanceHierarchy(C).splice(1)).to.be.deep.eq([A, B, C]);
+        expect(inhertitanceHierarchy(D).splice(1)).to.be.deep.eq([A, B, C, D]);
     });
 });
