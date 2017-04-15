@@ -12,6 +12,7 @@
 * **repository:** add CHANGELOG.md to record changes between versions
 * **tests:** add a unit testing framework and test the built-in services and utility functions
 * **middleware:** gracefully handle an empty array of middleware functions
+* **orm:** add the Sanitize decorator to ensure private data is removed before serializing it
 
 
 
