@@ -102,6 +102,18 @@ export class Server {
                 next();
             });
         }
+        this._app.use((req: Request, res: Response, next) => {
+            let origSendFile = <any>res.sendFile;
+            (<any>res).sendfile = (<any>res).sendFile = async (path: string, options: any, errback?: any) => {
+                if (!errback && typeof options === 'function') {
+                    errback = options;
+                    options = undefined;
+                }
+                if (errback) origSendFile(path, options, errback);
+                else await wrapPromise(origSendFile.bind(res), path, options);
+            }
+            next();
+        });
         if (this.meta.router && this.meta.router.middleware && this.meta.router.middleware.length) {
             this._app.use(...this.meta.router.middleware);
         }

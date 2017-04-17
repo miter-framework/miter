@@ -21,7 +21,7 @@ import { joinRoutePaths } from '../util/join-route-paths';
 import { wrapPromise } from '../util/wrap-promise';
 import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../util/http-status-type';
 
-import './extend-request';
+import './extend-req-res';
 
 @Injectable()
 export class RouterReflector {

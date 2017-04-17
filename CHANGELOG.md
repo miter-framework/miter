@@ -14,6 +14,7 @@
 * **middleware:** gracefully handle an empty array of middleware functions
 * **orm:** add the Sanitize decorator to ensure private data is removed before serializing it
 * **router:** allow users to mount controllers on other controllers
+* **router:** allow routes to await res.sendFile
 
 
 
