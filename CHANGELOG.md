@@ -13,6 +13,7 @@
 * **tests:** add a unit testing framework and test the built-in services and utility functions
 * **middleware:** gracefully handle an empty array of middleware functions
 * **orm:** add the Sanitize decorator to ensure private data is removed before serializing it
+* **router:** allow users to mount controllers on other controllers
 
 
 

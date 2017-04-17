@@ -37,31 +37,40 @@ export class RouterReflector {
         return this._router;
     }
     
-    reflectRoutes(controllers?: any[]) {
+    reflectRoutes(controllers?: any[], parentControllers?: any[]) {
+        parentControllers = parentControllers || [];
         controllers = controllers || this.routerMeta.controllers;
+        
+        this.logger.verbose('router', `in reflectRoutes; controllers=[${controllers && controllers.map(c => c.name || c)}]; parentControllers=[${parentControllers && parentControllers.map(c => c.name || c)}]`)
         for (let q = 0; q < controllers.length; q++) {
-            this.reflectControllerRoutes(controllers[q]);
+            this.reflectControllerRoutes(parentControllers, controllers[q]);
         }
     }
     
     private controllers: any = {};
-    reflectControllerRoutes(controllerFn: any) {
-        if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn}.`);
+    reflectControllerRoutes(parentControllers: any[], controllerFn: any) {
+        if (this.controllers[controllerFn]) throw new Error(`A controller was passed to the router-reflector twice: ${controllerFn.name || controllerFn}.`);
         let controllerInst = this.controllers[controllerFn] = this.injector.resolveInjectable(controllerFn);
         let controllerProto = controllerFn.prototype;
         
         let meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
-        if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerProto}.`);
-        this.logger.info('router', `Reflecting routes for controller ${controllerFn.name}`);
+        if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerFn.name || controllerFn}.`);
+        this.logger.info('router', `Reflecting routes for controller ${controllerFn.name || controllerFn}`);
+        
+        parentControllers = parentControllers || [];
+        let parentMeta: ControllerMetadata[] = parentControllers.map(pc => Reflect.getOwnMetadata(ControllerMetadataSym, pc.prototype));
+        if (parentMeta.some(pm => !pm)) throw new Error(`Failed to reflect parent controller metadata for controller: ${controllerFn.name || controllerFn}`);
         
         let routes = this.reflectRouteMeta(controllerProto);
         for (let q = 0; q < routes.length; q++) {
             let [routeFnName, routeMetaArr] = routes[q];
             for (let w = 0; w < routeMetaArr.length; w++) {
                 let routeMeta = routeMetaArr[w];
-                this.addRoute(controllerInst, routeFnName, meta, routeMeta);
+                this.addRoute(parentMeta, controllerInst, routeFnName, meta, routeMeta);
             }
         }
+        
+        this.reflectRoutes(meta.controllers || [], [...parentControllers, controllerFn]);
     }
     
     private reflectRouteMeta(controllerProto: any): [string, RouteMetadata[]][] {
@@ -81,12 +90,13 @@ export class RouterReflector {
         return routeMeta;
     }
     
-    private addRoute(controller: any, routeFnName: string, controllerMeta: ControllerMetadata, routeMeta: RouteMetadata) {
+    private addRoute(parentMeta: ControllerMetadata[], controller: any, routeFnName: string, controllerMeta: ControllerMetadata, routeMeta: RouteMetadata) {
         let controllerName = (controller && ((controller.constructor && controller.constructor.name) || controller.name)) || controller;
         let transactionName = `${controllerName}#${routeFnName}`;
         
         let policyDescriptors = [
             ...(this.routerMeta.policies),
+            ...(<PolicyDescriptor[]>[].concat.apply([], parentMeta.map(pm => pm.policies || []))),
             ...(controllerMeta.policies || []),
             ...(routeMeta.policies || [])
         ];
@@ -97,6 +107,7 @@ export class RouterReflector {
         if (controller.transformPathPart) pathPart = controller.transformPathPart(pathPart) || pathPart;
         let fullPath = joinRoutePaths(...[
             this.routerMeta.path,
+            ...parentMeta.map(pm => pm.path || ''),
             controllerMeta.path || '',
             pathPart
         ]);
