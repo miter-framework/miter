@@ -91,12 +91,12 @@ export class RouterReflector {
     }
     
     private addRoute(parentMeta: ControllerMetadata[], controller: any, routeFnName: string, controllerMeta: ControllerMetadata, routeMeta: RouteMetadata) {
-        let controllerName = (controller && ((controller.constructor && controller.constructor.name) || controller.name)) || controller;
+        let controllerName = this.getControllerName(controller);
         let transactionName = `${controllerName}#${routeFnName}`;
         
         let policyDescriptors = [
             ...(this.routerMeta.policies),
-            ...(<PolicyDescriptor[]>[].concat.apply([], parentMeta.map(pm => pm.policies || []))),
+            ...this.getParentPolicyDescriptors(parentMeta),
             ...(controllerMeta.policies || []),
             ...(routeMeta.policies || [])
         ];
@@ -116,7 +116,29 @@ export class RouterReflector {
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
-        (<any>this.router.expressRouter)[routeMeta.method](fullPath, this.createFullRouterFn(policies, boundRoute, transactionName, routeMeta));
+        let addRouteFn = (<any>this.router.expressRouter)[routeMeta.method].bind(this.router.expressRouter);
+        let fullRouterFn = this.createFullRouterFn(policies, boundRoute, transactionName, routeMeta);
+        addRouteFn(fullPath, fullRouterFn);
+    }
+    private getControllerName(controller: any): string {
+        if (!controller) {
+            throw new Error(`Cannot extract name from falsey controller: ${controller}`);
+        }
+        else if (controller.constructor && controller.constructor.name) {
+            return controller.constructor.name;
+        }
+        else if (controller.name) {
+            return controller.name;
+        }
+        else return controller;
+    }
+    private getParentPolicyDescriptors(parentMeta: ControllerMetadata[]): PolicyDescriptor[] {
+        let policies = [];
+        for (let pm of parentMeta)
+        {
+            policies.push(...(pm.policies || []));
+        }
+        return policies;
     }
     private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][] {
         return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }] => {
