@@ -16,6 +16,11 @@ export type PerformQueryT = {
     offset: number,
     limit: number
 };
+export type PerformFindOneQueryT = {
+    where: Object,
+    include: string[],
+    order: [string, string][]
+};
 
 export abstract class CrudController<T extends ModelT<any>> {
     constructor(
@@ -67,6 +72,9 @@ export abstract class CrudController<T extends ModelT<any>> {
     }
     protected async performQuery(req: Request, res: Response, query: PerformQueryT) {
         return await this.staticModel.db.findAndCountAll(<any>query);
+    }
+    protected async performFindOneQuery(req: Request, res: Response, query: PerformFindOneQueryT) {
+        return await this.staticModel.db.findOne(<any>query);
     }
     protected async transformQueryResults(req: Request, res:Response, results: CountAllResults<T>) {
         let initialStatusCode = res.statusCode;
@@ -144,6 +152,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     }
     
     @Get(`/%%PLURAL_NAME%%/find`)
+    @Get(`/%%PLURAL_NAME%%/find-one`)
     async find(req: Request, res: Response) {
         let query: any = {};
         let include: string[] = [];
@@ -171,29 +180,44 @@ export abstract class CrudController<T extends ModelT<any>> {
         query = await this.transformQuery(req, res, query) || query;
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        let perPage = req.query['perPage'];
-        if (!perPage || !(perPage = parseInt('' + perPage, 10)) || isNaN(perPage) || perPage <= 0) perPage = 10;
-        let page = req.query['page'];
-        if (!page || !(page = parseInt('' + page, 10)) || isNaN(page) || page < 0) page = 0;
-        
-        let results = await this.performQuery(req, res, {
-            where: query,
-            include: include,
-            order: order,
-            offset: page * perPage,
-            limit: perPage
-        });
-        if (res.statusCode !== initialStatusCode || res.headersSent) return;
-        
-        results = (await this.transformQueryResults(req, res, results))!;
-        if (res.statusCode !== initialStatusCode || res.headersSent || !results) return;
-        
-        res.status(HTTP_STATUS_OK).json({
-            results: results.results,
-            page: page,
-            perPage: perPage,
-            total: results.count
-        });
+        let findOne = req.path.endsWith('find-one');
+        if (findOne) {
+            let result = await this.performFindOneQuery(req, res, {
+                where: query,
+                include: include,
+                order: order
+            });
+            
+            result = await this.transformResult(req, res, result);
+            initialStatusCode = res.statusCode;
+            result = await this.transformResult(req, res, result);
+            if (res.statusCode === initialStatusCode && !res.headersSent) res.status(HTTP_STATUS_OK).json(result);
+        }
+        else {
+            let perPage = req.query['perPage'];
+            if (!perPage || !(perPage = parseInt('' + perPage, 10)) || isNaN(perPage) || perPage <= 0) perPage = 10;
+            let page = req.query['page'];
+            if (!page || !(page = parseInt('' + page, 10)) || isNaN(page) || page < 0) page = 0;
+            
+            let results = await this.performQuery(req, res, {
+                where: query,
+                include: include,
+                order: order,
+                offset: page * perPage,
+                limit: perPage
+            });
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            
+            results = (await this.transformQueryResults(req, res, results))!;
+            if (res.statusCode !== initialStatusCode || res.headersSent || !results) return;
+            
+            res.status(HTTP_STATUS_OK).json({
+                results: results.results,
+                page: page,
+                perPage: perPage,
+                total: results.count
+            });
+        }
     }
     
     @Get(`/%%PLURAL_NAME%%/count`)

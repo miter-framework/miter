@@ -1,6 +1,6 @@
 
-<a name="0.1.5"></a>
-## [0.1.5](https://github.com/miter-framework/miter/compare/0.1.4...HEAD) (_Future_)
+<a name="0.2.0"></a>
+## [0.2.0](https://github.com/miter-framework/miter/compare/0.1.4...HEAD) (_Future_)
 
 ### Bug Fixes
 
@@ -15,6 +15,7 @@
 * **orm:** add the Sanitize decorator to ensure private data is removed before serializing it
 * **router:** allow users to mount controllers on other controllers
 * **router:** allow routes to await res.sendFile
+* **crud-controller:** add findOne route to the CrudController
 
 
 
