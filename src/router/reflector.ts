@@ -94,24 +94,31 @@ export class RouterReflector {
         let controllerName = this.getControllerName(controller);
         let transactionName = `${controllerName}#${routeFnName}`;
         
-        let policyDescriptors = [
-            ...(this.routerMeta.policies),
-            ...this.getParentPolicyDescriptors(parentMeta),
-            ...(controllerMeta.policies || []),
-            ...(routeMeta.policies || [])
-        ];
-        let policies = this.resolvePolicies(policyDescriptors);
-        let boundRoute = controller[routeFnName].bind(controller);
-        
         let pathPart = routeMeta.path;
-        if (controller.transformPathPart) pathPart = controller.transformPathPart(pathPart) || pathPart;
+        if (typeof controller.transformPathPart === 'function') {
+            pathPart = controller.transformPathPart(routeFnName, pathPart) || pathPart;
+        }
         let fullPath = joinRoutePaths(...[
             this.routerMeta.path,
             ...parentMeta.map(pm => pm.path || ''),
             controllerMeta.path || '',
             pathPart
         ]);
-        if (controller.transformPath) fullPath = controller.transformPath(fullPath) || fullPath;
+        if (controller.transformPath) {
+            fullPath = controller.transformPath(routeFnName, fullPath) || fullPath;
+        }
+        
+        let policyDescriptors = [
+            ...(this.routerMeta.policies),
+            ...this.getParentPolicyDescriptors(parentMeta),
+            ...(controllerMeta.policies || []),
+            ...(routeMeta.policies || [])
+        ];
+        if (typeof controller.transformRoutePolicies === 'function') {
+            policyDescriptors = controller.transformRoutePolicies(routeFnName, fullPath, policyDescriptors) || policyDescriptors;
+        }
+        let policies = this.resolvePolicies(policyDescriptors);
+        let boundRoute = controller[routeFnName].bind(controller);
         
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);

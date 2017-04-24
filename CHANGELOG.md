@@ -16,6 +16,7 @@
 * **orm:** add Flag decorator as a shorthand for a non-null boolean column with "false" as the default value
 * **router:** allow users to mount controllers on other controllers
 * **router:** allow routes to await res.sendFile
+* **router:** allow controllers to dynamically change route policies at runtime
 * **crud-controller:** add findOne route to the CrudController
 
 

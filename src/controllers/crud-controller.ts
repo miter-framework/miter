@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 
 import { StaticModelT, ModelT } from '../core/model';
 import { CountAllResults } from '../core/db';
+import { PolicyDescriptor } from '../core/policy';
 
-import { Controller } from '../decorators/router/controller.decorator';
 import { Get, Post, Put, Patch, Delete } from '../decorators/router/routes';
 
 import { pluralize } from '../util/pluralize';
@@ -63,11 +63,32 @@ export abstract class CrudController<T extends ModelT<any>> {
     private singularName: string;
     private pluralName: string;
     
-    transformPathPart(part: string): string {
+    transformPathPart(routeFnName: string, part: string): string {
         return part.replace(/%%PLURAL_NAME%%/, this.pluralName).replace(/%%SINGULAR_NAME%%/, this.singularName);
     }
+    transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
+        switch (routeFnName) {
+        case 'create':
+        case 'update':
+        case 'destroy':
+            return [...policies, ...this.getReadPolicies(), ...this.getMutatePolicies()];
+        case 'find':
+        case 'count':
+        case 'get':
+            return [...policies, ...this.getReadPolicies()];
+        default:
+            return policies;
+        }
+    }
     
-    protected async transformQuery(req: Request, res: Response, query: Object) {
+    protected getReadPolicies(): PolicyDescriptor[] {
+        return [];
+    }
+    protected getMutatePolicies(): PolicyDescriptor[] {
+        return [];
+    }
+    
+    protected async transformQuery(req: Request, res: Response, query: Object): Promise<Object | boolean> {
         return query;
     }
     protected async performQuery(req: Request, res: Response, query: PerformQueryT) {
@@ -95,13 +116,13 @@ export abstract class CrudController<T extends ModelT<any>> {
     protected async transformResult(req: Request, res: Response, result: T | null) {
         return result;
     }
-    protected async transformCreateQuery(req: Request, res: Response, query: Object) {
+    protected async transformCreateQuery(req: Request, res: Response, query: Object): Promise<Object | false> {
         return query;
     }
     protected async transformCreateResult(req: Request, res: Response, result: T) {
         return result;
     }
-    protected async transformUpdateQuery(req: Request, res: Response, query: Object) {
+    protected async transformUpdateQuery(req: Request, res: Response, query: Object): Promise<Object | false> {
         return query;
     }
     protected async transformUpdateResult(req: Request, res: Response, result: T) {
@@ -126,7 +147,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     @Post(`/%%PLURAL_NAME%%/create`)
     async create(req: Request, res: Response) {
         let initialStatusCode = res.statusCode;
-        let data = await this.transformCreateQuery(req, res, req.body);
+        let data = await this.transformCreateQuery(req, res, req.body) || req.body;
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         await this.beforeCreate(req, res, data);
