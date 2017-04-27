@@ -3,8 +3,9 @@
     "version": "0.1.4",
     "description": "A typescript web framework based on ExpressJs based loosely on SailsJs",
     "scripts": {
-        "test": "bash ./scripts/test.sh",
+        "test": "bash ./scripts/test.sh once",
         "test-once": "bash ./scripts/test.sh once",
+        "test-watch": "bash ./scripts/test.sh watch",
         "build": "tsc",
         "watch": "tsc -w",
         "prepublish": "rm -rf ./dist && tsc",

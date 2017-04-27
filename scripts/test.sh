@@ -17,14 +17,14 @@ TEST_COUNT=${1:-}
 STATUS_RESPONSE=$(git status)
 NOT_STAGED_FOR_COMMIT="^.*not staged for commit.*$"
 UNTRACKED_FILES="^.*Untracked files.*$"
-if [[ $TEST_COUNT == "once" && ($STATUS_RESPONSE =~ $NOT_STAGED_FOR_COMMIT || $STATUS_RESPONSE =~ $UNTRACKED_FILES) ]]; then
+if [[ $TEST_COUNT != "watch" && ($STATUS_RESPONSE =~ $NOT_STAGED_FOR_COMMIT || $STATUS_RESPONSE =~ $UNTRACKED_FILES) ]]; then
     echo -e "${YELLOW}WARNING${NC}: You have unstaged changes. These tests might not have correct results."
 fi
 
-if [[ $TEST_COUNT == "once" ]]; then
-    node_modules/.bin/mocha --require ts-node/register src/**/*.spec.ts
-else
+if [[ $TEST_COUNT == "watch" ]]; then
     node_modules/.bin/mocha-typescript-watch -p tsconfig.test.json dist/**/*.spec.js
+else
+    node_modules/.bin/mocha --require ts-node/register src/**/*.spec.ts
 fi
 
 exit 0
