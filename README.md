@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/miter-framework/miter.svg?branch=master)](https://travis-ci.org/miter-framework/miter)
+
 # Miter Web Framework
 
 Miter is a web framework heavily influenced by [Ruby on Rails][rails] and [SailsJs][sails]. It is built on top of [Express][express]. Miter uses Typescript's experimental decorators to create elegant controllers and services, using dependency injection to avoid tight coupling.
