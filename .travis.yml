@@ -1,7 +1,9 @@
 language: node_js
 node_js:
-- "6"
-- "7"
-- "node"
+  - "6"
+  - "7"
+  - "node"
 before_script:
-- yarn build
+  - yarn build
+script:
+  - yarn travis

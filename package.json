@@ -6,6 +6,7 @@
         "test": "bash ./scripts/test.sh once",
         "test-once": "bash ./scripts/test.sh once",
         "test-watch": "bash ./scripts/test.sh watch",
+        "travis": "bash ./scripts/travis.sh",
         "build": "tsc",
         "watch": "tsc -w",
         "prepublish": "rm -rf ./dist && tsc",
