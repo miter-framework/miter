@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 * **repl-service:** only create the ReadLine interface if you inject the ReplService
+* **orm:** allow SQL and and or queries to be objects or arrays
 
 ### Features
 

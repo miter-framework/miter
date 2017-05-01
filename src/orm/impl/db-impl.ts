@@ -295,13 +295,28 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             if (!query) return query;
             query = _.clone(query);
             if ((<any>query)['$and']) {
-                (<any>query)['$and'] = this.transformQueryWhere((<any>query)['$and']);
-            }
-            let orVal = (<any>query)['$or'];
-            if (orVal && orVal.length) {
-                for (let q = 0; q < orVal.length; q++) {
-                    orVal[q] = this.transformQueryWhere(orVal[q]);
+                let andVal = (<any>query)['$and'];
+                if (Array.isArray(andVal)) {
+                    for (let q = 0; q < andVal.length; q++) {
+                        if (typeof andVal[q] !== 'object') throw new Error(`Invalid $and query: [..., ${andVal[q]}, ...]`);
+                        andVal[q] = this.transformQueryWhere(andVal[q]);
+                    }
                 }
+                else if (typeof andVal === 'object') andVal = this.transformQueryWhere(andVal);
+                else throw new Error(`Invalid $and query: ${andVal}`);
+                (<any>query)['$and'] = andVal;
+            }
+            if ((<any>query)['$or']) {
+                let orVal = (<any>query)['$or'];
+                if (Array.isArray(orVal)) {
+                    for (let q = 0; q < orVal.length; q++) {
+                        if (typeof orVal[q] !== 'object') throw new Error(`Invalid $or query: [..., ${orVal[q]}, ...]`);
+                        orVal[q] = this.transformQueryWhere(orVal[q]);
+                    }
+                }
+                else if (typeof orVal === 'object') orVal = this.transformQueryWhere(orVal);
+                else throw new Error(`Invalid $or query: ${orVal}`);
+                (<any>query)['$or'] = orVal;
             }
             for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
