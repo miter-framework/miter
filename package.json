@@ -10,12 +10,8 @@
         "build": "tsc",
         "watch": "tsc -w",
         "prepublish": "rm -rf ./dist && tsc",
-        "lint": "./node_modules/.bin/tslint tslint -c \"config/tslint.json\" --project \"tsconfig.json\" -e \"**/*.spec.ts\" -t stylish",
-        "pre-commit": "bash ./scripts/pre-commit.sh"
+        "lint": "./node_modules/.bin/tslint tslint -c \"config/tslint.json\" --project \"tsconfig.json\" -e \"**/*.spec.ts\" -t stylish"
     },
-    "pre-commit": [
-        "pre-commit"
-    ],
     "main": "./dist/index.js",
     "typings": "./dist/index",
     "devDependencies": {
@@ -25,7 +21,6 @@
         "chai": "^3.5.0",
         "mocha": "^3.2.0",
         "mocha-typescript": "^1.0.23",
-        "pre-commit": "^1.2.2",
         "sinon": "^2.1.0",
         "ts-node": "^3.0.2",
         "tslint": "^4.5.1"

@@ -4,6 +4,10 @@
 
 Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
+### Features
+
+* **build:** remove pre-commit hook that sometimes broke development pipeline
+
 
 
 <a name="0.2.0"></a>
