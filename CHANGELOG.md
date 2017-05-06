@@ -1,6 +1,13 @@
 
+<a name="0.3.0"></a>
+## [0.3.0](https://github.com/miter-framework/miter/compare/0.2.0...HEAD) (_Future_)
+
+Big things planned! More unit tests! Less ORM quirks! More awesomeness!
+
+
+
 <a name="0.2.0"></a>
-## [0.2.0](https://github.com/miter-framework/miter/compare/0.1.4...HEAD) (_Future_)
+## [0.2.0](https://github.com/miter-framework/miter/compare/0.1.4...0.2.0) (2017-05-05)
 
 ### Bug Fixes
 
