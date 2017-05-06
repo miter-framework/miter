@@ -13,11 +13,6 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 <a name="0.2.0"></a>
 ## [0.2.0](https://github.com/miter-framework/miter/compare/0.1.4...0.2.0) (2017-05-05)
 
-### Bug Fixes
-
-* **repl-service:** only create the ReadLine interface if you inject the ReplService
-* **orm:** allow SQL and and or queries to be objects or arrays
-
 ### Features
 
 * **repository:** add README.md sample controller and project information
@@ -31,6 +26,11 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** allow routes to await res.sendFile
 * **router:** allow controllers to dynamically change route policies at runtime
 * **crud-controller:** add findOne route to the CrudController
+
+### Bug Fixes
+
+* **repl-service:** only create the ReadLine interface if you inject the ReplService
+* **orm:** allow SQL and and or queries to be objects or arrays
 
 
 
