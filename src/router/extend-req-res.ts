@@ -1,6 +1,6 @@
 import { CtorT } from '../core/ctor';
 import { PolicyT } from '../core/policy';
-import { Errback } from 'express';
+import { Request, Response, Errback } from 'express';
 
 declare module 'express' {
     interface Request {
@@ -10,6 +10,12 @@ declare module 'express' {
     interface Response {
         sendFile(path: string): Promise<void>;
         sendFile(path: string, options: any): Promise<void>;
+        
+        //TODO: figure out why Typescript errors when I try to give req the "Request" type
+        sendFiles(req: any, path: string): Promise<boolean>;
+        sendFiles(req: any, path: string, options: any): Promise<boolean>;
+        
+        //Deprecated
         sendFile(path: string, fn: { (err: Error): void }): void;
         sendFile(path: string, options: any, fn: { (err: Error): void }): void;
         

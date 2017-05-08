@@ -3,21 +3,15 @@
 import * as createExpressApp from 'express';
 import { Request, Response, Application as ExpressApp } from 'express';
 import * as bodyParser from 'body-parser';
-
 import { Injector } from '../core/injector';
-
 import { Injectable } from '../decorators/services/injectable.decorator';
-
 import { ServerMetadataT, ServerMetadata } from '../metadata/server/server';
-
 import { OrmReflector } from '../orm/reflector';
-
 import { ServiceReflector } from '../services/reflector';
 import { Logger } from '../services/logger';
-
 import { RouterReflector } from '../router/reflector';
-
 import { wrapPromise } from '../util/wrap-promise';
+import { monkeypatchRequest } from './static-middleware';
 
 import * as http from 'http';
 import * as https from 'https';
@@ -102,18 +96,7 @@ export class Server {
                 next();
             });
         }
-        this._app.use((req: Request, res: Response, next) => {
-            let origSendFile = <any>res.sendFile;
-            (<any>res).sendfile = (<any>res).sendFile = async (path: string, options: any, errback?: any) => {
-                if (!errback && typeof options === 'function') {
-                    errback = options;
-                    options = undefined;
-                }
-                if (errback) origSendFile(path, options, errback);
-                else await wrapPromise(origSendFile.bind(res), path, options);
-            }
-            next();
-        });
+        this._app.use(monkeypatchRequest);
         if (this.meta.router && this.meta.router.middleware && this.meta.router.middleware.length) {
             this._app.use(...this.meta.router.middleware);
         }

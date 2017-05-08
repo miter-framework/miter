@@ -7,6 +7,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Features
 
 * **build:** remove pre-commit hook that sometimes broke development pipeline
+* **router:** add res.sendFiles as a replacement for express.static
 
 
 
