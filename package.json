@@ -18,10 +18,12 @@
         "@types/chai": "^3.4.35",
         "@types/mocha": "^2.2.40",
         "@types/sinon": "^2.1.1",
+        "@types/sinon-chai": "^2.7.27",
         "chai": "^3.5.0",
         "mocha": "^3.2.0",
         "mocha-typescript": "^1.0.23",
         "sinon": "^2.1.0",
+        "sinon-chai": "^2.10.0",
         "ts-node": "^3.0.2",
         "tslint": "^4.5.1"
     },
@@ -38,7 +40,6 @@
         "@types/pluralize": "^0.0.27",
         "@types/send": "^0.14.2",
         "@types/sequelize": "^4.0.38",
-        "@types/sinon-chai": "^2.7.27",
         "body-parser": "^1.15.2",
         "cli-color": "^1.1.0",
         "continuation-local-storage": "^3.2.0",
@@ -55,7 +56,6 @@
         "reflect-metadata": "^0.1.8",
         "send": "^0.15.2",
         "sequelize": "^3.24.6",
-        "sinon-chai": "^2.9.0",
         "typescript": "^2.2.1",
         "url": "^0.11.0"
     },
