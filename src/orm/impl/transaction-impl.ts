@@ -21,7 +21,7 @@ export class TransactionImpl implements TransactionT {
         return this._complete;
     }
     
-    private _complete: boolean;
+    private _complete: boolean = false;
     private _transaction: Sql.Transaction;
     
     sync() {

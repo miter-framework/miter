@@ -13,8 +13,7 @@ export class TransactionService {
         return this.sequelize.currentTransaction;
     }
     
-    async run(transactionName: string, fn: () => Promise<void>): Promise<void>;
-    async run<T>(transactionName: string, fn: () => Promise<T>): Promise<T> {
+    async run<T = void>(transactionName: string, fn: () => Promise<T>): Promise<T> {
         return await this.namespace.runAndReturn(async () => {
             let t = await this.sequelize.transaction(transactionName, this.current);
             this.logger.verbose('transactions', `creating transaction (${t.fullName})`);
