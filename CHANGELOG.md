@@ -10,6 +10,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **build:** upgrade to typescript@2.3.0
 * **router:** add res.sendFiles as a replacement for express.static
 
+### Bug Fixes
+
+* **services:** only shut down services if they started successfully
+
 
 
 <a name="0.2.0"></a>

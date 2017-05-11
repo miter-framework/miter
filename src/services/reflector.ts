@@ -17,38 +17,44 @@ export class ServiceReflector {
     
     private logger: Logger;
     
+    private _startedServices: ServiceT[] = [];
     async reflectServices(services: CtorT<ServiceT>[]) {
+        services = services || [];
         let failures = 0;
         for (let q = 0; q < services.length; q++) {
-            let result: boolean;
-            try {
-                result = await this.reflectService(services[q]);
-            }
-            catch (e) {
-                this.logger.error('services', `Exception occurred when trying to start service: ${services[q].name || services[q]}`);
-                this.logger.error('services', e);
-                result = false;
-            }
+            let result = await this.reflectService(services[q]);
             if (!result) {
                 this.logger.error('services', `Failed to start service: ${services[q].name || services[q]}`);
                 failures++;
             }
         }
         
-        if (!!failures) this.logger.error('services', `${services.length - failures} services started correctly out of ${services.length}`);
-        else this.logger.info('services', `${services.length - failures} services started correctly out of ${services.length}`);
-    }
-    
-    private _startedServices: ServiceT[] = [];
-    async reflectService(serviceFn: CtorT<ServiceT>): Promise<boolean> {
-        let service = this.injector.resolveInjectable(serviceFn);
-        if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceFn.name || serviceFn}`);
-        this._startedServices.push(service);
-        if (typeof service.start !== 'undefined') {
-            let result = await service.start();
-            if (typeof result === 'boolean' && !result) return false;
+        if (!!failures) {
+            this.logger.error('services', `${services.length - failures} services started correctly out of ${services.length}`);
+            return false;
         }
-        return true;
+        else {
+            this.logger.info('services', `${services.length - failures} services started correctly out of ${services.length}`);
+            return true;
+        }
+    }
+    async reflectService(serviceFn: CtorT<ServiceT>): Promise<boolean> {
+        let serviceName = serviceFn.name || serviceFn;
+        try {
+            let service = this.injector.resolveInjectable(serviceFn);
+            if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceName}`);
+            if (typeof service.start !== 'undefined') {
+                let result = await service.start();
+                if (typeof result === 'boolean' && !result) return false;
+            }
+            this._startedServices.push(service);
+            return true;
+        }
+        catch (e) {
+            this.logger.error('services', `Exception occurred when trying to start service: ${serviceName}`);
+            this.logger.error('services', e);
+            return false;
+        }
     }
     
     async shutdownServices() {
@@ -56,29 +62,32 @@ export class ServiceReflector {
         this._startedServices = [];
         let failures = 0;
         for (let q = 0; q < services.length; q++) {
-            let result: boolean;
-            try {
-                result = await this.shutdownService(services[q]);
-            }
-            catch (e) {
-                this.logger.error('services', `Exception occurred when trying to stop service: ${services[q]}`);
-                this.logger.error('services', e);
-                result = false;
-            }
+            let result = await this.shutdownService(services[q]);
             if (!result) {
-                this.logger.error('services', `Failed to start service: ${services[q]}`);
+                this.logger.error('services', `Failed to stop service: ${services[q]}`);
                 failures++;
             }
         }
         
-        if (!!failures) this.logger.error('services', `${services.length - failures} services terminated correctly out of ${services.length}`);
-        else this.logger.info('services', `${services.length - failures} services terminated correctly out of ${services.length}`);
+        if (!!failures) {
+            this.logger.error('services', `${services.length - failures} services terminated correctly out of ${services.length}`);
+            return false;
+        }
+        else {
+            this.logger.info('services', `${services.length - failures} services terminated correctly out of ${services.length}`);
+            return true;
+        }
     }
     async shutdownService(service: ServiceT): Promise<boolean> {
-        if (typeof service.stop !== 'undefined') {
-            let result = await service.stop();
-            if (typeof result === 'boolean' && !result) return false;
+        let serviceName = `${service}`;
+        try {
+            if (typeof service.stop !== 'undefined') await service.stop();
+            return true;
         }
-        return true;
+        catch (e) {
+            this.logger.error('services', `Exception occurred when trying to stop service: ${serviceName}`);
+            this.logger.error('services', e);
+            return false;
+        }
     }
 }
