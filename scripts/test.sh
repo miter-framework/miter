@@ -22,7 +22,7 @@ if [[ $TEST_COUNT != "watch" && ($STATUS_RESPONSE =~ $NOT_STAGED_FOR_COMMIT || $
 fi
 
 if [[ $TEST_COUNT == "watch" ]]; then
-    node_modules/.bin/mocha-typescript-watch -p tsconfig.test.json dist/**/*.spec.js
+    node_modules/.bin/mocha-typescript-watch -p tsconfig.json dist/**/*.spec.js
 else
     node_modules/.bin/mocha --require ts-node/register src/**/*.spec.ts
 fi

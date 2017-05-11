@@ -29,12 +29,6 @@
         "src"
     ],
     "exclude": [
-        "src/test",
-        "src/*/test",
-        "src/*/*/test",
-        "src/*/*/*/test",
-        "src/*/*/*/*/test",
-        "src/*/*/*/*/*/test",
         "dist",
         "node_modules"
     ],
