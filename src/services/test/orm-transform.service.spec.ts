@@ -14,7 +14,7 @@ describe('OrmTransformService', () => {
     
     describe('.transformModel', () => {
         it('should not modify the model metadata', () => {
-            expect(instance.transformModel(<any>{})).to.deep.eql({});
+            expect(instance.transformModel(<any>{})).to.deep.eq({});
         });
     });
     
@@ -26,7 +26,7 @@ describe('OrmTransformService', () => {
     
     describe('.transformColumn', () => {
         it('should not modify the column metadata', () => {
-            expect(instance.transformColumn(<any>{})).to.deep.eql({});
+            expect(instance.transformColumn(<any>{})).to.deep.eq({});
         });
     });
     
@@ -38,7 +38,7 @@ describe('OrmTransformService', () => {
     
     describe('.transformAssociation', () => {
         it('should not modify the column metadata', () => {
-            expect(instance.transformAssociation(<any>{})).to.deep.eql({});
+            expect(instance.transformAssociation(<any>{})).to.deep.eq({});
         });
     });
     

@@ -6,7 +6,150 @@ import * as sinonChai from 'sinon-chai';
 use(sinonChai);
 
 import { ServiceReflector } from '../reflector';
+import { Logger } from '../logger';
+import { Injector } from '../../core/injector';
+import { Injectable } from '../../decorators/services/injectable.decorator';
+
+@Injectable()
+class NoLifecycleService { }
+
+@Injectable()
+class LifecycleWorkService {
+    async start() {
+        return true;
+    }
+    async stop() { }
+}
+@Injectable()
+class LifecycleWork2Service extends LifecycleWorkService { }
+@Injectable()
+class LifecycleWork3Service extends LifecycleWorkService { }
+
+@Injectable()
+class LifecycleFailService {
+    async start() {
+        return false;
+    }
+    async stop() { }
+}
+
+@Injectable()
+class LifecycleThrowStartService {
+    async start() {
+        throw new Error('Throwing up!');
+    }
+    async stop() { }
+}
+
+@Injectable()
+class LifecycleThrowStopService {
+    async start() {
+        return true;
+    }
+    async stop() {
+        throw new Error('Throwing up!');
+    }
+}
 
 describe('ServiceReflector', () => {
-    //TODO: write unit tests for ServiceReflector
+    let injector: Injector;
+    let serviceReflector: ServiceReflector;
+    beforeEach(() => {
+        let logger = new Logger('abc', 'error', false);
+        injector = new Injector(logger);
+        serviceReflector = injector.resolveInjectable(ServiceReflector)!;
+    });
+    
+    describe('.reflectServices', () => {
+        it('should return true if no services are passed in', async () => {
+            expect(await serviceReflector.reflectServices([])).to.be.true;
+            expect(await serviceReflector.reflectServices(<any>null)).to.be.true;
+        });
+        it('should return true if no services fail to start', async () => {
+            expect(await serviceReflector.reflectServices([
+                LifecycleWorkService,
+                LifecycleWork2Service,
+                LifecycleWork3Service
+            ])).to.be.true;
+        });
+        it('should return false if any services fail to start', async () => {
+            expect(await serviceReflector.reflectServices([
+                LifecycleWorkService,
+                LifecycleFailService
+            ])).to.be.false;
+        });
+    });
+    
+    describe('.reflectService', () => {
+        it(`should invoke the service's start function if it has one`, async () => {
+            let lws = injector.resolveInjectable(LifecycleWorkService)!;
+            let startStub = sinon.stub(lws, 'start').callThrough();
+            await serviceReflector.reflectService(LifecycleWorkService);
+            expect(lws.start).to.have.been.calledOnce;
+        });
+        it('should return true if the service has no start function', async () => {
+            expect(await serviceReflector.reflectService(NoLifecycleService)).to.be.true;
+        });
+        it('should return true if the service start function returns true', async () => {
+            expect(await serviceReflector.reflectService(LifecycleWorkService)).to.be.true;
+        });
+        it('should return false if the service start function throws an error', async () => {
+            expect(await serviceReflector.reflectService(LifecycleThrowStartService)).to.be.false;
+        });
+        it('should return false if the service start function returns false', async () => {
+            expect(await serviceReflector.reflectService(LifecycleFailService)).to.be.false;
+        });
+    });
+    
+    describe('.shutdownServices', () => {
+        it('should return true if no services are started', async () => {
+            await serviceReflector.reflectServices([]);
+            expect(await serviceReflector.shutdownServices()).to.be.true;
+        });
+        it(`should return true if it doesn't fail to stop any services`, async () => {
+            await serviceReflector.reflectServices([
+                LifecycleWorkService,
+                LifecycleWork2Service,
+                LifecycleWork3Service
+            ]);
+            expect(await serviceReflector.shutdownServices()).to.be.true;
+        });
+        it('should return false if it fails to stop any services', async () => {
+            await serviceReflector.reflectServices([
+                LifecycleWorkService,
+                LifecycleThrowStopService
+            ]);
+            expect(await serviceReflector.shutdownServices()).to.be.false;
+        });
+        it('should not shutdown a service that failed to start', async () => {
+            let lts = injector.resolveInjectable(LifecycleThrowStartService)!;
+            let stopStub = sinon.stub(lts, 'stop').callThrough();
+            await serviceReflector.reflectServices([
+                LifecycleThrowStartService
+            ]);
+            expect(await serviceReflector.shutdownServices()).to.be.true;
+            expect(stopStub).not.to.have.been.called;
+        });
+    });
+    
+    describe('.shutdownService', () => {
+        it(`should invoke the service's stop function if it has one`, async () => {
+            let lws = injector.resolveInjectable(LifecycleWorkService)!;
+            let startStub = sinon.stub(lws, 'stop').callThrough();
+            await serviceReflector.shutdownService(lws);
+            expect(lws.stop).to.have.been.calledOnce;
+        });
+        it('should return true if the service has no stop function', async () => {
+            let nls = injector.resolveInjectable(NoLifecycleService)!;
+            expect(await serviceReflector.shutdownService(nls)).to.be.true;
+        });
+        it('should return true if the service stop function returns without throwing', async () => {
+            let lws = injector.resolveInjectable(LifecycleWorkService)!;
+            expect(await serviceReflector.shutdownService(lws)).to.be.true;
+        });
+        it('should return false if the service stop function throws an error', async () => {
+            let lts = injector.resolveInjectable(LifecycleThrowStopService)!;
+            expect(await serviceReflector.shutdownService(lts)).to.be.false;
+        });
+    });
 });
