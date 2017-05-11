@@ -26,8 +26,15 @@ describe('TransactionService', () => {
     });
     
     describe('.run', () => {
-        it('should persist a transaction after an asynchronous operation', (done) => {
+        it('should not have a transaction after the asynchronous task completes', async () => {
             expect(transactService.current).to.be.undefined;
+            await transactService.run(`test0`, async () => {
+                expect(transactService.current).not.to.be.undefined;
+            });
+            expect(transactService.current).to.be.undefined;
+        });
+        
+        it('should persist a transaction after an asynchronous operation', (done) => {
             transactService.run(`test0`, async () => {
                 let transact = transactService.current;
                 expect(transact).not.to.be.undefined;
@@ -36,7 +43,6 @@ describe('TransactionService', () => {
                     done();
                 }, 10);
             });
-            expect(transactService.current).to.be.undefined;
         });
         
         it('should return a promise that resolves to the result of the function', async () => {
@@ -47,13 +53,13 @@ describe('TransactionService', () => {
         });
         
         it('should commit the transaction when the task completes successfully', async () => {
-            let transact: TransactionT;
+            let transact: TransactionT = <any>void(0);
             let stubbed: {
                 commit: sinon.SinonStub,
                 rollback: sinon.SinonStub
             } = <any>{};
             await transactService.run(`test0`, async () => {
-                transact = transactService.current;
+                transact = transactService.current!;
                 expect(transact.isComplete).to.be.false;
                 stubbed.commit = sinon.stub(transact, 'commit').callThrough();
                 stubbed.rollback = sinon.stub(transact, 'rollback').callThrough();
@@ -66,14 +72,14 @@ describe('TransactionService', () => {
         });
         
         it('should rollback the transaction when the task throws an exception', async () => {
-            let transact: TransactionT;
+            let transact: TransactionT = <any>void(0);
             let stubbed: {
                 commit: sinon.SinonStub,
                 rollback: sinon.SinonStub
             } = <any>{};
             try {
                 await transactService.run(`test0`, async () => {
-                    transact = transactService.current;
+                    transact = transactService.current!;
                     expect(transact.isComplete).to.be.false;
                     stubbed.commit = sinon.stub(transact, 'commit').callThrough();
                     stubbed.rollback = sinon.stub(transact, 'rollback').callThrough();
