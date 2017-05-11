@@ -124,7 +124,7 @@ export class RouterReflector {
         this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
         let addRouteFn = (<any>this.router.expressRouter)[routeMeta.method].bind(this.router.expressRouter);
-        let fullRouterFn = this.createFullRouterFn(policies, boundRoute, transactionName, routeMeta);
+        let fullRouterFn = this.createFullRouterFn(policies, boundRoute, transactionName);
         addRouteFn(fullPath, fullRouterFn);
     }
     private getControllerName(controller: any): string {
@@ -178,7 +178,7 @@ export class RouterReflector {
     
     unfinishedRoutes = 0;
     requestIndex = 0;
-    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, transactionName: string, meta: RouteMetadata) {
+    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, transactionName: string) {
         let fullRouterFn = async function(this: RouterReflector, requestIndex: number, req: Request, res: Response) {
             this.logger.info('router', `{${requestIndex}} beginning request: ${req.url}`);
             this.logger.verbose('router', `{${requestIndex}} unfinishedRoutes: ${++this.unfinishedRoutes}`);

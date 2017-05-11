@@ -6,6 +6,7 @@ import * as sinonChai from 'sinon-chai';
 use(sinonChai);
 
 import { RouterReflector } from '../reflector';
+import { Request, Response } from 'express';
 
 import { Injector } from '../../core/injector';
 import { PolicyDescriptor, PolicyT } from '../../core/policy';
@@ -13,6 +14,7 @@ import { CtorT } from '../../core/ctor';
 
 import { Injectable } from '../../decorators/services/injectable.decorator';
 import { Controller } from '../../decorators/router/controller.decorator';
+import { Policy } from '../../decorators/policies/policy.decorator';
 
 import { RouterMetadata } from '../../metadata/server/router';
 import { ControllerMetadata } from '../../metadata/router/controller';
@@ -27,10 +29,37 @@ import { FakeTransactionService } from '../../services/test/fake-transaction.ser
 @Controller()
 class EmptyController { }
 
+class ControllerSansDecorator { }
+
 @Controller()
 class EmptyControllerChild { }
 @Controller({ controllers: [EmptyControllerChild] })
 class EmptyControllerRoot { }
+
+@Policy()
+class Policy1 {
+    async handle(req: Request, res: Response) {
+        return "one";
+    }
+}
+@Policy()
+class Policy2 {
+    async handle(req: Request, res: Response) {
+        return "two";
+    }
+}
+@Policy()
+class Policy3 {
+    async handle(req: Request, res: Response) {
+        return "three";
+    }
+}
+@Policy()
+class UnusedPolicy {
+    async handle(req: Request, res: Response) {
+        return "unused";
+    }
+}
 
 describe('RouterReflector', () => {
     let injector: Injector;
@@ -57,17 +86,18 @@ describe('RouterReflector', () => {
     });
     
     describe('.reflectControllerRoutes', () => {
-        xit('should throw an error if the same controller is reflected twice', () => {
-            
+        it('should throw an error if the same controller is reflected twice', () => {
+            routerReflector.reflectControllerRoutes([], EmptyController);
+            expect(() => routerReflector.reflectControllerRoutes([], EmptyController)).to.throw(/twice/);
         });
         xit('should dependency inject the controller', () => {
             
         });
-        xit('should throw an error if a class without the Controller decorator is passed in', () => {
-            
+        it('should throw an error if a class without the Controller decorator is passed in', () => {
+            expect(() => routerReflector.reflectControllerRoutes([], ControllerSansDecorator)).to.throw(/@Controller/);
         });
-        xit('should throw an error if any of the parent controllers do not have the Controller decorator', () => {
-            
+        it('should throw an error if any of the parent controllers do not have the Controller decorator', () => {
+            expect(() => routerReflector.reflectControllerRoutes([ControllerSansDecorator], EmptyController)).to.throw(/failed to reflect parent/i);
         });
         xit('should invoke reflectRouteMeta', () => {
             
@@ -169,8 +199,8 @@ describe('RouterReflector', () => {
         beforeEach(() => {
             fn = (<any>routerReflector).getParentPolicyDescriptors.bind(routerReflector);
         });
-        xit('should return an empty array if there are no policies', () => {
-            
+        it('should return an empty array if there are no policies', () => {
+            expect(fn([])).to.be.deep.eq([]);
         });
         xit('should dependency inject policies if policy constructors are passed in', () => {
             
@@ -184,12 +214,32 @@ describe('RouterReflector', () => {
     });
     
     describe('.createFullRouterFn', () => {
-        xit('should return a function', () => {
-            
+        let fn: (policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, transactionName: string, meta: RouteMetadata) => (req: Request, res: Response) => Promise<void>;
+        let controller = {
+            route: async (req: Request, res: Response) => { }
+        };
+        let stubs: {
+            route: sinon.SinonStub
+        } = <any>{};
+        let boundRoute: (req: Request, res: Response) => Promise<void>;
+        beforeEach(() => {
+            fn = (<any>routerReflector).createFullRouterFn.bind(routerReflector);
+            stubs.route = sinon.stub(controller, 'route').callThrough();
+            boundRoute = controller.route.bind(controller);
         });
-        describe('(result)', () => {
-            xit('should return a promise', () => {
-                
+        afterEach(() => {
+            stubs.route.restore();
+        });
+        
+        it('should return a function', () => {
+            let result = fn([], boundRoute, 'tname', { path: 'fish' });
+            expect(typeof result).to.eql('function');
+        });
+        describe('that function', () => {
+            it('should return a promise', () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let result = resultFn(<any>null, <any>null);
+                expect(result).to.be.an.instanceOf(Promise);
             });
             xit('should run the route policies and handler with a new transaction', () => {
                 
@@ -219,18 +269,38 @@ describe('RouterReflector', () => {
     });
     
     describe('.createPolicyResultsFn', () => {
-        xit('should return a function', () => {
-            
+        let fn: (policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], allResults: any[]) => (policy: number | CtorT<PolicyT<any>>) => any;
+        beforeEach(() => {
+            fn = (<any>routerReflector).createPolicyResultsFn.bind(routerReflector);
         });
-        describe('(result)', () => {
-            xit('should allow you to index the policies by number', () => {
-                
+        it('should return a function', () => {
+            expect(typeof fn([], [])).to.eql('function');
+        });
+        describe('that function', () => {
+            let resultFn: (policy: number | CtorT<PolicyT<any>>) => any;
+            beforeEach(() => {
+                resultFn = fn([
+                    [Policy1, <any>null],
+                    [Policy2, <any>null],
+                    [Policy3, <any>null]
+                ], ["one", "two", "three"]);
             });
-            xit('should return the policy result if the policy constructor is passed in', () => {
-                
+            it('should allow you to index the policies by number', () => {
+                expect(resultFn(0)).to.eql('one');
+                expect(resultFn(1)).to.eql('two');
+                expect(resultFn(2)).to.eql('three');
             });
-            xit('should return undefined if an unused policy is passed in', () => {
-                
+            it('should return undefined if an index is out of range', () => {
+                expect(resultFn(-1)).to.be.undefined;
+                expect(resultFn(3)).to.be.undefined;
+            });
+            it('should return the policy result if the policy constructor is passed in', () => {
+                expect(resultFn(Policy1)).to.eql("one");
+                expect(resultFn(Policy2)).to.eql("two");
+                expect(resultFn(Policy3)).to.eql("three");
+            });
+            it('should return undefined if an unused policy is passed in', () => {
+                expect(resultFn(UnusedPolicy)).to.be.undefined;
             });
         });
     });
