@@ -4,6 +4,8 @@ import { expect, use } from 'chai';
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 use(sinonChai);
+import * as chaiAsPromised from 'chai-as-promised';
+use(chaiAsPromised);
 
 import { RouterReflector } from '../reflector';
 import { Request, Response } from 'express';
@@ -11,11 +13,6 @@ import { Request, Response } from 'express';
 import { Injector } from '../../core/injector';
 import { PolicyDescriptor, PolicyT } from '../../core/policy';
 import { CtorT } from '../../core/ctor';
-
-import { Injectable } from '../../decorators/services/injectable.decorator';
-import { Controller } from '../../decorators/router/controller.decorator';
-import { Get } from '../../decorators/router/routes/get.decorator';
-import { Policy } from '../../decorators/policies/policy.decorator';
 
 import { RouterMetadata } from '../../metadata/server/router';
 import { ControllerMetadata } from '../../metadata/router/controller';
@@ -27,51 +24,19 @@ import { FakeRouterService } from '../../services/test/fake-router.service';
 import { TransactionService } from '../../services/transaction.service';
 import { FakeTransactionService } from '../../services/test/fake-transaction.service';
 
-@Controller()
-class EmptyController { }
-
-class ControllerSansDecorator { }
-
-@Controller()
-class EmptyControllerChild { }
-@Controller({ controllers: [EmptyControllerChild] })
-class EmptyControllerRoot { }
-
-@Controller()
-class SimpleController {
-    @Get('a') async a(req: Request, res: Response) { }
-    @Get('b') async b(req: Request, res: Response) { }
-    @Get('c') async c(req: Request, res: Response) { }
-}
-@Controller({
-    controllers: [SimpleController]
-})
-class SimpleControllerRoot { }
-
-@Policy()
-class Policy1 {
-    async handle(req: Request, res: Response) {
-        return "one";
-    }
-}
-@Policy()
-class Policy2 {
-    async handle(req: Request, res: Response) {
-        return "two";
-    }
-}
-@Policy()
-class Policy3 {
-    async handle(req: Request, res: Response) {
-        return "three";
-    }
-}
-@Policy()
-class UnusedPolicy {
-    async handle(req: Request, res: Response) {
-        return "unused";
-    }
-}
+import { Policy1, Policy2, Policy3,
+         UnusedPolicy,
+         EarlyReturnPolicy,
+         ThrowPolicy } from './test-policies';
+import { EmptyController,
+         ControllerSansDecorator,
+         EmptyControllerChild, EmptyControllerRoot,
+         SimpleController, SimpleChildController, SimpleControllerRoot,
+         MultiRouteController,
+         PhishingController,
+         ComplexController } from './test-controllers';
+import { FakeRequest } from './fake-request';
+import { FakeResponse } from './fake-response';
 
 describe('RouterReflector', () => {
     let injector: Injector;
@@ -157,20 +122,38 @@ describe('RouterReflector', () => {
         beforeEach(() => {
             fn = (<any>routerReflector).reflectRouteMeta.bind(routerReflector);
         });
-        xit('should return an array of route name, metadata tuples', () => {
-            
+        it('should include all routes in a controller', () => {
+            let results = fn(SimpleController.prototype);
+            expect(results).to.deep.eq([
+                ['a', [{ path: 'a', method: 'get' }]],
+                ['b', [{ path: 'b', method: 'get' }]],
+                ['c', [{ path: 'c', method: 'get' }]]
+            ]);
         });
-        xit('should include all routes in a controller', () => {
-            
+        it('should include multiple routes if multiple route decorators are on a single method', () => {
+            let results = fn(MultiRouteController.prototype);
+            expect(results).to.deep.eq([
+                ['multi', [
+                    { path: 'a', method: 'get' },
+                    { path: 'b', method: 'get' },
+                    { path: 'x', method: 'post' }
+                ]]
+            ]);
         });
-        xit('should include multiple routes if multiple route decorators are on a single method', () => {
-            
+        it(`should not include methods that don't have a route decorator`, () => {
+            let results = fn(PhishingController.prototype);
+            expect(results).to.deep.eq([]);
         });
-        xit(`should not include methods that don't have a route decorator`, () => {
-            
-        });
-        xit('should include routes from ancestor controllers', () => {
-            
+        it('should include routes from ancestor controllers', () => {
+            let results = fn(SimpleChildController.prototype);
+            expect(results).to.deep.eq([
+                ['a', [{ path: 'a', method: 'get' }]],
+                ['b', [{ path: 'b', method: 'get' }]],
+                ['c', [{ path: 'c', method: 'get' }]],
+                ['x', [{ path: 'x', method: 'get' }]],
+                ['y', [{ path: 'y', method: 'get' }]],
+                ['z', [{ path: 'z', method: 'get' }]]
+            ]);
         });
     });
     
@@ -179,23 +162,48 @@ describe('RouterReflector', () => {
         beforeEach(() => {
             fn = (<any>routerReflector).addRoute.bind(routerReflector);
         });
-        xit('should invoke transformPathPart with the route path if it exists on the controller instance', () => {
-            
+        it('should invoke transformPathPart with the route path if it exists on the controller instance', () => {
+            let inst = injector.resolveInjectable(ComplexController)!;
+            sinon.spy(inst, 'transformPathPart');
+            routerReflector.reflectControllerRoutes([], ComplexController);
+            expect(inst.transformPathPart).to.have.been.calledWith('healthCheck', 'x');
+            expect(inst.transformPathPart).to.have.returned('healthCheckxxx');
         });
-        xit('should invoke transformPath with the full route if it exists on the controller instance', () => {
-            
+        it('should invoke transformPath with the full route if it exists on the controller instance', () => {
+            let inst = injector.resolveInjectable(ComplexController)!;
+            sinon.spy(inst, 'transformPath');
+            routerReflector.reflectControllerRoutes([], ComplexController);
+            expect(inst.transformPath).to.have.been.calledWith('healthCheck', '/api/healthCheckxxx');
+            expect(inst.transformPath).to.have.returned('/API/HEALTHCHECKXXX');
         });
-        xit('should invoke transformRoutePolicies with the full list of route policies if it exists on the controller instance', () => {
-            
+        it('should invoke transformRoutePolicies with the full list of route policies if it exists on the controller instance', () => {
+            let inst = injector.resolveInjectable(ComplexController)!;
+            sinon.spy(inst, 'transformRoutePolicies');
+            routerReflector.reflectControllerRoutes([], ComplexController);
+            expect(inst.transformRoutePolicies).to.have.been.calledWith('healthCheck', '/API/HEALTHCHECKXXX', [Policy1, Policy2]);
+            expect(inst.transformRoutePolicies).to.have.returned([Policy3, Policy1, Policy2]);
         });
-        xit('should invoke resolvePolicies', () => {
-            
+        it('should invoke resolvePolicies', () => {
+            sinon.stub(routerReflector, 'resolvePolicies');
+            routerReflector.reflectControllerRoutes([], ComplexController);
+            expect((<any>routerReflector).resolvePolicies).to.have.been.calledWith([Policy3, Policy1, Policy2]);
         });
-        xit('should throw an error if the route method is not defined', () => {
-            
+        it('should throw an error if the route metadata has no method defined', () => {
+            let inst = injector.resolveInjectable(SimpleController)!;
+            let test = () => fn([], inst, 'a', {}, <any>{ path: 'x' });
+            expect(test).to.throw(/no method set/i);
         });
-        xit('should invoke the routing function on the express router with the full path and function', () => {
-            
+        it('should throw an error if the route handler is not defined on the controller', () => {
+            let inst = injector.resolveInjectable(EmptyController)!;
+            let test = () => fn([], inst, 'doSomething', {}, { method: 'get', path: 'x' });
+            expect(test).to.throw(/no route handler/i);
+        });
+        it('should invoke the routing function on the express router with the full path and function', () => {
+            let inst = injector.resolveInjectable(SimpleController)!;
+            let router = injector.resolveInjectable(RouterService)!;
+            sinon.stub(router.expressRouter, 'get');
+            fn([], inst, 'a', {}, <any>{ method: 'get', path: 'x' });
+            expect(router.expressRouter.get).to.have.been.calledWith('/x', sinon.match.func);
         });
     });
     
@@ -259,7 +267,7 @@ describe('RouterReflector', () => {
             let result = fn([policyFn]);
             expect(result[0][0]).to.be.undefined;
             expect(typeof result[0][1]).to.eql('function');
-            let resultPromise = result[0][1](<any>null, <any>null);
+            let resultPromise = result[0][1](FakeRequest(), FakeResponse());
             expect(resultPromise).to.be.an.instanceof(Promise);
             expect(await resultPromise).to.eql('fish!');
         });
@@ -268,27 +276,35 @@ describe('RouterReflector', () => {
             expect(Array.isArray(results)).to.be.true;
             expect(results.length).to.eql(3);
             expect(results[0][0]).to.eql(Policy1);
-            expect(await results[0][1](<any>null, <any>null)).to.eql("one");
+            expect(await results[0][1](FakeRequest(), FakeResponse())).to.eql("one");
             expect(results[1][0]).to.eql(Policy2);
-            expect(await results[1][1](<any>null, <any>null)).to.eql("two");
+            expect(await results[1][1](FakeRequest(), FakeResponse())).to.eql("two");
             expect(results[2][0]).to.eql(Policy3);
-            expect(await results[2][1](<any>null, <any>null)).to.eql("three");
+            expect(await results[2][1](FakeRequest(), FakeResponse())).to.eql("three");
         });
     });
     
     describe('.createFullRouterFn', () => {
         let fn: (policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, transactionName: string, meta: RouteMetadata) => (req: Request, res: Response) => Promise<void>;
         let controller = {
-            route: async (req: Request, res: Response) => { }
+            route: async (req: Request, res: Response) => {
+                return await controller.routeImpl(req, res);
+            },
+            routeImpl: async (req: Request, res: Response) => {
+                res.status(200);
+            }
         };
         let stubs: {
-            route: sinon.SinonStub
+            route: sinon.SinonSpy
         } = <any>{};
         let boundRoute: (req: Request, res: Response) => Promise<void>;
         beforeEach(() => {
             fn = (<any>routerReflector).createFullRouterFn.bind(routerReflector);
-            stubs.route = sinon.stub(controller, 'route').callThrough();
+            stubs.route = sinon.spy(controller, 'route');
             boundRoute = controller.route.bind(controller);
+            controller.routeImpl = async (req: Request, res: Response) => {
+                res.status(200);
+            };
         });
         afterEach(() => {
             stubs.route.restore();
@@ -301,32 +317,75 @@ describe('RouterReflector', () => {
         describe('that function', () => {
             it('should return a promise', () => {
                 let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
-                let result = resultFn(<any>null, <any>null);
+                let result = resultFn(FakeRequest(), FakeResponse());
                 expect(result).to.be.an.instanceOf(Promise);
             });
-            xit('should run the route policies and handler with a new transaction', () => {
-                
+            it('should run the route policies and handler with a new transaction', async () => {
+                let policyInst = injector.resolveInjectable(Policy1)!;
+                sinon.spy(policyInst, 'handle');
+                let resultFn = fn([[Policy1, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
+                let result = await resultFn(FakeRequest(), FakeResponse());
+                expect(policyInst.handle).to.have.been.calledOnce;
             });
-            xit('should call the handle function on each policy', () => {
-                
+            it('should call the handle function on each policy', async () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let result = await resultFn(FakeRequest(), FakeResponse());
+                expect(controller.route).to.have.been.calledOnce;
             });
-            xit('should stop processing policies if one sets the status code', () => {
-                
+            it('should stop processing policies if one sets the status code', async () => {
+                let policyInst = injector.resolveInjectable(EarlyReturnPolicy)!;
+                sinon.spy(policyInst, 'handle');
+                let policy1Inst = injector.resolveInjectable(Policy1)!;
+                sinon.spy(policy1Inst, 'handle');
+                let resultFn = fn([
+                    [EarlyReturnPolicy, policyInst.handle.bind(policyInst)],
+                    [Policy1, policy1Inst.handle.bind(policy1Inst)]
+                ], boundRoute, 'tname', { path: 'fish' });
+                let result = await resultFn(FakeRequest(), FakeResponse());
+                expect(policyInst.handle).to.have.been.calledOnce;
+                expect(policy1Inst.handle).not.to.have.been.called;
+                expect(controller.route).not.to.have.been.called;
             });
-            xit(`should catch errors thrown in route policies`, () => {
-                
+            it(`should catch errors thrown in route policies`, async () => {
+                let policyInst = injector.resolveInjectable(ThrowPolicy)!;
+                sinon.spy(policyInst, 'handle');
+                let resultFn = fn([[ThrowPolicy, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
+                await expect(resultFn(FakeRequest(), FakeResponse())).not.to.eventually.be.rejected;
+                expect(policyInst.handle).to.have.been.calledOnce;
+                expect(controller.route).not.to.have.been.called;
             });
-            xit(`should send an 'internal server error' status when a policy throws an error`, () => {
-                
+            it(`should send an 'internal server error' status when a policy throws an error`, async () => {
+                let policyInst = injector.resolveInjectable(ThrowPolicy)!;
+                let resultFn = fn([[ThrowPolicy, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
+                let res = FakeResponse();
+                sinon.spy(res, 'status');
+                let result = await resultFn(FakeRequest(), res);
+                expect(res.status).to.have.been.calledWith(500);
             });
-            xit(`should send a '404 not found' status if the handler does not send a response`, () => {
-                
+            it(`should send a '404 not found' status if the handler does not send a response`, async () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let res = FakeResponse();
+                sinon.spy(res, 'status');
+                controller.routeImpl = async (req: Request, res: Response) => { };
+                let result = await resultFn(FakeRequest(), res);
+                expect(res.status).to.have.been.calledWith(404);
             });
-            xit('should catch errors thrown in the route handler', () => {
-                
+            it('should catch errors thrown in the route handler', async () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                controller.routeImpl = async (req: Request, res: Response) => {
+                    throw new Error(`Going up!`);
+                };
+                await expect(resultFn(FakeRequest(), FakeResponse())).not.to.eventually.be.rejected;
             });
-            xit(`should send an 'internal server error' status when the handler throws an error`, () => {
-                
+            it(`should send an 'internal server error' status when the handler throws an error`, async () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let res = FakeResponse();
+                sinon.spy(res, 'status');
+                controller.routeImpl = async (req: Request, res: Response) => {
+                    throw new Error(`Going up!`);
+                };
+                let result = await resultFn(FakeRequest(), res);
+                expect(res.status).to.have.been.calledWith(500);
             });
         });
     });

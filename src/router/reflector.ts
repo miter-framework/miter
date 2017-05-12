@@ -118,6 +118,8 @@ export class RouterReflector {
             policyDescriptors = controller.transformRoutePolicies(routeFnName, fullPath, policyDescriptors) || policyDescriptors;
         }
         let policies = this.resolvePolicies(policyDescriptors);
+        if (!controller[routeFnName]) throw new Error(`There is no route handler for ${controllerName}.${routeFnName}`);
+        if (typeof controller[routeFnName] !== 'function') throw new Error(`The route handler for ${controllerName}.${routeFnName} is not a function`);
         let boundRoute = controller[routeFnName].bind(controller);
         
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
