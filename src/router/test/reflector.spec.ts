@@ -14,6 +14,7 @@ import { CtorT } from '../../core/ctor';
 
 import { Injectable } from '../../decorators/services/injectable.decorator';
 import { Controller } from '../../decorators/router/controller.decorator';
+import { Get } from '../../decorators/router/routes/get.decorator';
 import { Policy } from '../../decorators/policies/policy.decorator';
 
 import { RouterMetadata } from '../../metadata/server/router';
@@ -35,6 +36,17 @@ class ControllerSansDecorator { }
 class EmptyControllerChild { }
 @Controller({ controllers: [EmptyControllerChild] })
 class EmptyControllerRoot { }
+
+@Controller()
+class SimpleController {
+    @Get('a') async a(req: Request, res: Response) { }
+    @Get('b') async b(req: Request, res: Response) { }
+    @Get('c') async c(req: Request, res: Response) { }
+}
+@Controller({
+    controllers: [SimpleController]
+})
+class SimpleControllerRoot { }
 
 @Policy()
 class Policy1 {
@@ -67,21 +79,35 @@ describe('RouterReflector', () => {
     beforeEach(() => {
         let logger = new Logger('abc', 'error', false);
         injector = new Injector(logger);
-        new RouterMetadata({ }, injector);
+        new RouterMetadata({
+            controllers: [
+                EmptyController,
+                EmptyControllerRoot
+            ]
+        }, injector);
         injector.provide({ provide: RouterService, useClass: FakeRouterService });
         injector.provide({ provide: TransactionService, useClass: FakeTransactionService });
         routerReflector = injector.resolveInjectable(RouterReflector)!;
     });
     
     describe('.reflectRoutes', () => {
-        xit('should default to the router metadata controllers if controllers has a falsey value', () => {
-            
+        it('should default to the router metadata controllers if controllers has a falsey value', () => {
+            let stub = sinon.stub(routerReflector, 'reflectControllerRoutes');
+            routerReflector.reflectRoutes(undefined, []);
+            let subject = expect(routerReflector.reflectControllerRoutes).to.have.been;
+            subject.calledTwice;
+            subject.calledWith([], EmptyController);
+            subject.calledWith([], EmptyControllerRoot);
         });
-        xit('should default to an empty array if parentControllers has a falsey value', () => {
-            
+        it('should default to an empty array if parentControllers has a falsey value', () => {
+            let stub = sinon.stub(routerReflector, 'reflectControllerRoutes');
+            routerReflector.reflectRoutes([EmptyController]);
+            expect(routerReflector.reflectControllerRoutes).to.have.been.calledWith([], EmptyController);
         });
-        xit('should invoke reflectControllerRoutes once for each controller', () => {
-            
+        it('should invoke reflectControllerRoutes once for each controller', () => {
+            let stub = sinon.stub(routerReflector, 'reflectControllerRoutes');
+            routerReflector.reflectRoutes([EmptyController, EmptyControllerRoot]);
+            expect(routerReflector.reflectControllerRoutes).to.have.been.calledTwice;
         });
     });
     
@@ -90,8 +116,10 @@ describe('RouterReflector', () => {
             routerReflector.reflectControllerRoutes([], EmptyController);
             expect(() => routerReflector.reflectControllerRoutes([], EmptyController)).to.throw(/twice/);
         });
-        xit('should dependency inject the controller', () => {
-            
+        it('should dependency inject the controller', () => {
+            let stub = sinon.stub(injector, 'resolveInjectable');
+            routerReflector.reflectControllerRoutes([], EmptyController);
+            expect(injector.resolveInjectable).to.have.been.calledWith(EmptyController);
         });
         it('should throw an error if a class without the Controller decorator is passed in', () => {
             expect(() => routerReflector.reflectControllerRoutes([], ControllerSansDecorator)).to.throw(/@Controller/);
@@ -99,14 +127,28 @@ describe('RouterReflector', () => {
         it('should throw an error if any of the parent controllers do not have the Controller decorator', () => {
             expect(() => routerReflector.reflectControllerRoutes([ControllerSansDecorator], EmptyController)).to.throw(/failed to reflect parent/i);
         });
-        xit('should invoke reflectRouteMeta', () => {
-            
+        it('should invoke reflectRouteMeta', () => {
+            let stub = sinon.stub(routerReflector, 'reflectRouteMeta').callThrough();
+            routerReflector.reflectControllerRoutes([], EmptyController);
+            expect((<any>routerReflector).reflectRouteMeta).to.have.been.calledWith(EmptyController.prototype);
         });
-        xit('should invoke addRoute once for each route', () => {
-            
+        it('should invoke addRoute once for each route', () => {
+            let inst = injector.resolveInjectable(SimpleController)!;
+            let stub = sinon.stub(routerReflector, 'addRoute');
+            routerReflector.reflectControllerRoutes([], SimpleController);
+            let subject = expect((<any>routerReflector).addRoute).to.have.been;
+            subject.calledThrice;
+            subject.calledWith([], inst, 'a', {}, { path: 'a', method: 'get' });
+            subject.calledWith([], inst, 'b', {}, { path: 'b', method: 'get' });
+            subject.calledWith([], inst, 'c', {}, { path: 'c', method: 'get' });
         });
-        xit(`should recursively invoke reflectRoutes for the controller's children`, () => {
-            
+        it(`should recursively invoke reflectRoutes for the controller's children`, () => {
+            let stub = sinon.spy(routerReflector, 'reflectRoutes');
+            routerReflector.reflectControllerRoutes([], SimpleControllerRoot);
+            let subject = expect((<any>routerReflector).reflectRoutes).to.have.been;
+            subject.calledTwice;
+            subject.calledWith([SimpleController], [SimpleControllerRoot]);
+            subject.calledWith([], [SimpleControllerRoot, SimpleController]);
         });
     });
     
@@ -197,19 +239,40 @@ describe('RouterReflector', () => {
     describe('.resolvePolicies', () => {
         let fn: (descriptors: PolicyDescriptor[]) => [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][];
         beforeEach(() => {
-            fn = (<any>routerReflector).getParentPolicyDescriptors.bind(routerReflector);
+            fn = (<any>routerReflector).resolvePolicies.bind(routerReflector);
         });
         it('should return an empty array if there are no policies', () => {
             expect(fn([])).to.be.deep.eq([]);
         });
-        xit('should dependency inject policies if policy constructors are passed in', () => {
-            
+        it('should dependency inject policies if policy constructors are passed in', () => {
+            let stub = sinon.spy(injector, 'resolveInjectable');
+            fn([Policy1, Policy2]);
+            let subject = expect(injector.resolveInjectable).to.have.been;
+            subject.calledTwice;
+            subject.calledWith(Policy1);
+            subject.calledWith(Policy2)
         });
-        xit('should support callback-based function policies', () => {
-            
+        it('should support callback-based function policies', async () => {
+            let policyFn = (req: Request, res: Response, next: any) => {
+                next(null, 'fish!');
+            };
+            let result = fn([policyFn]);
+            expect(result[0][0]).to.be.undefined;
+            expect(typeof result[0][1]).to.eql('function');
+            let resultPromise = result[0][1](<any>null, <any>null);
+            expect(resultPromise).to.be.an.instanceof(Promise);
+            expect(await resultPromise).to.eql('fish!');
         });
-        xit('should return an array of policy constructor, policy instance tuples', () => {
-            
+        it('should return an array of policy constructor, policy instance tuples', async () => {
+            let results = fn([Policy1, Policy2, Policy3]);
+            expect(Array.isArray(results)).to.be.true;
+            expect(results.length).to.eql(3);
+            expect(results[0][0]).to.eql(Policy1);
+            expect(await results[0][1](<any>null, <any>null)).to.eql("one");
+            expect(results[1][0]).to.eql(Policy2);
+            expect(await results[1][1](<any>null, <any>null)).to.eql("two");
+            expect(results[2][0]).to.eql(Policy3);
+            expect(await results[2][1](<any>null, <any>null)).to.eql("three");
         });
     });
     

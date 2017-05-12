@@ -154,7 +154,7 @@ export class RouterReflector {
             if (this.isPolicyCtor(desc)) {
                 key = desc;
                 let val = this.injector.resolveInjectable(desc);
-                if (!val) throw new Error(`Could not resolve dependency for policy: ${desc}`);
+                if (!val) throw new Error(`Could not resolve dependency for policy: ${desc.name || desc}`);
                 desc = val;
             }
             if (this.isPolicyT(desc)) {
@@ -163,14 +163,16 @@ export class RouterReflector {
             else {
                 let handler = desc;
                 fn = async function(req: Request, res: Response) {
-                    await wrapPromise(handler, req, res);
+                    return await wrapPromise(handler, req, res);
                 }
             }
             return [key, fn];
         });
     }
     private isPolicyCtor(desc: PolicyDescriptor): desc is CtorT<PolicyT<any>> {
-        return !this.isPolicyT(desc) && !!(<CtorT<PolicyT<any>>>desc).prototype.handle;
+        if (this.isPolicyT(desc)) return false;
+        let ctorFn = <CtorT<PolicyT<any>>>desc;
+        return !!(ctorFn.prototype && ctorFn.prototype.handle);
     }
     private isPolicyT(desc: PolicyDescriptor): desc is PolicyT<any> {
         return !!(<PolicyT<any>>desc).handle;
