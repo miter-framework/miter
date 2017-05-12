@@ -23,7 +23,7 @@ export function createRouteDecorator(pathOrMeta: RouteMetadata | string, method?
         Reflect.defineMetadata(ControllerRoutesSym, controllerRoutes, controller);
         
         let methodRoutes: RouteMetadata[] = Reflect.getOwnMetadata(RouteMetadataSym, controller, routeName) || [];
-        methodRoutes.push(_.merge({}, meta));
+        methodRoutes.unshift(_.merge({}, meta));
         Reflect.defineMetadata(RouteMetadataSym, methodRoutes, controller, routeName);
     }
 }
