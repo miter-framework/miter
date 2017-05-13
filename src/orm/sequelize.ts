@@ -20,7 +20,8 @@ export class Sequelize {
         this._initialized = true;
         
         let orm = this.ormMeta;
-        if ((typeof orm.enabled !== 'undefined' && !orm.enabled) || !orm.db) return;
+        console.log('orm.enabled', orm.enabled);
+        if (!orm.enabled || !orm.db) return;
         let db = orm.db;
         
         this.sql = new __Sequelize(db.name, db.user, db.password, {

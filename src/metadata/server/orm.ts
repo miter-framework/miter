@@ -19,13 +19,14 @@ export class OrmMetadata implements OrmMetadataT {
     }
     
     get enabled() {
-        return this._meta.enabled || false;
+        if (typeof this._meta.enabled === 'undefined') return true;
+        return !!this._meta.enabled;
     }
     get models() {
         return this._meta.models || [];
     }
     get recreate() {
-        return this._meta.recreate;
+        return !!this._meta.recreate;
     }
     
     private _db: DatabaseMetadata;

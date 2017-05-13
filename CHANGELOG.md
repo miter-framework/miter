@@ -14,6 +14,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **services:** only shut down services if they started successfully
 * **router:** add multiple routes on the same method in the order they are listed as decorators
+* **orm:** only attempt to connect to a sql server if the orm is not disabled
 
 
 
