@@ -20,7 +20,6 @@ export class Sequelize {
         this._initialized = true;
         
         let orm = this.ormMeta;
-        console.log('orm.enabled', orm.enabled);
         if (!orm.enabled || !orm.db) return;
         let db = orm.db;
         
