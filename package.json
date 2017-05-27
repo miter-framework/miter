@@ -8,8 +8,8 @@
         "test-watch": "bash ./scripts/test.sh watch",
         "travis": "bash ./scripts/travis.sh",
         "build": "tsc",
+        "build-production": "tsc --project tsconfig-production.json",
         "watch": "tsc -w",
-        "prepublish": "rm -rf ./dist && tsc",
         "lint": "./node_modules/.bin/tslint tslint -c \"config/tslint.json\" --project \"tsconfig.json\" -e \"**/*.spec.ts\" -t stylish"
     },
     "main": "./dist/index.js",
