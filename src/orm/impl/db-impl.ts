@@ -97,6 +97,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let sqlTransact = this.getSqlTransact(transaction);
         let implicitIncludes: string[] = [];
         if (options) [options, implicitIncludes] = this.transformQuery(options);
+        if (options && typeof (<any>options).limit !== 'undefined') throw new Error(`Cannot include limit in findById query.`);
         let result = await this.model.findById(id, _.merge({}, { transaction: sqlTransact }, options));
         return result && this.wrapResult(result, implicitIncludes);
     }
@@ -104,8 +105,17 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let sqlTransact = this.getSqlTransact(transaction);
         let implicitIncludes: string[] = [];
         [query, implicitIncludes] = this.transformQuery(query);
-        let result = await this.model.findOne(_.merge({}, { transaction: sqlTransact }, query));
-        return result && this.wrapResult(result, implicitIncludes);
+        
+        let limit = query && (<any>query).limit;
+        if (implicitIncludes.length) {
+            let results = await this.model.findAll(_.merge({}, { transaction: sqlTransact }, query));
+            let result = results[0] || null;
+            return result && this.wrapResult(result, implicitIncludes);
+        }
+        else {
+            let result = await this.model.findOne(_.merge({}, { transaction: sqlTransact }, query));
+            return result && this.wrapResult(result, implicitIncludes);
+        }
     }
     async findOrCreate(query: Sql.WhereOptions, defaults?: Object | T, transaction?: TransactionImpl): Promise<[T, boolean]> {
         let sqlTransact = this.getSqlTransact(transaction);
@@ -128,7 +138,18 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let sqlTransact = this.getSqlTransact(transaction);
         let implicitIncludes: string[] = [];
         if (query) [query, implicitIncludes] = this.transformQuery(query);
+        
+        let limitAfter = false;
+        let limit = query && (<any>query).limit;
+        if (implicitIncludes.length && limit) {
+            limitAfter = true;
+            delete (<any>query).limit;
+        }
+        
         let results = await this.model.findAndCountAll(_.merge({}, { transaction: sqlTransact }, query));
+        
+        if (limitAfter) results.rows = results.rows.slice(0, limit);
+        
         return {
             count: results.count,
             results: this.wrapResults(results.rows, implicitIncludes)
@@ -138,7 +159,18 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let sqlTransact = this.getSqlTransact(transaction);
         let implicitIncludes: string[] = [];
         if (query) [query, implicitIncludes] = this.transformQuery(query);
+        
+        let limitAfter = false;
+        let limit = query && (<any>query).limit;
+        if (implicitIncludes.length && limit) {
+            limitAfter = true;
+            delete (<any>query).limit;
+        }
+        
         let results = await this.model.findAll(_.merge({}, { transaction: sqlTransact }, query));
+        
+        if (limitAfter) results = results.slice(0, limit);
+        
         return this.wrapResults(results, implicitIncludes);
     }
     async all(query?: QueryT, transaction?: TransactionImpl) {
@@ -179,10 +211,17 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         else if (this.isT(query)) query = { where: { id: query.id } };
         else {
             [query, implicitIncludes] = this.transformQuery(query);
-            if (returning) {
+            let limit = query && (<any>query).limit;
+            let filterAfter = false;
+            if (implicitIncludes.length && limit) {
+                filterAfter = true;
+                delete (<any>query).limit;
+            }
+            if (returning || filterAfter) {
                 let results = await this.model.findAll(<QueryT>query);
+                if (filterAfter) results = results.slice(0, limit);
                 let ids = results.map((result) => (<any>result).id);
-                query = { where: {id: {$in: ids } } };
+                query = { where: { id: { $in: ids } } };
             }
         }
         
@@ -217,6 +256,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         if (this.isId(query)) query = { where: { id: query } };
         else if (this.isT(query)) query = { where: { id: query.id } };
         else [query, implicitIncludes] = this.transformQuery(query);
+        if (implicitIncludes.length && query && (<any>query).limit) throw new Error(`Model.destroy with limit and with a query containing implicit includes is not implemented`);
         return await this.model.destroy(_.merge({}, { transaction: sqlTransact }, query));
     }
     
@@ -264,7 +304,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return <DbImpl<ModelT<any>, any, any>>staticModel.db;
     }
     
-    private transformQueryWhere: { <T>(query: T, implicitIncludes?: string[]): [T, string[]] };
+    private transformQueryWhere: { <T>(query: T, implicitIncludes?: string[], prefix?: string): [T, string[]] };
     private transformQueryInclude: { (aliases: string[]): any };
     private transformResult: { <T>(sql: TInstance, result: T, implicitIncludes?: string[]): T };
     private includeFields: string[];
@@ -279,15 +319,16 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private transformQuery(query: any): [any, string[]] {
         let result = _.clone(query);
         let implicitIncludes: string[] = [];
-        if (query.where) [result.where, implicitIncludes] = this.transformQueryWhere(query.where);
+        if (query.where) [result.where, implicitIncludes] = this.transformQueryWhere(query.where, implicitIncludes);
         
-        for (let q = 0; q < query.includes.length; q++) {
-            let alias = query.includes[q];
+        if (!query.include) query.include = [];
+        for (let q = 0; q < query.include.length; q++) {
+            let alias = query.include[q];
             let idx = implicitIncludes.indexOf(alias);
             if (idx !== -1) implicitIncludes.splice(idx, 1);
         }
-        let includes = [...query.includes, ...implicitIncludes];
-        if (query.include) result.include = this.transformQueryInclude(includes);
+        let include = [...query.include, ...implicitIncludes];
+        result.include = this.transformQueryInclude(include);
         
         return [result, implicitIncludes];
     }
@@ -352,19 +393,35 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return transforms;
     }
     
+    private composeAnd(query: any, $and: any) {
+        if (!query) throw new Error(`Cannot compose $and. Invalid query: ${query}.`);
+        if (Array.isArray(query)) query.push({ $and: $and });
+        else if (!query.$and) query.$and = $and;
+        else query.$and = [query.$and, $and];
+    }
+    private addPrefix(query: any, prefix: string) {
+        if (!query) throw new Error(`Cannot add prefix to query. Invalid query: ${query}.`);
+        let newQuery: any = {};
+        for (let key in query) {
+            if (key === '$and' || key === '$or') newQuery[key] = query[key];
+            else newQuery[`$${prefix}.${key}$`] = query[key];
+        }
+        return newQuery;
+    }
+    
     private createTransformQueryWhere(transforms: TransformValMeta[]) {
-        this.transformQueryWhere = function<U>(this: DbImpl<T, TInstance, TAttributes>, query: U, implicitIncludes: string[] = []): U {
-            if (!query) return query;
+        this.transformQueryWhere = (function<U>(this: DbImpl<T, TInstance, TAttributes>, query: U, implicitIncludes: string[] = [], prefix = ''): [U, string[]] {
+            if (!query) return [query, implicitIncludes];
             query = _.clone(query);
             if ((<any>query)['$and']) {
                 let andVal = (<any>query)['$and'];
                 if (Array.isArray(andVal)) {
                     for (let q = 0; q < andVal.length; q++) {
                         if (typeof andVal[q] !== 'object') throw new Error(`Invalid $and query: [..., ${andVal[q]}, ...]`);
-                        andVal[q] = this.transformQueryWhere(andVal[q], implicitIncludes);
+                        [andVal[q], implicitIncludes] = this.transformQueryWhere(andVal[q], implicitIncludes, prefix);
                     }
                 }
-                else if (typeof andVal === 'object') andVal = this.transformQueryWhere(andVal, implicitIncludes);
+                else if (typeof andVal === 'object') [andVal, implicitIncludes] = this.transformQueryWhere(andVal, implicitIncludes, prefix);
                 else throw new Error(`Invalid $and query: ${andVal}`);
                 (<any>query)['$and'] = andVal;
             }
@@ -373,10 +430,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 if (Array.isArray(orVal)) {
                     for (let q = 0; q < orVal.length; q++) {
                         if (typeof orVal[q] !== 'object') throw new Error(`Invalid $or query: [..., ${orVal[q]}, ...]`);
-                        orVal[q] = this.transformQueryWhere(orVal[q], implicitIncludes);
+                        [orVal[q], implicitIncludes] = this.transformQueryWhere(orVal[q], implicitIncludes, prefix);
                     }
                 }
-                else if (typeof orVal === 'object') orVal = this.transformQueryWhere(orVal, implicitIncludes);
+                else if (typeof orVal === 'object') [orVal, implicitIncludes] = this.transformQueryWhere(orVal, implicitIncludes, prefix);
                 else throw new Error(`Invalid $or query: ${orVal}`);
                 (<any>query)['$or'] = orVal;
             }
@@ -391,28 +448,47 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                             (<any>query)[transform.columnName] = fieldVal;
                             delete (<any>query)[transform.fieldName];
                         }
+                        else if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
                         else {
-                            throw new Error(`Not implemented! Cannot include belongs-to value in where query: ${transform.fieldName}`);
+                            if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
+                            if (implicitIncludes.indexOf(transform.fieldName) === -1) implicitIncludes.push(transform.fieldName);
+                            let foreignDb = transform.foreignDb();
+                            let $and: any;
+                            [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transform.fieldName);
+                            delete (<any>query)[transform.fieldName];
+                            this.composeAnd(query, $and);
                         }
                     }
                     break;
                 case 'has-one':
                     if (typeof fieldVal !== 'undefined') {
-                        throw new Error(`Not implemented! Cannot include has-one value in where query: ${transform.fieldName}`);
+                        if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
+                        if (implicitIncludes.indexOf(transform.fieldName) === -1) implicitIncludes.push(transform.fieldName);
+                        let foreignDb = transform.foreignDb();
+                        let $and: any;
+                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transform.fieldName);
+                        delete (<any>query)[transform.fieldName];
+                        this.composeAnd(query, $and);
                     }
                     break;
                 case 'has-many':
                     if (typeof fieldVal !== 'undefined') {
+                        if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
                         if (implicitIncludes.indexOf(transform.fieldName) === -1) implicitIncludes.push(transform.fieldName);
-                        throw new Error(`Not implemented! Cannot include has-many value in where query: ${transform.fieldName}`);
+                        let foreignDb = transform.foreignDb();
+                        let $and: any;
+                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transform.fieldName);
+                        delete (<any>query)[transform.fieldName];
+                        this.composeAnd(query, $and);
                     }
                     break;
                 default:
                     throw new Error(`WTF? How did you get here?`);
                 }
             }
-            return query;
-        }
+            let transformed = prefix ? this.addPrefix(query, prefix) : query;
+            return [transformed, implicitIncludes];
+        }).bind(this);
     }
     
     private createTransformQueryInclude(transforms: TransformValMeta[]) {
@@ -424,18 +500,18 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             return null;
         }
         
-        this.transformQueryInclude = function(fields: string[]): any {
+        this.transformQueryInclude = (function(fields: string[]): any {
             if (!fields) return fields;
             return fields.map(field => {
                 let model = getFieldModel(field);
                 if (!model) throw new Error(`Cannot find field ${field} from include query`);
                 return {model: model, as: field};
             });
-        }
+        }).bind(this);
     }
     
     private createTransformResult(transforms: TransformValMeta[]) {
-        this.transformResult = function<T>(sql: TInstance, result: T, implicitIncludes: string[] = []): T {
+        this.transformResult = (function<T>(sql: TInstance, result: T, implicitIncludes: string[] = []): T {
             if (result === null) return result;
             else if (typeof result === 'undefined') throw new Error(`Result was undefined in DbImpl#transformResult!`);
             result = _.clone(result);
@@ -487,7 +563,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 //TODO: has-many?
             }
             return result;
-        }
+        }).bind(this);
     }
     
     fromJson(json: any): T {
@@ -496,10 +572,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private wrapResult(result: TInstance, implicitIncludes: string[]): T {
         let t = new this.modelFn();
         this.copyVals(result, t);
-        if (implicitIncludes.length) {
-            this.logger.error('db-impl', result);
-            throw new Error(`Not implemented! wrapResult with implicitIncludes: [${implicitIncludes.map(str => "'" + str + "'").join(', ')}]`);
-        }
+        // if (implicitIncludes.length) {
+        //     this.logger.error('db-impl', result);
+        //     throw new Error(`Not implemented! wrapResult with implicitIncludes: [${implicitIncludes.map(str => "'" + str + "'").join(', ')}]`);
+        // }
         return this.transformResult(result, t, implicitIncludes);
     }
     private wrapResults(results: TInstance[], implicitIncludes: string[]): T[] {
