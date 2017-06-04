@@ -9,6 +9,8 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **build:** remove pre-commit hook that sometimes broke development pipeline
 * **build:** upgrade to typescript@2.3.0
 * **router:** add res.sendFiles as a replacement for express.static
+* **orm:** allow where queries to filter by details on associated tabled
+* **orm:** allow has-many associations in where queries
 
 ### Bug Fixes
 
