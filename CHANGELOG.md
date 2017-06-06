@@ -1,8 +1,14 @@
 
-<a name="0.3.0"></a>
-## [0.3.0](https://github.com/miter-framework/miter/compare/0.2.0...HEAD) (_Future_)
+
+<a name="0.4.0"></a>
+## [0.4.0](https://github.com/miter-framework/miter/compare/0.3.0...HEAD) (_Future_)
 
 Big things planned! More unit tests! Less ORM quirks! More awesomeness!
+
+
+
+<a name="0.3.0"></a>
+## [0.3.0](https://github.com/miter-framework/miter/compare/0.2.0...0.3.0) (2017-06-05)
 
 ### Features
 
@@ -12,6 +18,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **orm:** allow where queries to filter by details on associated tabled
 * **orm:** allow has-many associations in where queries
 * **orm:** allow nested includes using dot-notation
+* **tests:** add lots, lots more unit tests
 
 ### Bug Fixes
 
