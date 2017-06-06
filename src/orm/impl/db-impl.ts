@@ -50,6 +50,8 @@ type HasManyTransformMeta = {
 }
 type TransformValMeta = BelongsToTransformMeta | HasOneTransformMeta | HasManyTransformMeta;
 
+type TransformedInclude = { model: any, as: string, include?: TransformedInclude[] };
+
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
     constructor(
         private modelFn: StaticModelT<T>,
@@ -310,9 +312,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private includeFields: string[];
     
     private createTransformQuery() {
-        let transforms = this.getTransforms();
+        let transforms = this.transforms = this.getTransforms();
         this.createTransformQueryWhere(transforms);
-        this.createTransformQueryInclude(transforms);
+        this.createTransformQueryInclude();
         this.createTransformResult(transforms);
     }
     
@@ -333,6 +335,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return [result, implicitIncludes];
     }
     
+    private transforms: TransformValMeta[] = [];
     private getTransforms() {
         let transforms: TransformValMeta[] = [];
         
@@ -491,22 +494,49 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         }).bind(this);
     }
     
-    private createTransformQueryInclude(transforms: TransformValMeta[]) {
-        function getFieldModel(field: string) {
-            for (let i = 0; i < transforms.length; i++) {
-                if (field == transforms[i].fieldName)
-                    return transforms[i].foreignDb().model;
+    private createTransformQueryInclude() {
+        function getForeignDb(impl: DbImpl<any, any, any>, field: string) {
+            for (let i = 0; i < impl.transforms.length; i++) {
+                if (field == impl.transforms[i].fieldName)
+                    return impl.transforms[i].foreignDb();
             }
             return null;
         }
         
-        this.transformQueryInclude = (function(fields: string[]): any {
+        this.transformQueryInclude = (function(this: DbImpl<any, any, any>, fields: string[]): any {
             if (!fields) return fields;
-            return fields.map(field => {
-                let model = getFieldModel(field);
-                if (!model) throw new Error(`Cannot find field ${field} from include query`);
-                return {model: model, as: field};
-            });
+            let newFieldMap = new Map<string, [DbImpl<any, any, any>, TransformedInclude]>();
+            let newFields: TransformedInclude[] = [];
+            
+            let self = this;
+            function addInclude(field: string): [DbImpl<any, any, any>, TransformedInclude] {
+                if (newFieldMap.has(field)) return newFieldMap.get(field)!;
+                let lastIdx = field.lastIndexOf('.');
+                if (lastIdx === -1) {
+                    let fdb = getForeignDb(self, field);
+                    if (!fdb) throw new Error(`Cannot find field ${field} from include query`);
+                    let val: TransformedInclude = { model: fdb.model, as: field };
+                    newFields.push(val);
+                    newFieldMap.set(field, [fdb, val]);
+                    return [fdb, val];
+                }
+                else {
+                    let assocName = field.substr(lastIdx + 1);
+                    let prevName = field.substr(0, lastIdx);
+                    let [prevDb, prevInclude] = addInclude(prevName);
+                    let fdb = getForeignDb(prevDb, assocName);
+                    if (!fdb) throw new Error(`Cannot find field ${field} from include query`);
+                    let val: TransformedInclude = { model: fdb.model, as: assocName };
+                    if (!prevInclude.include) prevInclude.include = [val];
+                    else prevInclude.include.push(val);
+                    newFieldMap.set(field, [fdb, val]);
+                    return [fdb, val];
+                }
+            }
+            
+            fields.forEach(addInclude);
+            
+            return newFields;
         }).bind(this);
     }
     

@@ -11,6 +11,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** add res.sendFiles as a replacement for express.static
 * **orm:** allow where queries to filter by details on associated tabled
 * **orm:** allow has-many associations in where queries
+* **orm:** allow nested includes using dot-notation
 
 ### Bug Fixes
 
