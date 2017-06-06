@@ -524,8 +524,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                     if (typeof fieldVal !== 'undefined') {
                         let t: ModelT<any> | null = null;
                         if (fieldVal) {
-                            t = new foreignDb.modelFn();
-                            foreignDb.copyVals(fieldVal, t);
+                            //TODO: include implicitIncludes
+                            t = foreignDb.wrapResult(fieldVal, []);
                         }
                         (<any>result)[transform.fieldName] = transform.foreignDb().transformResult(fieldVal, t);
                     }
@@ -538,8 +538,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                     if (typeof fieldVal !== 'undefined') {
                         let t: ModelT<any> | null = null;
                         if (fieldVal) {
-                            t = new foreignDb.modelFn();
-                            foreignDb.copyVals(fieldVal, t);
+                            //TODO: include implicitIncludes
+                            t = foreignDb.wrapResult(fieldVal, []);
                         }
                         (<any>result)[transform.fieldName] = foreignDb.transformResult(fieldVal, t);
                     }
@@ -548,11 +548,8 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                     if (typeof fieldVal !== 'undefined') {
                         let ts: ModelT<any>[] = [];
                         if (fieldVal) {
-                            ts = fieldVal.map((val: any) => {
-                                let t = new foreignDb.modelFn();
-                                foreignDb.copyVals(fieldVal, t);
-                                return t;
-                            });
+                            //TODO: include implicitIncludes
+                            ts = foreignDb.wrapResults(fieldVal, []);
                         }
                         (<any>result)[transform.fieldName] = ts.map(t => foreignDb.transformResult(fieldVal, t));
                     }
