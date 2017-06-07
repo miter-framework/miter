@@ -125,7 +125,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         [query, implicitIncludes] = this.transformQueryWhere(query);
         let defaultImplicitIncludes: string[] = [];
         [defaults, defaultImplicitIncludes] = this.transformQueryWhere(defaults);
-        if (defaultImplicitIncludes.length) throw new Error(`Cannot have implicit includes in default values in findOrCreate query.`);
+        if (defaultImplicitIncludes.length) {
+            this.logger.error(`findOrCreate. query:`, query);
+            this.logger.error(`defaults:`, defaults);
+            this.logger.error(`defaultImplicitIncludes:`, defaultImplicitIncludes);
+            throw new Error(`Cannot have implicit includes in default values in findOrCreate query.`);
+        }
         
         let findOrCreateOpts = _.merge({}, {
             where: query,
@@ -229,7 +234,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         
         let replaceImplicitIncludes: string[] = [];
         [replace, replaceImplicitIncludes] = this.transformQueryWhere(replace);
-        if (replaceImplicitIncludes.length) throw new Error(`Cannot have implicit includes in replace values in update query.`);
+        if (replaceImplicitIncludes.length) {
+            this.logger.error(`update. query:`, query);
+            this.logger.error(`replace:`, replace);
+            this.logger.error(`replaceImplicitIncludes:`, replaceImplicitIncludes);
+            throw new Error(`Cannot have implicit includes in replace values in update query.`);
+        }
         
         let [affected, results]: [number, any[]] = await this.model.update(<any>replace, _.merge({}, { transaction: sqlTransact }, <UpdateQueryT>query));
         
@@ -447,7 +457,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 case 'belongs-to':
                     if (typeof fieldVal !== 'undefined') {
                         if (fieldVal && fieldVal[transform.foreignPkName]) fieldVal = fieldVal[transform.foreignPkName];
-                        if (typeof fieldVal === 'string' || typeof fieldVal === 'number') {
+                        if (fieldVal === null || typeof fieldVal === 'string' || typeof fieldVal === 'number') {
                             (<any>query)[transform.columnName] = fieldVal;
                             delete (<any>query)[transform.fieldName];
                         }

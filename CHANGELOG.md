@@ -5,6 +5,10 @@
 
 Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
+### Bug Fixes
+
+* **orm:** add implicit include only if the value is non-null and has no id
+
 
 
 <a name="0.3.0"></a>
