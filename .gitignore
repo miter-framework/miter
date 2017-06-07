@@ -3,4 +3,4 @@
 
 .yarnclean
 yarn-error.log
-npm-debug.log
+npm-debug.log*

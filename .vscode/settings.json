@@ -5,5 +5,13 @@
     "editor.renderWhitespace": "all",
     "editor.trimAutoWhitespace": false,
     "files.insertFinalNewline": true,
-    "vsicons.presets.angular": false
+    "vsicons.presets.angular": false,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/npm-debug.log*": true
+    }
 }
