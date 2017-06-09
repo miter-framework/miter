@@ -4,7 +4,6 @@ import { TransactionT } from './transaction';
 export type QueryT = Sql.FindOptions;
 export type FindOrCreateQueryT = Sql.FindOrInitializeOptions<any>;
 export type CountQueryT = Sql.CountOptions;
-export type UpdateQueryT = Sql.UpdateOptions;
 export type DestroyQueryT = Sql.DestroyOptions;
 
 export interface CountAllResults<T> {
@@ -31,7 +30,7 @@ export interface Db<T> {
     save(t: T): Promise<T>;
     update(id: number | string, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
     update(t: T, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
-    update(query: UpdateQueryT, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
+    update(query: QueryT, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
     updateOrCreate(query: string | Sql.WhereOptions, defaults: Object | T) : Promise<[T, boolean]>;
     
     destroy(id: string | number): Promise<boolean>;

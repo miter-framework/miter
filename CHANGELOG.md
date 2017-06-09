@@ -5,6 +5,10 @@
 
 Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
+### Features
+
+* **orm:** allow update queries to have includes if returning = true
+
 ### Bug Fixes
 
 * **orm:** add implicit include only if the value is non-null and has no id

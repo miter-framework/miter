@@ -2,7 +2,7 @@ import * as Sql from 'sequelize';
 import * as _ from 'lodash';
 
 import { StaticModelT, ModelT, PkType, Db } from '../../core/model';
-import { QueryT, FindOrCreateQueryT, CountQueryT, UpdateQueryT, DestroyQueryT, CountAllResults } from '../../core/db';
+import { QueryT, FindOrCreateQueryT, CountQueryT, DestroyQueryT, CountAllResults } from '../../core/db';
 import { CtorT } from '../../core/ctor';
 import { TransactionT } from '../../core/transaction';
 
@@ -208,7 +208,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         return result;
     }
     
-    async update(query: number | string | T | UpdateQueryT, replace: Object, returning: boolean = false, transaction?: TransactionImpl): Promise<[boolean | number, any]> {
+    async update(query: number | string | T | QueryT, replace: Object, returning: boolean = false, transaction?: TransactionImpl): Promise<[boolean | number, any]> {
         if (!query) {
             throw new Error(`Db.update query parameter was falsey: ${query}`);
         }
@@ -217,10 +217,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         if (this.isId(query)) query = { where: { id: query } };
         else if (this.isT(query)) query = { where: { id: query.id } };
         else {
+            let include = (<any>query).include;
+            if (include && include.length && !returning) throw new Error(`Cannot have explicit includes in update when returning = false.`);
             [query, implicitIncludes] = this.transformQuery(query);
             let limit = query && (<any>query).limit;
             let filterAfter = false;
-            if (implicitIncludes.length && limit) {
+            if (implicitIncludes && implicitIncludes.length && limit) {
                 filterAfter = true;
                 delete (<any>query).limit;
             }
@@ -241,10 +243,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             throw new Error(`Cannot have implicit includes in replace values in update query.`);
         }
         
-        let [affected, results]: [number, any[]] = await this.model.update(<any>replace, _.merge({}, { transaction: sqlTransact }, <UpdateQueryT>query));
+        let [affected, results]: [number, any[]] = await this.model.update(<any>replace, _.merge({}, { transaction: sqlTransact }, <any>query));
         
         if (returning) {
-            let returningResults = await this.model.findAll(_.merge({}, { transaction: sqlTransact }, <QueryT>query))
+            let returningResults = await this.model.findAll(_.merge({}, { transaction: sqlTransact }, <QueryT>query));
             results = this.wrapResults(returningResults, implicitIncludes);
         }
         return [affected, results];
@@ -275,7 +277,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     private isId(query: any): query is (number | string) {
         return typeof query === 'number' || typeof query == 'string';
     }
-    private isT(query: T | DestroyQueryT): query is T {
+    private isT(query: T | QueryT): query is T {
         return !!(<T>query).id;
     }
     
