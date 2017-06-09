@@ -126,9 +126,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let defaultImplicitIncludes: string[] = [];
         [defaults, defaultImplicitIncludes] = this.transformQueryWhere(defaults);
         if (defaultImplicitIncludes.length) {
-            this.logger.error(`findOrCreate. query:`, query);
-            this.logger.error(`defaults:`, defaults);
-            this.logger.error(`defaultImplicitIncludes:`, defaultImplicitIncludes);
+            this.logger.error('db-impl', `findOrCreate. query:`, query);
+            this.logger.error('db-impl', `defaults:`, defaults);
+            this.logger.error('db-impl', `defaultImplicitIncludes:`, defaultImplicitIncludes);
             throw new Error(`Cannot have implicit includes in default values in findOrCreate query.`);
         }
         
@@ -237,9 +237,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let replaceImplicitIncludes: string[] = [];
         [replace, replaceImplicitIncludes] = this.transformQueryWhere(replace);
         if (replaceImplicitIncludes.length) {
-            this.logger.error(`update. query:`, query);
-            this.logger.error(`replace:`, replace);
-            this.logger.error(`replaceImplicitIncludes:`, replaceImplicitIncludes);
+            this.logger.error('db-impl', `update. query:`, query);
+            this.logger.error('db-impl', `replace:`, replace);
+            this.logger.error('db-impl', `replaceImplicitIncludes:`, replaceImplicitIncludes);
             throw new Error(`Cannot have implicit includes in replace values in update query.`);
         }
         
