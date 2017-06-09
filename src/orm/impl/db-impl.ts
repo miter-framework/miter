@@ -308,7 +308,6 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             }
             // logger.log('dbimpl', JSON.stringify(sql));
         }
-        //TODO: deep copy?
     }
     
     private static getForeignModelDbImpl(foreignModel: ForeignModelSource | undefined) {
@@ -455,6 +454,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             for (let q = 0; q < transforms.length; q++) {
                 let transform = transforms[q];
                 let fieldVal: any = (<any>query)[transform.fieldName];
+                let transformedPrefix = (prefix ? `${prefix}.` : '') + transform.fieldName;
                 switch (transform.type) {
                 case 'belongs-to':
                     if (typeof fieldVal !== 'undefined') {
@@ -463,13 +463,11 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                             (<any>query)[transform.columnName] = fieldVal;
                             delete (<any>query)[transform.fieldName];
                         }
-                        else if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
                         else {
-                            if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
-                            if (implicitIncludes.indexOf(transform.fieldName) === -1) implicitIncludes.push(transform.fieldName);
+                            if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
                             let foreignDb = transform.foreignDb();
                             let $and: any;
-                            [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transform.fieldName);
+                            [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
                             delete (<any>query)[transform.fieldName];
                             this.composeAnd(query, $and);
                         }
@@ -477,22 +475,20 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                     break;
                 case 'has-one':
                     if (typeof fieldVal !== 'undefined') {
-                        if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
-                        if (implicitIncludes.indexOf(transform.fieldName) === -1) implicitIncludes.push(transform.fieldName);
+                        if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
                         let foreignDb = transform.foreignDb();
                         let $and: any;
-                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transform.fieldName);
+                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
                         delete (<any>query)[transform.fieldName];
                         this.composeAnd(query, $and);
                     }
                     break;
                 case 'has-many':
                     if (typeof fieldVal !== 'undefined') {
-                        if (prefix) throw new Error(`Doubly-nested implicit includes: ${prefix}.${transform.fieldName}`);
-                        if (implicitIncludes.indexOf(transform.fieldName) === -1) implicitIncludes.push(transform.fieldName);
+                        if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
                         let foreignDb = transform.foreignDb();
                         let $and: any;
-                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transform.fieldName);
+                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
                         delete (<any>query)[transform.fieldName];
                         this.composeAnd(query, $and);
                     }
@@ -526,7 +522,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 let lastIdx = field.lastIndexOf('.');
                 if (lastIdx === -1) {
                     let fdb = getForeignDb(self, field);
-                    if (!fdb) throw new Error(`Cannot find field ${field} from include query`);
+                    if (!fdb) {
+                        self.logger.error('db-impl', 'fields:', fields);
+                        self.logger.error('db-impl', 'newFieldMap:', newFieldMap);
+                        self.logger.error('db-impl', 'newFields:', newFields);
+                        throw new Error(`Cannot find field ${field} from include query`);
+                    }
                     let val: TransformedInclude = { model: fdb.model, as: field };
                     newFields.push(val);
                     newFieldMap.set(field, [fdb, val]);
@@ -537,7 +538,12 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                     let prevName = field.substr(0, lastIdx);
                     let [prevDb, prevInclude] = addInclude(prevName);
                     let fdb = getForeignDb(prevDb, assocName);
-                    if (!fdb) throw new Error(`Cannot find field ${field} from include query`);
+                    if (!fdb) {
+                        self.logger.error('db-impl', 'fields:', fields);
+                        self.logger.error('db-impl', 'newFieldMap:', newFieldMap);
+                        self.logger.error('db-impl', 'newFields:', newFields);
+                        throw new Error(`Cannot find field ${field} from include query`);
+                    }
                     let val: TransformedInclude = { model: fdb.model, as: assocName };
                     if (!prevInclude.include) prevInclude.include = [val];
                     else prevInclude.include.push(val);
