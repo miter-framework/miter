@@ -9,6 +9,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **orm:** allow update queries to have includes if returning = true
 * **orm:** allow deeply-nested associations to be implicitly included in where query
+* **orm:** extract performCreate and performUpdate hooks in CrudController
 
 ### Bug Fixes
 

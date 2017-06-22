@@ -116,14 +116,22 @@ export abstract class CrudController<T extends ModelT<any>> {
     protected async transformResult(req: Request, res: Response, result: T | null) {
         return result;
     }
+    
     protected async transformCreateQuery(req: Request, res: Response, query: Object): Promise<Object | false> {
         return query;
+    }
+    protected async performCreate(req: Request, res: Response, data: object) {
+        return await this.staticModel.db.create(data);
     }
     protected async transformCreateResult(req: Request, res: Response, result: T) {
         return result;
     }
+    
     protected async transformUpdateQuery(req: Request, res: Response, query: Object): Promise<Object | false> {
         return query;
+    }
+    protected async performUpdate(req: Request, res: Response, id: string | number, data: object, returning: boolean) {
+        return await this.staticModel.db.update(id, data, returning);
     }
     protected async transformUpdateResult(req: Request, res: Response, result: T) {
         return result;
@@ -161,7 +169,8 @@ export abstract class CrudController<T extends ModelT<any>> {
             throw new Error("createMany not supported");
         }
         
-        let result: T = await this.staticModel.db.create(data);
+        let result: T = await this.performCreate(req, res, data);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         result = await this.transformCreateResult(req, res, result);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
@@ -319,9 +328,9 @@ export abstract class CrudController<T extends ModelT<any>> {
         await this.beforeUpdate(req, res, id, data);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        let [updated, results] = await this.staticModel.db.update(id, data, returning);
+        let [updated, results] = await this.performUpdate(req, res, id, data, returning);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        initialStatusCode = res.statusCode;
         results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
