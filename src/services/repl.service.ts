@@ -4,6 +4,7 @@ import { Logger } from './logger';
 import { cin } from '../util/cin';
 import { cout } from '../util/cout';
 import { directLogger } from '../util/direct-logger';
+import { delay } from '../util/delay';
 import vm = require('vm');
 
 const ELLIPSIS_CHANGE_MILLIS = 50;
@@ -59,13 +60,8 @@ export class ReplService {
         (<any>this.context)['Server'] = this.server;
         (<any>this.context)['Injector'] = this.server.injector;
         (<any>this.context)['logger'] = this.server.logger;
-        (<any>this.context)['delay'] = this.delay;
+        (<any>this.context)['delay'] = delay;
         (<any>this.context)['require'] = require;
-    }
-    private delay(millis: number) {
-        return new Promise((resolve, reject) => {
-            setTimeout(resolve, millis);
-        });
     }
     private async resolvePromise(promise: Promise<any>) {
         cin.pause();
@@ -84,7 +80,7 @@ export class ReplService {
             let dots = (ticks / 5) % 4;
             let line = `Resolving${'.'.repeat(dots)}`;
             cout.write(line);
-            await this.delay(ELLIPSIS_CHANGE_MILLIS);
+            await delay(ELLIPSIS_CHANGE_MILLIS);
             cout.clearLine();
             cout.moveCursor(-line.length, 0);
             ticks++;
