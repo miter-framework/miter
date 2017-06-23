@@ -17,11 +17,13 @@
     "devDependencies": {
         "@types/chai": "^3.4.35",
         "@types/chai-as-promised": "^0.0.30",
+        "@types/jsonwebtoken": "^7.2.1",
         "@types/mocha": "^2.2.40",
         "@types/sinon": "^2.1.1",
         "@types/sinon-chai": "^2.7.27",
         "chai": "^3.5.0",
         "chai-as-promised": "^6.0.0",
+        "jsonwebtoken": "^7.4.1",
         "mocha": "^3.2.0",
         "mocha-typescript": "^1.0.23",
         "sinon": "^2.1.0",

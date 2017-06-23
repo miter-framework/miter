@@ -5,5 +5,7 @@ export function FakeRequest(): Request {
     ['params', 'param', 'query'].forEach(name => {
         obj[name] = function() { return obj; };
     });
+    obj.headers = {};
+    obj.header = () => void(0);
     return obj;
 }

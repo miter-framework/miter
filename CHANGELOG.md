@@ -12,6 +12,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **orm:** extract performCreate and performUpdate hooks in CrudController
 * **orm:** allow TransactionService.run to create detached transactions
 * **orm:** allow the Transaction decorator to create detached transactions
+* **test:** add unit tests for JwtBasePolicy
 
 ### Bug Fixes
 
