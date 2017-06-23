@@ -11,6 +11,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **orm:** allow deeply-nested associations to be implicitly included in where query
 * **orm:** extract performCreate and performUpdate hooks in CrudController
 * **orm:** allow TransactionService.run to create detached transactions
+* **orm:** allow the Transaction decorator to create detached transactions
 
 ### Bug Fixes
 
