@@ -13,13 +13,19 @@ export class TransactionService {
         return this.sequelize.currentTransaction;
     }
     
-    async run<T = void>(transactionName: string, fn: () => Promise<T>): Promise<T> {
+    run<T = void>(transactionName: string, fn: () => Promise<T>): Promise<T>;
+    run<T = void>(transactionName: string, detach: boolean, fn: () => Promise<T>): Promise<T>
+    async run<T = void>(transactionName: string, detach: boolean | (() => Promise<T>), fn?: () => Promise<T>): Promise<T> {
+        if (typeof detach === 'function') {
+            fn = detach;
+            detach = false;
+        }
         return await this.namespace.runAndReturn(async () => {
-            let t = await this.sequelize.transaction(transactionName, this.current);
+            let t = await this.sequelize.transaction(transactionName, detach ? null : this.current);
             this.logger.verbose('transactions', `creating transaction (${t.fullName})`);
             let failed = false;
             try {
-                return await fn();
+                return await fn!();
             }
             catch (e) {
                 this.logger.error('transactions', `caught an exception in a transaction (${t.fullName}). Rolling back...`);

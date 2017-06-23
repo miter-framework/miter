@@ -34,6 +34,24 @@ describe('TransactionService', () => {
             expect(transactService.current).to.be.undefined;
         });
         
+        it('should nest transactions by default', async () => {
+            await transactService.run(`test0`, async () => {
+                expect(transactService.current!.fullName).to.match(/test0/i);
+                await transactService.run(`test1`, async () => {
+                    expect(transactService.current!.fullName).to.match(/test0.*test1/i);
+                });
+            });
+        });
+        
+        it('should not nest transactions by if detach = true', async () => {
+            await transactService.run(`test0`, async () => {
+                expect(transactService.current!.fullName).to.match(/test0/i);
+                await transactService.run(`test1`, true, async () => {
+                    expect(transactService.current!.fullName).not.to.match(/test0.*test1/i);
+                });
+            });
+        });
+        
         it('should persist a transaction after an asynchronous operation', (done) => {
             transactService.run(`test0`, async () => {
                 let transact = transactService.current;

@@ -62,13 +62,14 @@ export class Sequelize {
         this.namespace.set('transaction', val);
     }
     
-    async transaction(transactionName: string, transaction?: TransactionT): Promise<TransactionT> {
-        let parentTransaction = transaction || this.currentTransaction;
+    async transaction(transactionName: string, transaction?: TransactionT | null): Promise<TransactionT> {
+        let parentTransaction = transaction;
+        if (typeof parentTransaction === 'undefined') parentTransaction = this.currentTransaction;
         let sqlTransact = parentTransaction && (<TransactionImpl>parentTransaction).sync();
         if (!sqlTransact) sqlTransact = await this.sql.transaction();
         else sqlTransact = await this.sql.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong
         
-        let t = new TransactionImpl(transactionName, sqlTransact!, parentTransaction);
+        let t = new TransactionImpl(transactionName, sqlTransact!, parentTransaction || null);
         this.currentTransaction = t;
         return t;
     }

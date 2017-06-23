@@ -24,7 +24,8 @@ export class FakeSequelize extends Sequelize {
     }
     
     async transaction(transactionName: string, transaction?: TransactionT): Promise<TransactionT> {
-        let parentTransaction = transaction || this.currentTransaction;
+        let parentTransaction = transaction;
+        if (typeof parentTransaction === 'undefined') parentTransaction = this.currentTransaction;
         let t = new FakeTransaction(transactionName, parentTransaction);
         this.currentTransaction = t;
         return t;

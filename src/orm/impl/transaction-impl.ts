@@ -2,7 +2,7 @@ import * as Sql from 'sequelize';
 import { TransactionT } from '../../core/transaction';
 
 export class TransactionImpl implements TransactionT {
-    constructor(name: string, private sqlTransact: Sql.Transaction, private parentTransaction?: TransactionT) {
+    constructor(name: string, private sqlTransact: Sql.Transaction, private parentTransaction: TransactionT | null = null) {
         this._name = name;
         this._complete = false;
         this._transaction = sqlTransact;
