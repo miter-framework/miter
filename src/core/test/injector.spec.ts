@@ -6,23 +6,23 @@ import * as sinonChai from 'sinon-chai';
 use(sinonChai);
 
 import { Injector } from '../injector';
-import { Logger } from '../../services/logger';
+import { LoggerCore } from '../../services/logger-core';
 import { CtorT } from '../../core/ctor';
 import { Injectable } from '../../decorators/services/injectable.decorator';
 import { Meta } from '../../decorators/services/meta.decorator';
 import { Name } from '../../decorators/services/name.decorator';
 
 describe('Injector', () => {
-    let logger: Logger;
+    let loggerCore: LoggerCore;
     let instance: Injector;
     beforeEach(() => {
-        logger = new Logger('abc-xyz', 'default', false);
-        instance = new Injector(logger);
+        loggerCore = new LoggerCore('abc-xyz', 'default', false);
+        instance = new Injector(loggerCore);
     });
     
     describe('.resolveInjectable', () => {
-        it('should provide the logger when requested', () => {
-            expect(instance.resolveInjectable(Logger)).to.equal(logger);
+        it('should provide the logger core when requested', () => {
+            expect(instance.resolveInjectable(LoggerCore)).to.equal(loggerCore);
         });
         it('should provide itself when requested', () => {
             expect(instance.resolveInjectable(Injector)).to.equal(instance);

@@ -1,4 +1,5 @@
 import { Service } from '../decorators/services/service.decorator';
+import { Name } from '../decorators/services/name.decorator';
 import { Server } from '../server/server';
 import { Logger } from './logger';
 import { cin } from '../util/cin';
@@ -10,12 +11,9 @@ import vm = require('vm');
 const ELLIPSIS_CHANGE_MILLIS = 50;
 
 @Service()
+@Name('repl')
 export class ReplService {
-    constructor(private server: Server) {
-    }
-    
-    get logger() {
-        return this.server.logger;
+    constructor(private server: Server, private logger: Logger) {
     }
     
     private context: vm.Context;
@@ -31,7 +29,7 @@ export class ReplService {
         let proxy_handler = {
             get: (target: any, name: string, receiver: any) => {
                 if (!(name in target) && (name in target.db)) {
-                    this.logger.warn('repl', `${name} is not a property on ${target.name || target}. Forwarding call to ${target.name || target}.db`);
+                    this.logger.warn(`${name} is not a property on ${target.name || target}. Forwarding call to ${target.name || target}.db`);
                     let value = target.db[name];
                     if (typeof value === 'function') value = value.bind(target.db);
                     return value;
@@ -59,7 +57,7 @@ export class ReplService {
         }
         (<any>this.context)['Server'] = this.server;
         (<any>this.context)['Injector'] = this.server.injector;
-        (<any>this.context)['logger'] = this.server.logger;
+        (<any>this.context)['logger'] = this.logger;
         (<any>this.context)['delay'] = delay;
         (<any>this.context)['require'] = require;
     }
@@ -97,7 +95,7 @@ export class ReplService {
             directLogger.log(result);
         }
         catch (e) {
-            this.logger.error('repl', e && (e.message || e));
+            this.logger.error(e && (e.message || e));
         }
     }
     

@@ -15,10 +15,35 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **test:** add unit tests for JwtBasePolicy
 * **injector:** add cache and deps options to providers that use factory functions
 * **injector:** allow metadata to be defined and injected into provide factory functions
+* **logger:** infer subsystem based on the name of the injectable the logger is injected into
 
 ### Bug Fixes
 
 * **orm:** add implicit include only if the value is non-null and has no id
+
+### Breaking Changes
+
+* Server.logger is now private. If you need an instance of a logger, you can dependency inject Logger or LoggerCore.
+    If you need to do this through code, you can manually grab the logger like this:
+    ```typescript
+    import { Miter, LoggerCore, Logger } from 'miter';
+    let server = await Miter.launch({ ... });
+    let logger: Logger = server.injector.resolveInjectable(LoggerCore).getSubsystem('my-subsystem');
+    ```
+* The Logger methods no longer accept a subsystem. This includes `log`, `trace`, `error`, `info`, `warn`, and `verbose`.
+    Instead of requiring the subsystem every time you need to log a message, the logger will use the name of the class the logger is injected into.
+    If you want to provide a specific subsystem, you can use the new Name decorator to override the default behavior.
+    In this example, the class is 'TransactionService' but the subsystem is 'transactions':
+    ```
+    @Injectable()
+    @Name('transactions')
+    export class TransactionService {
+        constructor(private logger: Logger) {
+            logger.info('This message will use my overridden subsystem name');
+        }
+    }
+    ```
+* Injector.resolveDependency throws more errors. Previously it silently swallowed some circular dependency errors, and it only logged falsey injections. Now it will fail fast when one of these errors occur.
 
 
 

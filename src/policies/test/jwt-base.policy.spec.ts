@@ -7,7 +7,7 @@ use(sinonChai);
 
 import { JwtBasePolicy } from '../jwt-base.policy';
 import { Request, Response } from 'express';
-import { Logger } from '../../services/logger';
+import { LoggerCore } from '../../services/logger-core';
 import { JwtMetadata } from '../../metadata/server/jwt';
 import { FakeRequest } from '../../router/test/fake-request';
 import { FakeResponse } from '../../router/test/fake-response';
@@ -26,7 +26,7 @@ describe('JwtBasePolicy', () => {
     let res: Response;
     let headerStub: sinon.SinonStub | undefined;
     beforeEach(() => {
-        let logger = new Logger('abc', 'error', false);
+        let logger = new LoggerCore('abc', 'error', false);
         ctor = (jwtMeta: any, credentialsRequired: boolean) => {
             return jwtBasePolicy = new JwtBasePolicy(jwtMeta && new JwtMetadata(jwtMeta, <any>null), logger, credentialsRequired);
         };

@@ -7,6 +7,7 @@ import { CtorT } from '../../core/ctor';
 import { TransactionT } from '../../core/transaction';
 
 import { Transaction } from '../../decorators/orm/transaction.decorator';
+import { Name } from '../../decorators/services/name.decorator';
 
 import { PropMetadata, PropMetadataSym } from '../../metadata/orm/prop';
 import { ModelPropertiesSym } from '../../metadata/orm/model';
@@ -52,6 +53,7 @@ type TransformValMeta = BelongsToTransformMeta | HasOneTransformMeta | HasManyTr
 
 type TransformedInclude = { model: any, as: string, include?: TransformedInclude[] };
 
+@Name('db-impl')
 export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements Db<T> {
     constructor(
         private modelFn: StaticModelT<T>,
@@ -66,7 +68,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     
     private getSqlTransact(transaction?: TransactionT) {
         transaction = transaction || this.transactionService.current;
-        if (transaction) this.logger.verbose('dbimpl', `Using transaction: ${transaction.fullName}`);
+        if (transaction) this.logger.verbose(`Using transaction: ${transaction.fullName}`);
         return transaction && (<TransactionImpl>transaction).sync();
     }
     
@@ -126,9 +128,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let defaultImplicitIncludes: string[] = [];
         [defaults, defaultImplicitIncludes] = this.transformQueryWhere(defaults);
         if (defaultImplicitIncludes.length) {
-            this.logger.error('db-impl', `findOrCreate. query:`, query);
-            this.logger.error('db-impl', `defaults:`, defaults);
-            this.logger.error('db-impl', `defaultImplicitIncludes:`, defaultImplicitIncludes);
+            this.logger.error(`findOrCreate. query:`, query);
+            this.logger.error(`defaults:`, defaults);
+            this.logger.error(`defaultImplicitIncludes:`, defaultImplicitIncludes);
             throw new Error(`Cannot have implicit includes in default values in findOrCreate query.`);
         }
         
@@ -237,9 +239,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let replaceImplicitIncludes: string[] = [];
         [replace, replaceImplicitIncludes] = this.transformQueryWhere(replace);
         if (replaceImplicitIncludes.length) {
-            this.logger.error('db-impl', `update. query:`, query);
-            this.logger.error('db-impl', `replace:`, replace);
-            this.logger.error('db-impl', `replaceImplicitIncludes:`, replaceImplicitIncludes);
+            this.logger.error(`update. query:`, query);
+            this.logger.error(`replace:`, replace);
+            this.logger.error(`replaceImplicitIncludes:`, replaceImplicitIncludes);
             throw new Error(`Cannot have implicit includes in replace values in update query.`);
         }
         
@@ -297,16 +299,16 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
             allProps.push({columnName: propMeta.columnName || propName, propertyName: propName, transformFn: transformFn});
         }
         
-        // logger.log('dbimpl', this.modelFn.name || this.modelFn, 'allProps:', `[\r\n    ${allProps.map(p => p.propertyName + ': ' + p.columnName).join(',\r\n    ')}\r\n]`);
+        // logger.log(this.modelFn.name || this.modelFn, 'allProps:', `[\r\n    ${allProps.map(p => p.propertyName + ': ' + p.columnName).join(',\r\n    ')}\r\n]`);
         
         this.copyVals = function(sql: TInstance, t: any) {
             for (let q = 0; q < allProps.length; q++) {
-                // logger.log('dbimpl', allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
+                // logger.log(allProps[q].propertyName + ':', sql[allProps[q].propertyName]);
                 // t[allProps[q].propertyName] = allProps[q].transformFn(sql[allProps[q].columnName]);
                 let propName = allProps[q].propertyName;
                 t[propName] = allProps[q].transformFn((<any>sql)[propName]);
             }
-            // logger.log('dbimpl', JSON.stringify(sql));
+            // logger.log(JSON.stringify(sql));
         }
     }
     
@@ -523,9 +525,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                 if (lastIdx === -1) {
                     let fdb = getForeignDb(self, field);
                     if (!fdb) {
-                        self.logger.error('db-impl', 'fields:', fields);
-                        self.logger.error('db-impl', 'newFieldMap:', newFieldMap);
-                        self.logger.error('db-impl', 'newFields:', newFields);
+                        self.logger.error('fields:', fields);
+                        self.logger.error('newFieldMap:', newFieldMap);
+                        self.logger.error('newFields:', newFields);
                         throw new Error(`Cannot find field ${field} from include query`);
                     }
                     let val: TransformedInclude = { model: fdb.model, as: field };
@@ -539,9 +541,9 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                     let [prevDb, prevInclude] = addInclude(prevName);
                     let fdb = getForeignDb(prevDb, assocName);
                     if (!fdb) {
-                        self.logger.error('db-impl', 'fields:', fields);
-                        self.logger.error('db-impl', 'newFieldMap:', newFieldMap);
-                        self.logger.error('db-impl', 'newFields:', newFields);
+                        self.logger.error('fields:', fields);
+                        self.logger.error('newFieldMap:', newFieldMap);
+                        self.logger.error('newFields:', newFields);
                         throw new Error(`Cannot find field ${field} from include query`);
                     }
                     let val: TransformedInclude = { model: fdb.model, as: assocName };
@@ -618,7 +620,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         let t = new this.modelFn();
         this.copyVals(result, t);
         // if (implicitIncludes.length) {
-        //     this.logger.error('db-impl', result);
+        //     this.logger.error(result);
         //     throw new Error(`Not implemented! wrapResult with implicitIncludes: [${implicitIncludes.map(str => "'" + str + "'").join(', ')}]`);
         // }
         return this.transformResult(result, t, implicitIncludes);

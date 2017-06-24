@@ -1,18 +1,18 @@
 import { StaticModelT, ModelT, PkType } from '../../core/model';
 import { Sequelize } from '../sequelize';
-import { Logger } from '../../services/logger';
+import { LoggerCore } from '../../services/logger-core';
 import { ClsNamespaceService } from '../../services/cls-namespace.service';
 import { TransactionT } from '../../core/transaction';
 import { FakeTransaction } from '../impl/test/fake-transaction';
 import * as __Sequelize from 'sequelize';
 
 export class FakeSequelize extends Sequelize {
-    constructor(logger: Logger, clsNamespace: ClsNamespaceService, ...models: StaticModelT<ModelT<any>>[]) {
+    constructor(core: LoggerCore, clsNamespace: ClsNamespaceService, ...models: StaticModelT<ModelT<any>>[]) {
         super(<any>{
             enabled: true,
             models: [...models],
             recreate: false
-        }, logger, clsNamespace);
+        }, core, core.getSubsystem('orm'), clsNamespace);
     }
     
     async init() { }

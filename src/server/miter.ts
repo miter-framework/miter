@@ -6,18 +6,7 @@ import { Service } from '../decorators/services/service.decorator';
 export class Miter {
     public static async launch(meta: ServerMetadataT): Promise<Server> {
         let serverInst = new Server(meta);
-        let initPromise = serverInst.init();
-        process.on('SIGINT', async () => {
-            serverInst.logger.error('miter', `Received SIGINT kill signal...`);
-            try {
-                await initPromise; //Wait for initialization before we try to shut down the server
-                await serverInst.shutdown();
-            }
-            finally {
-                process.exit(serverInst.errorCode);
-            }
-        });
-        await initPromise;
+        await serverInst.init();
         return serverInst;
     }
     

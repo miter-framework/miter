@@ -6,8 +6,9 @@ import * as sinonChai from 'sinon-chai';
 use(sinonChai);
 
 import { ServiceReflector } from '../reflector';
-import { Logger } from '../logger';
+import { LoggerCore } from '../logger-core';
 import { Injector } from '../../core/injector';
+import { ServerMetadata } from '../../metadata/server/server';
 import { Injectable } from '../../decorators/services/injectable.decorator';
 
 @Injectable()
@@ -55,8 +56,9 @@ describe('ServiceReflector', () => {
     let injector: Injector;
     let serviceReflector: ServiceReflector;
     beforeEach(() => {
-        let logger = new Logger('abc', 'error', false);
-        injector = new Injector(logger);
+        let loggerCore = new LoggerCore('abc', 'error', false);
+        injector = new Injector(loggerCore);
+        new ServerMetadata({ name: 'abc' }, injector);
         serviceReflector = injector.resolveInjectable(ServiceReflector)!;
     });
     

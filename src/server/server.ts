@@ -8,7 +8,7 @@ import { Injectable } from '../decorators/services/injectable.decorator';
 import { ServerMetadataT, ServerMetadata } from '../metadata/server/server';
 import { OrmReflector } from '../orm/reflector';
 import { ServiceReflector } from '../services/reflector';
-import { Logger } from '../services/logger';
+import { LoggerCore } from '../services/logger-core';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
 import { monkeypatchRequest } from './static-middleware';
@@ -21,8 +21,8 @@ let debug = debug_module('express:server');
 @Injectable()
 export class Server {
     constructor(meta: ServerMetadataT) {
-        this._logger = new Logger(meta.name || null, meta.logLevel);
-        this._injector = new Injector(this._logger);
+        this._loggerCore = new LoggerCore(meta.name || null, meta.logLevel);
+        this._injector = new Injector(this._loggerCore);
         this._injector.provide({ provide: Server, useValue: this });
         this._meta = new ServerMetadata(meta, this._injector);
         for (let q = 0; q < this.meta.inject.length; q++) {
@@ -36,10 +36,13 @@ export class Server {
         return this._meta;
     }
     
-    private _logger: Logger;
-    get logger(): Logger {
-        return this._logger;
+    private _loggerCore: LoggerCore;
+    private get logger() {
+        return this._loggerCore.getSubsystem('miter');
     }
+    // get logger(): Logger {
+    //     return this._logger;
+    // }
     
     private _app: ExpressApp;
     get app(): ExpressApp {
@@ -51,37 +54,53 @@ export class Server {
         return this._injector;
     }
     
-    async init() {
+    init() {
+        this.initPromise = this.initImpl();
+        process.on('SIGINT', this.onSIGINT.bind(this));
+        return this.initPromise;
+    }
+    async initImpl() {
         try {
-            this.logger.info('miter', `Initializing miter server...`);
+            this.logger.info(`Initializing miter server...`);
             if (this.meta.router) await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();
             if (this.meta.router) this.reflectRoutes();
         }
         catch (e) {
-            this.logger.error('miter', `FATAL ERROR: Failed to launch server.`);
-            this.logger.error('miter', e);
+            this.logger.error(`FATAL ERROR: Failed to launch server.`);
+            this.logger.error(e);
             return;
         }
         
         if (this.meta.router) this.listen();
     }
+    private initPromise: Promise<void>
     errorCode: number = 0;
+    private async onSIGINT() {
+        this.logger.error(`Received SIGINT kill signal...`);
+        try {
+            await this.initPromise; //Wait for initialization before we try to shut down the server
+            await this.shutdown();
+        }
+        finally {
+            process.exit(this.errorCode);
+        }
+    }
     async shutdown() {
         try {
             try {
-                this.logger.info('miter', `Shutting down miter server...`);
+                this.logger.info(`Shutting down miter server...`);
                 if (this.meta.router) await this.stopListening();
                 await this.stopServices();
             }
             finally {
-                this.logger.ShutDown();
+                this._loggerCore.shutdown();
             }
         }
         catch (e) {
-            this.logger.error('miter', `FATAL ERROR: Failed to gracefully shutdown server.`);
-            this.logger.error('miter', e);
+            this.logger.error(`FATAL ERROR: Failed to gracefully shutdown server.`);
+            this.logger.error(e);
         }
     }
     
@@ -89,7 +108,7 @@ export class Server {
         this._app = createExpressApp();
         this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
         if (this.meta.allowCrossOrigin) {
-            this.logger.warn('miter', `Server starting with cross-origin policy enabled. This should not be enabled in production.`);
+            this.logger.warn(`Server starting with cross-origin policy enabled. This should not be enabled in production.`);
             this._app.use(function(req: Request, res: Response, next) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", req.header("Access-Control-Request-Headers"));
@@ -106,41 +125,32 @@ export class Server {
     async reflectOrm() {
         let orm = this.meta.orm;
         if (orm && (typeof orm.enabled === 'undefined' || orm.enabled) && orm.db) {
-            this.logger.verbose('orm', `Initializing ORM...`);
             this.ormReflector = this._injector.resolveInjectable(OrmReflector)!;
             await this.ormReflector.init();
-            this.logger.info('orm', `Finished initializing ORM.`);
         }
         else if (this.meta.orm.models.length) {
-            this.logger.warn('orm', `Models included in server metadata, but no orm configuration defined.`);
+            this.logger.warn(`Models included in server metadata, but no orm configuration defined.`);
         }
     }
     
     private serviceReflector: ServiceReflector;
     private async startServices() {
-        this.logger.verbose('services', `Starting services...`);
         this.serviceReflector = this._injector.resolveInjectable(ServiceReflector)!;
-        await this.serviceReflector.reflectServices(this.meta.services || []);
-        this.logger.info('services', `Finished starting services.`);
+        await this.serviceReflector.startServices();
     }
     private async stopServices() {
-        this.logger.verbose('services', `Shutting down services...`);
         await this.serviceReflector.shutdownServices();
-        this.logger.info('services', `Finished shutting down services.`);
     }
     
     private routerReflector: RouterReflector;
     private reflectRoutes() {
-        this.logger.verbose('router', `Loading routes...`);
         this.routerReflector = this._injector.resolveInjectable(RouterReflector)!;
-        this.routerReflector.reflectRoutes();
-        this.app.use(this.routerReflector.router.expressRouter);
-        this.logger.info('router', `Finished loading routes.`);
+        this.routerReflector.reflectServerRoutes(this.app);
     }
     
     private webServer: http.Server | https.Server| undefined;
     private listen() {
-        this.logger.info('miter', `Serving`);
+        this.logger.info(`Serving`);
         
         if (this.meta.ssl.enabled) {
             this.webServer = https.createServer({key: this._meta.ssl.privateKey, cert: this._meta.ssl.certificate}, this.app);
@@ -152,12 +162,12 @@ export class Server {
         this.webServer.on("error", (err: any) => this.onError(err));
     }
     private async stopListening() {
-        this.logger.verbose('miter', `Closing HTTP server...`);
+        this.logger.verbose(`Closing HTTP server...`);
         await wrapPromise((cb: Function) => {
             if (!this.webServer) return cb();
             (<any>this.webServer).close(cb);
         });
-        this.logger.info('miter', `Finished closing HTTP server.`);
+        this.logger.info(`Finished closing HTTP server.`);
     }
     private onError(error: Error & { syscall?: string, code?: string }) {
         if (error.syscall !== "listen") {
@@ -169,13 +179,13 @@ export class Server {
         // handle specific listen errors with friendly messages
         switch (error.code) {
         case "EACCES":
-            this.logger.error('miter', `${bind} requires elevated privileges`);
+            this.logger.error(`${bind} requires elevated privileges`);
             this.errorCode = 1;
             this.webServer = undefined;
             this.shutdown();
             break;
         case "EADDRINUSE":
-            this.logger.error('miter', `${bind} is already in use`);
+            this.logger.error(`${bind} is already in use`);
             this.errorCode = 1;
             this.webServer = undefined;
             this.shutdown();
@@ -188,6 +198,6 @@ export class Server {
         if (!this.webServer) throw new Error(`onListening called, but there is no httpServer!`);
         let addr = this.webServer.address();
         let bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
-        this.logger.info('miter', `Listening on ${bind}`);
+        this.logger.info(`Listening on ${bind}`);
     }
 }

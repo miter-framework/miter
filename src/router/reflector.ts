@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Request, Response } from 'express';
+import { Request, Response, Application as ExpressApp } from 'express';
 
 import { Injector } from '../core/injector';
 import { PolicyDescriptor } from '../core/policy';
@@ -7,6 +7,7 @@ import { CtorT } from '../core/ctor';
 import { PolicyT } from '../core/policy';
 
 import { Injectable } from '../decorators/services/injectable.decorator';
+import { Name } from '../decorators/services/name.decorator';
 
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../metadata/router/controller';
 import { RouteMetadata, RouteMetadataSym } from '../metadata/router/route';
@@ -24,6 +25,7 @@ import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../uti
 import './extend-req-res';
 
 @Injectable()
+@Name('router')
 export class RouterReflector {
     constructor(
         private injector: Injector,
@@ -37,11 +39,16 @@ export class RouterReflector {
         return this._router;
     }
     
-    reflectRoutes(controllers?: any[], parentControllers?: any[]) {
+    reflectServerRoutes(app: ExpressApp) {
+        this.logger.verbose(`Loading routes...`);
+        this.reflectRoutes(this.routerMeta.controllers);
+        app.use(this.router.expressRouter);
+        this.logger.info(`Finished loading routes.`);
+    }
+    reflectRoutes(controllers: any[], parentControllers?: any[]) {
         parentControllers = parentControllers || [];
-        controllers = controllers || this.routerMeta.controllers;
         
-        this.logger.verbose('router', `in reflectRoutes; controllers=[${controllers && controllers.map(c => c.name || c)}]; parentControllers=[${parentControllers && parentControllers.map(c => c.name || c)}]`)
+        this.logger.verbose(`in reflectRoutes; controllers=[${controllers && controllers.map(c => c.name || c)}]; parentControllers=[${parentControllers && parentControllers.map(c => c.name || c)}]`)
         for (let q = 0; q < controllers.length; q++) {
             this.reflectControllerRoutes(parentControllers, controllers[q]);
         }
@@ -55,7 +62,7 @@ export class RouterReflector {
         
         let meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
         if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerFn.name || controllerFn}.`);
-        this.logger.info('router', `Reflecting routes for controller ${controllerFn.name || controllerFn}`);
+        this.logger.info(`Reflecting routes for controller ${controllerFn.name || controllerFn}`);
         
         parentControllers = parentControllers || [];
         let parentMeta: ControllerMetadata[] = parentControllers.map(pc => Reflect.getOwnMetadata(ControllerMetadataSym, pc.prototype));
@@ -75,7 +82,7 @@ export class RouterReflector {
     
     private reflectRouteMeta(controllerProto: any): [string, RouteMetadata[]][] {
         let hierarchy = inhertitanceHierarchy(controllerProto);
-        this.logger.verbose('router', 'reflecting routes for inheritance hierarchy:', hierarchy.map(fn => fn.name || fn));
+        this.logger.verbose('reflecting routes for inheritance hierarchy:', hierarchy.map(fn => fn.name || fn));
         let routeMeta: [string, RouteMetadata[]][] = [];
         for (let r = 0; r < hierarchy.length; r++) {
             let fn = hierarchy[r];
@@ -123,7 +130,7 @@ export class RouterReflector {
         let boundRoute = controller[routeFnName].bind(controller);
         
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
-        this.logger.verbose('router', `& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
+        this.logger.verbose(`& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         
         let addRouteFn = (<any>this.router.expressRouter)[routeMeta.method].bind(this.router.expressRouter);
         let fullRouterFn = this.createFullRouterFn(policies, boundRoute, transactionName);
@@ -184,8 +191,8 @@ export class RouterReflector {
     requestIndex = 0;
     private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, transactionName: string) {
         let fullRouterFn = async function(this: RouterReflector, requestIndex: number, req: Request, res: Response) {
-            this.logger.info('router', `{${requestIndex}} beginning request: ${req.url}`);
-            this.logger.verbose('router', `{${requestIndex}} unfinishedRoutes: ${++this.unfinishedRoutes}`);
+            this.logger.info(`{${requestIndex}} beginning request: ${req.url}`);
+            this.logger.verbose(`{${requestIndex}} unfinishedRoutes: ${++this.unfinishedRoutes}`);
             let allResults: any[] = [];
             req.policyResults = this.createPolicyResultsFn(policies, allResults);
             let initialStatusCode = res.statusCode;
@@ -195,31 +202,31 @@ export class RouterReflector {
                 let policyCtor = policy[0];
                 let policyName = (policyCtor && (policyCtor.name || policyCtor)) || '(undefined)';
                 try {
-                    this.logger.verbose('router', `{${requestIndex}} awaiting policy ${q+1}/${policies.length} (${policyName})`);
+                    this.logger.verbose(`{${requestIndex}} awaiting policy ${q+1}/${policies.length} (${policyName})`);
                     result = await policy[1](req, res);
-                    this.logger.verbose('router', `{${requestIndex}} policy ${policyName} returned with result ${JSON.stringify(result)}`);
+                    this.logger.verbose(`{${requestIndex}} policy ${policyName} returned with result ${JSON.stringify(result)}`);
                 }
                 catch (e) {
-                    this.logger.error('router', `{${requestIndex}} policy (${policyName}) threw an exception. Serving 500 - Internal server error`);
-                    this.logger.error('router', e);
+                    this.logger.error(`{${requestIndex}} policy (${policyName}) threw an exception. Serving 500 - Internal server error`);
+                    this.logger.error(e);
                     res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                     res.send('Internal server error');
-                    this.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                    this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                     return;
                 }
                 allResults.push(result);
                 if (res.statusCode !== initialStatusCode || res.headersSent) return;
             }
             
-            this.logger.verbose('router', `{${requestIndex}} policies complete`);
+            this.logger.verbose(`{${requestIndex}} policies complete`);
             let failed = false;
             try {
-                this.logger.verbose('router', `{${requestIndex}} calling route`);
+                this.logger.verbose(`{${requestIndex}} calling route`);
                 await boundRoute(req, res);
-                this.logger.verbose('router', `{${requestIndex}} route complete`);
+                this.logger.verbose(`{${requestIndex}} route complete`);
             }
             catch (e) {
-                this.logger.error('router', `{${requestIndex}} route threw an exception. Serving 500 - Internal server error. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                this.logger.error(`{${requestIndex}} route threw an exception. Serving 500 - Internal server error. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                 res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
                 res.send('Internal server error');
                 failed = true;
@@ -227,10 +234,10 @@ export class RouterReflector {
             }
             finally {
                 if (!failed && res.statusCode === initialStatusCode && !res.headersSent) {
-                    this.logger.error('router', `{${requestIndex}} route failed to send a response. Serving 404 - Not Found`);
+                    this.logger.error(`{${requestIndex}} route failed to send a response. Serving 404 - Not Found`);
                     res.status(HTTP_STATUS_NOT_FOUND);
                     res.send(`Not found.`);
-                    this.logger.verbose('router', `{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                    this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                 }
             }
         };
@@ -244,7 +251,7 @@ export class RouterReflector {
                 });
             }
             catch (e) {
-                self.logger.error('router', e);
+                self.logger.error(e);
             }
         }
     }

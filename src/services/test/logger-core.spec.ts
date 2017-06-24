@@ -6,7 +6,7 @@ import * as sinonChai from 'sinon-chai';
 use(sinonChai);
 
 import { stubDirectLogger } from '../../util/test/stub-direct-logger';
-import { Logger } from '../logger';
+import { LoggerCore } from '../logger-core';
 
 const testServerName = 'abc-xyz';
 const logLevels = {
@@ -17,9 +17,9 @@ const logLevels = {
     'default': 'verbose'
 };
 
-describe('Logger', () => {
-    let instance: Logger;
-    before(() => instance = new Logger(testServerName, logLevels, false));
+describe('LoggerCore', () => {
+    let instance: LoggerCore;
+    before(() => instance = new LoggerCore(testServerName, logLevels, false));
     
     let stubs = stubDirectLogger();
     

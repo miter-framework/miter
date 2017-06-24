@@ -1,18 +1,26 @@
 import { Injectable } from '../decorators/services/injectable.decorator';
+import { Name } from '../decorators/services/name.decorator';
 import { OrmMetadata } from '../metadata/server/orm';
 import { Logger } from '../services/logger';
+import { LoggerCore } from '../services/logger-core';
 import { ClsNamespaceService } from '../services/cls-namespace.service';
 import { TransactionT } from '../core/transaction';
 import { TransactionImpl } from './impl/transaction-impl';
 import * as __Sequelize from 'sequelize';
 
 @Injectable()
+@Name('orm')
 export class Sequelize {
     constructor(
         private ormMeta: OrmMetadata,
+        private loggerCore: LoggerCore,
         private logger: Logger,
         private namespace: ClsNamespaceService
-    ) { }
+    ) {
+        this.sqlLogger = Logger.fromSubsystem(this.loggerCore, 'sql');
+    }
+    
+    private sqlLogger: Logger;
     
     private _initialized = false;
     async init() {
@@ -36,7 +44,7 @@ export class Sequelize {
                 charset: db.charset,
                 collate: `${db.charset}_general_ci`
             },
-            logging: (msg: string, ...extras: any[]) => this.logger.verbose('sql', msg, ...extras)
+            logging: (msg: string, ...extras: any[]) => this.sqlLogger.verbose(msg, ...extras)
         });
     }
     
@@ -46,7 +54,7 @@ export class Sequelize {
         let recreate = (this.ormMeta.recreate) || false;
         if (recreate) {
             if ((<string>process.env.NODE_ENV || '') == 'production') throw new Error('Server launched with config value orm.recreate enabled. As a security feature, this causes a crash when NODE_ENV = production.');
-            this.logger.warn('orm', `Warning: recreating database tables. Note: this option should not be enabled in production.`);
+            this.logger.warn(`Warning: recreating database tables. Note: this option should not be enabled in production.`);
         }
         return await this.sql.sync({force: recreate});
     }

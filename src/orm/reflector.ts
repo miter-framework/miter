@@ -6,6 +6,7 @@ import { StaticModelT, ModelT, PkType } from '../core/model';
 import { TransactionT } from '../core/transaction';
 
 import { Injectable } from '../decorators/services/injectable.decorator';
+import { Name } from '../decorators/services/name.decorator';
 
 import { OrmMetadata } from '../metadata/server/orm';
 import { ModelMetadata, ModelMetadataSym, ModelPropertiesSym } from '../metadata/orm/model';
@@ -15,6 +16,7 @@ import { ModelHasManyAssociationsSym, HasManyMetadataSym, HasManyMetadata } from
 import { ModelBelongsToAssociationsSym, BelongsToMetadataSym, BelongsToMetadata } from '../metadata/orm/associations/belongs-to';
 import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '../metadata/orm/associations/has-one';
 
+import { LoggerCore } from '../services/logger-core';
 import { Logger } from '../services/logger';
 import { Sequelize } from './sequelize';
 import { OrmTransformService } from '../services/orm-transform.service';
@@ -31,16 +33,23 @@ type AssociationTypeDef = {
 };
 
 @Injectable()
+@Name('orm')
 export class OrmReflector {
     constructor(
         private logger: Logger,
+        private loggerCore: LoggerCore,
         private ormMeta: OrmMetadata,
         private transactionService: TransactionService,
         private ormTransform: OrmTransformService,
         private sql: Sequelize
-    ) { }
+    ) {
+        this.dbImplLogger = this.loggerCore.getSubsystem('db-impl');
+    }
+    
+    private dbImplLogger: Logger;
     
     async init() {
+        this.logger.verbose(`Initializing ORM...`);
         await this.sql.init();
         
         let models = this.ormMeta.models;
@@ -49,6 +58,7 @@ export class OrmReflector {
         this.createDbImpls(models);
         
         await this.sql.sync();
+        this.logger.info(`Finished initializing ORM.`);
     }
     
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {
@@ -167,7 +177,7 @@ export class OrmReflector {
             let modelFn = models[q];
             let model = this.models.get(modelFn);
             if (!model) throw new Error(`Could not reflect model associations for a model that failed to be reflected: ${modelFn.name || modelFn}.`);
-            let db = new DbImpl(modelFn, model, this.sql, this.logger, this.transactionService);
+            let db = new DbImpl(modelFn, model, this.sql, this.dbImplLogger, this.transactionService);
             modelFn.db = db;
         }
     }

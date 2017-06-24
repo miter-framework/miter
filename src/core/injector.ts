@@ -3,6 +3,7 @@ import { CtorT } from './ctor';
 import { Injectable } from '../decorators/services/injectable.decorator';
 import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata/server/provide';
 import { MetadataMetadataSym } from '../metadata/services/metadata';
+import { LoggerCore } from '../services/logger-core';
 import { Logger } from '../services/logger';
 import { clc } from '../util/clc';
 import _ = require('lodash');
@@ -11,10 +12,18 @@ type MetaStackFrame = [CtorT<any>, Map<string, string> | undefined];
 
 @Injectable()
 export class Injector {
-    constructor(private logger: Logger) {
-        this.cache.set(Logger, () => this.logger);
+    constructor(private _loggerCore: LoggerCore) {
+        this.cache.set(LoggerCore, () => this._loggerCore);
         this.cache.set(Injector, () => this);
+        this.logger = Logger.fromSubsystem(this._loggerCore, 'injector');
+        this.provide({
+            provide: Logger,
+            useCallback: Logger.fromSubsystem,
+            deps: [LoggerCore, 'name']
+        });
     }
+    
+    private logger: Logger;
     
     private temporaryValue = Symbol.for('recursive-injection');
     private cache: Map<CtorT<any>, any> = new Map<CtorT<any>, any>();
@@ -23,7 +32,7 @@ export class Injector {
         if (!ctorFn) {
             throw new Error('Attempted to inject a falsey type.');
         }
-        this.logger.verbose('injector', `Resolving ${ctorFn.name || ctorFn}`);
+        this.logger.verbose(`Resolving ${ctorFn.name || ctorFn}`);
         if (this.cache.get(ctorFn) === this.temporaryValue) {
             throw new Error(`Detected circular dependency. Recursive injection of type ${ctorFn.name || ctorFn}`);
         }
@@ -77,10 +86,10 @@ export class Injector {
             let name = `${(ctor && ctor.name) || ctor}`;
             if (!types) types = [];
             let typesStr = `[${types.map(type => this.stringifyDependency(type)).join(', ')}]`;
-            this.logger.verbose('injector', `Constructing ${name} with types ${typesStr}`);
+            this.logger.verbose(`Constructing ${name} with types ${typesStr}`);
             for (let q = 0; q < types.length; q++) {
                 let type = types[q];
-                if (!type || type === Object) {
+                if (!type || type === Object || type === String) {
                     throw new Error(`Could not dependency inject ${name}. Failed to resolve dependencies. Reflected: ${typesStr}`);
                 }
             }
@@ -94,7 +103,7 @@ export class Injector {
         finally {
             if (len != this.metaStack.length) {
                 if (!failed) throw new Error(`Metadata stack is the wrong size in Injector.resolveDependencies!`);
-                else console.error(`BIG PROBLEMS! Metadata stack is the wrong size in Injector.resolveDependencies! Throwing an exception would hide another one.`);
+                else this.logger.error(`BIG PROBLEMS! Metadata stack is the wrong size in Injector.resolveDependencies! Throwing an exception would hide another one.`);
             }
             else this.metaStack.pop();
         }
@@ -123,17 +132,17 @@ export class Injector {
         
         let tFn: { (): T };
         if (this.isClassSource(provideMeta)) {
-            this.logger.verbose('injector', `Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`);
+            this.logger.verbose(`Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`);
             let t = this.construct(provideMeta.useClass);
             tFn = () => t;
         }
         else if (this.isValueSource(provideMeta)) {
-            this.logger.verbose('injector', `Providing ${ctorFn.name || ctorFn} using value ${JSON.stringify(provideMeta.useValue)}`);
+            this.logger.verbose(`Providing ${ctorFn.name || ctorFn} using value ${JSON.stringify(provideMeta.useValue)}`);
             let t = provideMeta.useValue;
             tFn = () => t;
         }
         else if (this.isCallbackSource(provideMeta)) {
-            this.logger.verbose('injector', `Providing ${ctorFn.name || ctorFn} using callback ${provideMeta.useCallback.name || provideMeta.useCallback}`);
+            this.logger.verbose(`Providing ${ctorFn.name || ctorFn} using callback ${provideMeta.useCallback.name || provideMeta.useCallback}`);
             tFn = this.constructCallback(provideMeta);
         }
         else throw new Error(`Could not resolve dependency injection provider source.`);

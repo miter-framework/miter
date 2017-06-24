@@ -8,6 +8,7 @@ use(sinonChai);
 import { TransactionService } from '../transaction.service';
 import { Sequelize } from '../../orm/sequelize';
 import { FakeSequelize } from '../../orm/test/fake-sequelize';
+import { LoggerCore } from '../logger-core';
 import { Logger } from '../logger';
 import { ClsNamespaceService } from '../cls-namespace.service';
 import { TransactionT } from '../../core/transaction';
@@ -15,10 +16,10 @@ import { TransactionT } from '../../core/transaction';
 describe('TransactionService', () => {
     let transactService: TransactionService;
     beforeEach(() => {
-        let logger = new Logger('abc', 'error', false);
+        let loggerCore = new LoggerCore('abc', 'error', false);
         let clsNamespace = new ClsNamespaceService(<any>{ name: 'abc' });
-        let fakeSql: Sequelize = <any>new FakeSequelize(logger, clsNamespace);
-        transactService = new TransactionService(fakeSql, logger, clsNamespace);
+        let fakeSql: Sequelize = <any>new FakeSequelize(loggerCore, clsNamespace);
+        transactService = new TransactionService(fakeSql, Logger.fromSubsystem(loggerCore, 'transactions'), clsNamespace);
     });
     
     it('should start with no transaction', () => {

@@ -1,8 +1,8 @@
 import { Request, Response, RequestHandler } from 'express';
 import * as expressJwt from 'express-jwt';
-
 import { Policy } from '../decorators/policies/policy.decorator';
 import { JwtMetadata } from '../metadata/server/jwt';
+import { LoggerCore } from '../services/logger-core';
 import { Logger } from '../services/logger';
 import { wrapPromise } from '../util/wrap-promise';
 import { HTTP_STATUS_UNAUTHORIZED } from '../util/http-status-type';
@@ -13,7 +13,7 @@ type AbstractCtorT<T> = { (...args: any[]): T };
 export class JwtBasePolicy {
     constructor(
         private jwtMeta: JwtMetadata,
-        protected readonly logger: Logger,
+        loggerCore: LoggerCore,
         public credentialsRequired: boolean
     ) {
         if (!jwtMeta) return;
@@ -23,7 +23,9 @@ export class JwtBasePolicy {
             userProperty: this.property,
             credentialsRequired: false
         });
+        this.logger = Logger.fromSubsystem(loggerCore, 'jwt-policy');
     }
+    protected readonly logger: Logger;
     
     get property() {
         if (!this.jwtMeta) return undefined;
@@ -48,8 +50,8 @@ export class JwtBasePolicy {
                 await wrapPromise<void>(this.jwtHandler, req, res);
             }
             catch (e) {
-                this.logger.verbose('jwt-policy', `express-jwt failed to parse 'Authorization' header.`);
-                this.logger.verbose('jwt-policy', `'Authorization' header: '${req.header('Authorization')}'`);
+                this.logger.verbose(`express-jwt failed to parse 'Authorization' header.`);
+                this.logger.verbose(`'Authorization' header: '${req.header('Authorization')}'`);
             }
         }
         return (<any>req)[reqProperty] = (<any>req)[reqProperty] || null;
