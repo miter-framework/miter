@@ -14,6 +14,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **orm:** allow the Transaction decorator to create detached transactions
 * **test:** add unit tests for JwtBasePolicy
 * **injector:** add cache and deps options to providers that use factory functions
+* **injector:** allow metadata to be defined and injected into provide factory functions
 
 ### Bug Fixes
 

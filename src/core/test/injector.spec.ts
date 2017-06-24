@@ -7,8 +7,10 @@ use(sinonChai);
 
 import { Injector } from '../injector';
 import { Logger } from '../../services/logger';
-
+import { CtorT } from '../../core/ctor';
 import { Injectable } from '../../decorators/services/injectable.decorator';
+import { Meta } from '../../decorators/services/meta.decorator';
+import { Name } from '../../decorators/services/name.decorator';
 
 describe('Injector', () => {
     let logger: Logger;
@@ -42,8 +44,8 @@ describe('Injector', () => {
             expect(instance.resolveInjectable(TestClass)).to.eq(testInst);
             expect(ctorCallCount).to.eq(1);
         });
-        it('should return undefined if you try to inject a falsey type', () => {
-            expect(instance.resolveInjectable(<any>null)).to.be.undefined;
+        it('should throw an error if you try to inject a falsey type', () => {
+            expect(() => instance.resolveInjectable(<any>null)).to.throw('falsey');
         });
         it('should inject constructor parameters when it instantiates a type', () => {
             @Injectable() class TestClassInner { constructor() { } }
@@ -60,13 +62,20 @@ describe('Injector', () => {
             sinon.spy(instance, 'resolveDependencies');
             instance.resolveInjectable(TestClass);
             expect((<any>instance).resolveDependencies).to.have.been.calledTwice
-                .calledWith([TestClass2], 'TestClass')
-                .calledWith([], 'TestClass2');
+                .calledWith([TestClass2], TestClass)
+                .calledWith([], TestClass2);
         });
-        it('should throw when the constructor parameters cannot be resolved', () => {
+        it('should throw an error when the constructor parameters cannot be resolved', () => {
             @Injectable() class TestClass { constructor(public dependency: any) { } }
             
             expect(() => instance.resolveInjectable(TestClass)).to.throw(/Failed to resolve dependencies/);
+        });
+        it('should throw an error when a constructor introduces a circular dependency', () => {
+            @Injectable() class TestClass { constructor() { } }
+            @Injectable() class TestClass2 { constructor() { } }
+            Reflect.defineMetadata('design:paramtypes', [TestClass2], TestClass);
+            Reflect.defineMetadata('design:paramtypes', [TestClass], TestClass2);
+            expect(() => instance.resolveInjectable(TestClass)).to.throw(/circular dependency/i);
         });
     });
     
@@ -148,25 +157,152 @@ describe('Injector', () => {
                 let meta = {
                     provide: TestClass,
                     useCallback: () => <any>void(0),
-                    deps: [TestClass]
+                    deps: []
                 };
                 sinon.stub(instance, 'resolveDependencies').returns([]);
                 instance.provide(meta);
                 instance.resolveInjectable(TestClass);
-                expect((<any>instance).resolveDependencies).to.have.been.calledOnce.calledWith(meta.deps, 'TestClass');
+                expect((<any>instance).resolveDependencies).to.have.been.calledOnce.calledWith(meta.deps, TestClass);
+            });
+            it('should resolve string dependencies to defined metadata', () => {
+                let testAbc = 'my?test:abc!';
+                @Injectable()
+                class TestClass2 { constructor() { } }
+                @Injectable()
+                @Meta('abc', testAbc)
+                class TestClass { constructor(private tc2: TestClass2) { } }
+                let resolvedAbc = '';
+                let meta = {
+                    provide: TestClass2,
+                    useCallback: (abc: string) => resolvedAbc = abc,
+                    deps: ['abc']
+                };
+                instance.provide(meta);
+                instance.resolveInjectable(TestClass);
+                expect(resolvedAbc).to.eq(testAbc);
+            });
+            it('should not resolve string dependencies for metadata on the factory function class', () => {
+                let testAbc = 'my?test:abc!';
+                @Injectable()
+                @Meta('abc', testAbc)
+                class TestClass { constructor() { } }
+                let resolvedAbc = '';
+                let meta = {
+                    provide: TestClass,
+                    useCallback: (abc: string) => resolvedAbc = abc,
+                    deps: ['abc']
+                };
+                instance.provide(meta);
+                instance.resolveInjectable(TestClass);
+                expect(resolvedAbc).to.be.undefined;
+            });
+            it('should resolve string dependencies for metadata on the factory function class', () => {
+                let testAbc = 'my?test:abc!';
+                @Injectable()
+                @Meta('name', testAbc)
+                class TestClass { constructor() { } }
+                let resolvedAbc = '';
+                let meta = {
+                    provide: TestClass,
+                    useCallback: (abc: string) => resolvedAbc = abc,
+                    deps: ['abc']
+                };
+                instance.provide(meta);
+                instance.resolveInjectable(TestClass);
+                expect(resolvedAbc).to.be.undefined;
+            });
+            it(`should resolve the 'name' dependency even if the name has been explicitly defined`, () => {
+                @Injectable()
+                class TestClass2 { constructor() { } }
+                @Injectable()
+                class TestClass { constructor(private tc2: TestClass2) { } }
+                let resolvedName = '';
+                let meta = {
+                    provide: TestClass2,
+                    useCallback: (name: string) => resolvedName = name,
+                    deps: ['name']
+                };
+                instance.provide(meta);
+                instance.resolveInjectable(TestClass);
+                expect(resolvedName).to.eq(TestClass.name);
+            });
+            it(`should allow a custom 'name' metadata to be explicitly defined`, () => {
+                let testName = 'my!!!!test:name##';
+                @Injectable()
+                class TestClass2 { constructor() { } }
+                @Injectable()
+                @Name(testName)
+                class TestClass { constructor(private tc2: TestClass2) { } }
+                let resolvedName = '';
+                let meta = {
+                    provide: TestClass2,
+                    useCallback: (name: string) => resolvedName = name,
+                    deps: ['name']
+                };
+                instance.provide(meta);
+                instance.resolveInjectable(TestClass);
+                expect(resolvedName).to.eq(testName);
+            });
+            it('should resolve string dependencies for metadata on the factory function class when resolving other dependencies', () => {
+                let testName = 'my?test:name!';
+                let resolvedName = '';
+                @Injectable()
+                class TestClass3 { constructor() { } }
+                @Injectable()
+                @Meta('name', testName + '2')
+                class TestClass2 { constructor(private tc3: TestClass3) { } }
+                @Injectable()
+                @Meta('name', testName)
+                class TestClass { constructor(private tc2: TestClass2) { } }
+                let meta3 = {
+                    provide: TestClass3,
+                    useCallback: (name: string) => resolvedName = name,
+                    deps: ['name']
+                };
+                instance.provide(meta3);
+                let meta2 = {
+                    provide: TestClass2,
+                    useCallback: (tc3: TestClass3) => <any>void(0),
+                    deps: [TestClass3]
+                };
+                instance.provide(meta2);
+                instance.resolveInjectable(TestClass);
+                expect(resolvedName).to.eq(testName + '2');
+            });
+            it('should throw an error when the factory function depends on itself', () => {
+                @Injectable() class TestClass { constructor() { } }
+                let meta = {
+                    provide: TestClass,
+                    useCallback: () => <any>void(0),
+                    deps: [TestClass]
+                };
+                instance.provide(meta);
+                expect(() => instance.resolveInjectable(TestClass)).to.throw(/circular dependency/i);
+            });
+            it('should throw an error when a factory function introduces a circular dependency', () => {
+                @Injectable() class TestClass { constructor() { } }
+                @Injectable() class TestClass2 { constructor(private tc: TestClass) { } }
+                let meta = {
+                    provide: TestClass,
+                    useCallback: (tc2: TestClass2) => <any>void(0),
+                    deps: [TestClass2]
+                };
+                instance.provide(meta);
+                expect(() => instance.resolveInjectable(TestClass)).to.throw(/circular dependency/i);
             });
         })
     });
     
     describe('.resolveDependencies', () => {
-        let resolveDependencies: (types: any[] | undefined, name: string) => any[];
+        let resolveDependencies: (types: any[] | undefined, ctor: CtorT<any>) => any[];
         beforeEach(() => {
             resolveDependencies = (<any>instance).resolveDependencies.bind(instance);
         });
         
         it('should throw when the dependencies cannot be resolved', () => {
-            expect(() => resolveDependencies([null], 'name')).to.throw(/Failed to resolve dependencies/);
-            expect(() => resolveDependencies([Object], 'name')).to.throw(/Failed to resolve dependencies/);
+            @Injectable() class TestClass { constructor() { } }
+            expect(() => resolveDependencies([null], TestClass)).to.throw(/Failed to resolve dependencies/);
+            expect(() => resolveDependencies([Object], TestClass)).to.throw(/Failed to resolve dependencies/);
         });
     });
 });
