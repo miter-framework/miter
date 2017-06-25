@@ -14,12 +14,9 @@ import { Logger } from '../services/logger';
 export class ServiceReflector {
     constructor(
         private injector: Injector,
-        private serverMeta: ServerMetadata
-    ) {
-        this.logger = injector.resolveInjectable(Logger)!;
-    }
-    
-    private logger: Logger;
+        private serverMeta: ServerMetadata,
+        private logger: Logger
+    ) { }
     
     async startServices() {
         this.logger.verbose(`Starting services...`);
