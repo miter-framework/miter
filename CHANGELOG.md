@@ -23,7 +23,8 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 ### Breaking Changes
 
-* Server.logger is now private. If you need an instance of a logger, you can dependency inject Logger or LoggerCore.
+* Server.logger is now private.
+    If you need an instance of a logger, you can dependency inject Logger or LoggerCore.
     If you need to do this through code, you can manually grab the logger like this:
     ```typescript
     import { Miter, LoggerCore, Logger } from 'miter';
@@ -43,7 +44,11 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
         }
     }
     ```
-* Injector.resolveDependency throws more errors. Previously it silently swallowed some circular dependency errors, and it only logged falsey injections. Now it will fail fast when one of these errors occur.
+* The constructors for JwtBasePolicy, JwtPolicy, and RequiredJwtPolicy now require a LoggerCore instead of a logger.
+    If you provide your own implementation of one of these classes, make sure you update them to the correct type.
+* Injector.resolveDependency throws more errors.
+    Previously it silently swallowed some circular dependency errors, and it only logged falsey injections.
+    Now it will fail fast when one of these errors occur.
 
 
 
