@@ -1,7 +1,12 @@
 import { Injectable } from '../decorators/services/injectable.decorator';
 import { LoggerCore } from './logger-core';
 
-@Injectable()
+@Injectable({
+    provide: {
+        useCallback: Logger.fromSubsystem,
+        deps: [() => LoggerCore, 'name']
+    }
+})
 export class Logger {
     constructor(private core: LoggerCore, private subsystem: string) {
     }

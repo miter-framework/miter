@@ -16,6 +16,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **injector:** add cache and deps options to providers that use factory functions
 * **injector:** allow metadata to be defined and injected into provide factory functions
 * **logger:** infer subsystem based on the name of the injectable the logger is injected into
+* **injector:** allow injectables to define custom factory function providers
 
 ### Bug Fixes
 

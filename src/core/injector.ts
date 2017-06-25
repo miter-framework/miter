@@ -1,8 +1,10 @@
 import 'reflect-metadata';
 import { CtorT } from './ctor';
 import { Injectable } from '../decorators/services/injectable.decorator';
-import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource } from '../metadata/server/provide';
+import { ProvideMetadata, ProvideMetadataClassSource, ProvideMetadataValueSource, ProvideMetadataCallbackSource,
+         DependencySource, SimpleDependencySource } from '../metadata/server/provide';
 import { MetadataMetadataSym } from '../metadata/services/metadata';
+import { InjectableMetadata, InjectableMetadataSym } from '../metadata/services/injectable';
 import { LoggerCore } from '../services/logger-core';
 import { Logger } from '../services/logger';
 import { clc } from '../util/clc';
@@ -16,11 +18,6 @@ export class Injector {
         this.cache.set(LoggerCore, () => this._loggerCore);
         this.cache.set(Injector, () => this);
         this.logger = Logger.fromSubsystem(this._loggerCore, 'injector');
-        this.provide({
-            provide: Logger,
-            useCallback: Logger.fromSubsystem,
-            deps: [LoggerCore, 'name']
-        });
     }
     
     private logger: Logger;
@@ -36,14 +33,24 @@ export class Injector {
         if (this.cache.get(ctorFn) === this.temporaryValue) {
             throw new Error(`Detected circular dependency. Recursive injection of type ${ctorFn.name || ctorFn}`);
         }
-        if (this.cache.has(ctorFn)) {
-            return this.cache.get(ctorFn)();
+        
+        if (!this.cache.has(ctorFn)) {
+            let injectableMeta: InjectableMetadata<any> = Reflect.getOwnMetadata(InjectableMetadataSym, ctorFn.prototype) || {};
+            if (injectableMeta.provide) {
+                let source: any = injectableMeta.provide;
+                source.provide = ctorFn;
+                if (this.isClassSource(source) || this.isValueSource(source)) throw new Error(`Injectable metadata { provide: ... } can only be used to specify a callback function.`);
+                this.provide(source);
+            }
+            else {
+                this.cache.set(ctorFn, this.temporaryValue);
+                let inst = this.construct(ctorFn);
+                this.cache.set(ctorFn, () => inst);
+                return inst;
+            }
         }
         
-        this.cache.set(ctorFn, this.temporaryValue);
-        let inst = this.construct(ctorFn);
-        this.cache.set(ctorFn, () => inst);
-        return inst;
+        return this.cache.get(ctorFn)();
     }
     private construct<T>(ctorFn: CtorT<T>): T {
         let types: any[] = Reflect.getOwnMetadata('design:paramtypes', ctorFn);
@@ -77,14 +84,15 @@ export class Injector {
             return cachedValue;
         };
     }
-    private resolveDependencies(types: any[] | undefined, ctor: CtorT<any>) {
+    private resolveDependencies(deps: DependencySource[] | undefined, ctor: CtorT<any>) {
         let map: Map<string, string> | undefined = Reflect.getOwnMetadata(MetadataMetadataSym, ctor.prototype);
         this.metaStack.push([ctor, map]);
         let len = this.metaStack.length;
         let failed = false;
         try {
             let name = `${(ctor && ctor.name) || ctor}`;
-            if (!types) types = [];
+            if (!deps) deps = [];
+            let types: SimpleDependencySource[] = deps.map(dep => this.getSimpleDependency(dep));
             let typesStr = `[${types.map(type => this.stringifyDependency(type)).join(', ')}]`;
             this.logger.verbose(`Constructing ${name} with types ${typesStr}`);
             for (let q = 0; q < types.length; q++) {
@@ -108,11 +116,18 @@ export class Injector {
             else this.metaStack.pop();
         }
     }
-    private stringifyDependency(type: CtorT<any> | string) {
+    private getSimpleDependency(dep: DependencySource): SimpleDependencySource {
+        if (typeof dep === 'function' && !dep.prototype) {
+            let result = (<() => SimpleDependencySource>dep)();
+            return result;
+        }
+        return <SimpleDependencySource>dep;
+    }
+    private stringifyDependency(type: SimpleDependencySource) {
         if (typeof type === 'string') return `'${type}'`;
         return (type && type.name) || type;
     }
-    private resolveDependency(type: CtorT<any> | string) {
+    private resolveDependency(type: SimpleDependencySource) {
         if (typeof type === 'string') return this.resolveMetadata(type);
         return this.resolveInjectable(type);
     }
