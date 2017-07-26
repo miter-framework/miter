@@ -1,9 +1,14 @@
 
 
-<a name="0.4.0"></a>
-## [0.4.0](https://github.com/miter-framework/miter/compare/0.3.0...HEAD) (_Future_)
+<a name="0.5.0"></a>
+## [0.5.0](https://github.com/miter-framework/miter/compare/0.4.0...HEAD) (_Future_)
 
 Big things planned! More unit tests! Less ORM quirks! More awesomeness!
+
+
+
+<a name="0.4.0"></a>
+## [0.4.0](https://github.com/miter-framework/miter/compare/0.3.0...0.4.0) (2017-07-26)
 
 ### Features
 
