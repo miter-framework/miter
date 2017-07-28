@@ -60,7 +60,7 @@
         "reflect-metadata": "^0.1.8",
         "send": "^0.15.2",
         "sequelize": "^3.24.6",
-        "typescript": "^2.3.2",
+        "typescript": "2.3.4",
         "url": "^0.11.0"
     },
     "keywords": [
