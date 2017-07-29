@@ -9,6 +9,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **crud-controller:** add transformInclude hook as a temporary replacement for scopes
 
+### Bug Fixes
+
+* **orm:** fix Db.sum typings
+
 
 
 <a name="0.4.0"></a>

@@ -25,7 +25,7 @@ export interface Db<T> {
     
     max<T>(field: string): Promise<T>;
     min<T>(field: string): Promise<T>;
-    sum<T>(field: string): Promise<T>;
+    sum<T>(field: string): Promise<number>;
     
     save(t: T): Promise<T>;
     update(id: number | string, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
