@@ -88,6 +88,9 @@ export abstract class CrudController<T extends ModelT<any>> {
         return [];
     }
     
+    protected async transformInclude(req: Request, res: Response, include: string[]): Promise<string[] | void> {
+    }
+    
     protected async transformQuery(req: Request, res: Response, query: Object): Promise<Object | boolean> {
         return query;
     }
@@ -210,6 +213,10 @@ export abstract class CrudController<T extends ModelT<any>> {
         query = await this.transformQuery(req, res, query) || query;
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
+        include = include || [];
+        include = await this.transformInclude(req, res, include) || include;
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
         let findOne = req.path.endsWith('find-one');
         if (findOne) {
             let result = await this.performFindOneQuery(req, res, {
@@ -288,8 +295,12 @@ export abstract class CrudController<T extends ModelT<any>> {
             return;
         }
         
-        let result = await this.staticModel.db.findById(id, { include: include });
         let initialStatusCode = res.statusCode;
+        include = include || [];
+        include = await this.transformInclude(req, res, include) || include;
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
+        let result = await this.staticModel.db.findById(id, <any>{ include: include });
         result = await this.transformResult(req, res, result);
         if (res.statusCode === initialStatusCode && !res.headersSent) res.status(HTTP_STATUS_OK).json(result);
     }
