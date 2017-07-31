@@ -324,7 +324,7 @@ export abstract class CrudController<T extends ModelT<any>> {
             return;
         }
         let initialStatusCode = res.statusCode;
-        let data = await this.transformUpdateQuery(req, res, req.body);
+        let data = await this.transformUpdateQuery(req, res, req.body) || req.body;
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         if (!data) {
@@ -345,8 +345,10 @@ export abstract class CrudController<T extends ModelT<any>> {
         await this.beforeUpdate(req, res, id, data);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        let [updated, results] = await this.performUpdate(req, res, id, data, returning);
+        let performUpdateResults = await this.performUpdate(req, res, id, data, returning);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        let [updated, results] = performUpdateResults;
+        if (results && results.length > 1) throw new Error(`performUpdate returned multiple results`);
         
         if (updated) {
             results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));

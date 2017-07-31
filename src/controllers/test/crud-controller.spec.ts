@@ -827,11 +827,14 @@ describe('CrudController', () => {
                 let req: Request;
                 let res: Response;
                 let payload: any;
+                let performUpdateStub: sinon.SinonStub;
                 beforeEach(() => {
                     req = FakeRequest();
                     res = FakeResponse();
+                    req.body = payload = { column: 'POISSON' };
                     req.path = 'user/42';
                     req.params.id = `42`;
+                    performUpdateStub = sinon.stub(inst, 'performUpdate').returns([true, [{}]]);
                 });
                 
                 it('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
@@ -839,62 +842,142 @@ describe('CrudController', () => {
                     await inst.update(req, res);
                     expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should invoke transformUpdateQuery', async () => {
-                    
+                it('should invoke transformUpdateQuery', async () => {
+                    sinon.stub(inst, 'transformUpdateQuery');
+                    await inst.update(req, res);
+                    expect((<any>inst).transformUpdateQuery).to.have.been.calledOnce;
                 });
-                xit('should use the original update query if transformUpdateQuery returns a falsey value', async () => {
-                    
+                it('should use the original update query if transformUpdateQuery returns a falsey value', async () => {
+                    sinon.stub(inst, 'transformUpdateQuery').returns(undefined);
+                    await inst.update(req, res);
+                    expect((<any>inst).performUpdate).to.have.been.calledWith(any, any, +req.params.id, payload);
                 });
-                xit('should short circuit if transformUpdateQuery sends a response', async () => {
-                    
+                it('should short circuit if transformUpdateQuery sends a response', async () => {
+                    sinon.stub(inst, 'transformUpdateQuery').callsFake((req, res) => {
+                        res.status(123).send(`C'est le meme`);
+                    });
+                    sinon.stub(inst, 'beforeUpdate');
+                    await inst.update(req, res);
+                    expect((<any>inst).beforeUpdate).not.to.have.been.called;
                 });
-                xit('should send HTTP_STATUS_ERROR if there is no update query', async () => {
-                    
+                it('should send HTTP_STATUS_ERROR if there is no update query', async () => {
+                    req.body = undefined;
+                    await inst.update(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should send HTTP_STATUS_ERROR if there is an invalid returning query param', () => {
-                    
+                it('should send HTTP_STATUS_ERROR if there is an invalid returning query param', async () => {
+                    req.query.returning = 'FISH and CHIPS';
+                    await inst.update(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should invoke beforeUpdate', async () => {
-                    
+                it('should invoke beforeUpdate', async () => {
+                    sinon.stub(inst, 'beforeUpdate');
+                    await inst.update(req, res);
+                    expect((<any>inst).beforeUpdate).to.have.been.calledOnce;
                 });
-                xit('should short circuit if beforeUpdate sends a response', async () => {
-                    
+                it('should short circuit if beforeUpdate sends a response', async () => {
+                    sinon.stub(inst, 'beforeUpdate').callsFake((req, res) => {
+                        res.status(123).send('Quoi?');
+                    });
+                    await inst.update(req, res);
+                    expect(performUpdateStub).not.to.have.been.called;
                 });
-                xit('should invoke performUpdate', async () => {
-                    
+                it('should invoke performUpdate', async () => {
+                    await inst.update(req, res);
+                    expect((<any>inst).performUpdate).to.have.been.calledOnce;
                 });
-                xit('should short circuit if performUpdate sends a response', async () => {
-                    
+                it('should short circuit if performUpdate sends a response', async () => {
+                    sinon.stub(inst, 'transformUpdateResult');
+                    performUpdateStub.callsFake((req, res) => {
+                        res.status(123).send('Quoi?');
+                        return [true, [{}]];
+                    });
+                    await inst.update(req, res);
+                    expect((<any>inst).transformUpdateResult).not.to.have.been.called;
+                    expect(res.statusCode).to.eq(123);
+                });
+                it('should not throw an error if performUpdate sends a response and returns undefined', async () => {
+                    sinon.stub(inst, 'transformUpdateResult');
+                    performUpdateStub.callsFake((req, res) => {
+                        res.status(123).send('Quoi?');
+                        return void(0);
+                    });
+                    await inst.update(req, res);
+                });
+                it('should throw an error if performUpdate returns multiple results', async () => {
+                    performUpdateStub.returns([true, [{}, {}]]);
+                    try { await inst.update(req, res); }
+                    catch (e) {
+                        if (e instanceof Error && e.message.match(/multiple results/i)) return;
+                    }
+                    expect(false).to.be.true;
                 });
                 
                 describe('when performUpdate indicates that the model was updated', () => {
-                    xit('should invoke transformUpdateResult', async () => {
-                        
+                    it('should invoke transformUpdateResult', async () => {
+                        sinon.stub(inst, 'transformUpdateResult');
+                        await inst.update(req, res);
+                        expect((<any>inst).transformUpdateResult).to.have.been.calledOnce;
                     });
-                    xit('should short circuit if transformUpdateResult sends a response', async () => {
-                        
+                    it('should short circuit if transformUpdateResult sends a response', async () => {
+                        sinon.stub(inst, 'afterUpdate');
+                        sinon.stub(inst, 'transformUpdateResult').callsFake((req, res) => {
+                            res.status(123).send('Orangutans of the world, unite!');
+                        });
+                        await inst.update(req, res);
+                        expect((<any>inst).afterUpdate).not.to.have.been.called;
                     });
-                    xit('should invoke afterUpdate', async () => {
-                        
+                    it('should invoke afterUpdate', async () => {
+                        sinon.stub(inst, 'afterUpdate');
+                        await inst.update(req, res);
+                        expect((<any>inst).afterUpdate).to.have.been.calledOnce;
                     });
-                    xit('should short circuit if afterUpdate sends a response', async () => {
-                        
+                    it('should short circuit if afterUpdate sends a response', async () => {
+                        sinon.stub(inst, 'afterUpdate').callsFake((req, res) => {
+                            res.status(123).send('Orangutans of the world, unite!');
+                        });
+                        await inst.update(req, res);
+                        expect(res.statusCode).to.eq(123);
                     });
-                    xit('should send HTTP_STATUS_OK with the value returned by transformUpdateResult if returning = true', async () => {
+                    
+                    describe('when returning = true', () => {
+                        beforeEach(() => {
+                            req.query.returning = true;
+                        });
                         
+                        it('should send HTTP_STATUS_OK with the value returned by transformUpdateResult', async () => {
+                            let expectedResult = Symbol();
+                            sinon.stub(inst, 'transformUpdateResult').returns(expectedResult);
+                            sinon.stub(res, 'json');
+                            await inst.update(req, res);
+                            expect(res.statusCode).to.eq(HTTP_STATUS_OK);
+                            expect(res.json).to.have.been.calledOnce.calledWith(expectedResult);
+                        });
                     });
-                    xit('should send HTTP_STATUS_OK without any value if returning = false', async () => {
+                    
+                    describe('when returning = false', () => {
+                        beforeEach(() => {
+                            req.query.returning = false;
+                        });
                         
+                        it('should send HTTP_STATUS_OK without any value', async () => {
+                            sinon.stub(res, 'json');
+                            await inst.update(req, res);
+                            expect(res.statusCode).to.eq(HTTP_STATUS_OK);
+                            expect(res.json).to.have.been.calledOnce.calledWith(undefined);
+                        });
                     });
                 });
                 
                 describe('when performUpdate indicates that the model was not updated', () => {
                     beforeEach(() => {
-                        sinon.stub(TestModel.db, 'update').returns([false, []]);
+                        performUpdateStub.returns([false, []]);
                     });
                     
-                    xit('should send HTTP_STATUS_ERROR', async () => {
-                        
+                    it('should send HTTP_STATUS_ERROR', async () => {
+                        req.params.id = '';
+                        await inst.update(req, res);
+                        expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                     });
                 });
             });
