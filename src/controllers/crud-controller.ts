@@ -29,8 +29,8 @@ export abstract class CrudController<T extends ModelT<any>> {
         pluralName?: string,
         singularName?: string
     ) {
-        this.singularName = singularName || this.getSingularPath(modelName);
-        this.pluralName = pluralName || this.getPluralPath(modelName);
+        this._singularName = singularName || this.getSingularPath(modelName);
+        this._pluralName = pluralName || this.getPluralPath(modelName);
     }
     private *splitOnWords(name: string) {
         let currentWord = '';
@@ -60,11 +60,17 @@ export abstract class CrudController<T extends ModelT<any>> {
         parts[parts.length - 1] = pluralize(parts[parts.length - 1]);
         return parts.map(pt => pt.toLowerCase()).join('-');
     }
-    private singularName: string;
-    private pluralName: string;
+    private _singularName: string;
+    get singularName() {
+        return this._singularName;
+    }
+    private _pluralName: string;
+    get pluralName() {
+        return this._pluralName;
+    }
     
     transformPathPart(routeFnName: string, part: string): string {
-        return part.replace(/%%PLURAL_NAME%%/, this.pluralName).replace(/%%SINGULAR_NAME%%/, this.singularName);
+        return part.replace(/%%PLURAL_NAME%%/g, this._pluralName).replace(/%%SINGULAR_NAME%%/g, this._singularName);
     }
     transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
         switch (routeFnName) {
@@ -100,7 +106,7 @@ export abstract class CrudController<T extends ModelT<any>> {
     protected async performFindOneQuery(req: Request, res: Response, query: PerformFindOneQueryT) {
         return await this.staticModel.db.findOne(<any>query);
     }
-    protected async transformQueryResults(req: Request, res:Response, results: CountAllResults<T>) {
+    protected async transformQueryResults(req: Request, res: Response, results: CountAllResults<T>) {
         let initialStatusCode = res.statusCode;
         let oldResults = results.results;
         let newResults: T[] = [];
@@ -161,9 +167,6 @@ export abstract class CrudController<T extends ModelT<any>> {
         let data = await this.transformCreateQuery(req, res, req.body) || req.body;
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        await this.beforeCreate(req, res, data);
-        if (res.statusCode !== initialStatusCode || res.headersSent) return;
-        
         if (!data) {
             res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to create the ${this.modelName} with!`);
             return;
@@ -171,6 +174,9 @@ export abstract class CrudController<T extends ModelT<any>> {
         if (data.constructor == Array) {
             throw new Error("createMany not supported");
         }
+        
+        await this.beforeCreate(req, res, data);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         let result: T = await this.performCreate(req, res, data);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
@@ -226,9 +232,9 @@ export abstract class CrudController<T extends ModelT<any>> {
             });
             
             result = await this.transformResult(req, res, result);
-            initialStatusCode = res.statusCode;
-            result = await this.transformResult(req, res, result);
-            if (res.statusCode === initialStatusCode && !res.headersSent) res.status(HTTP_STATUS_OK).json(result);
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            
+            res.status(HTTP_STATUS_OK).json(result);
         }
         else {
             let perPage = req.query['perPage'];
@@ -301,8 +307,11 @@ export abstract class CrudController<T extends ModelT<any>> {
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         let result = await this.staticModel.db.findById(id, <any>{ include: include });
+        
         result = await this.transformResult(req, res, result);
-        if (res.statusCode === initialStatusCode && !res.headersSent) res.status(HTTP_STATUS_OK).json(result);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
+        
+        res.status(HTTP_STATUS_OK).json(result);
     }
     
     @Put(`/%%SINGULAR_NAME%%/:id`)
@@ -315,9 +324,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         }
         let initialStatusCode = res.statusCode;
         let data = await this.transformUpdateQuery(req, res, req.body);
-        if (res.statusCode !== initialStatusCode || res.headersSent) {
-            return;
-        }
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         if (!data) {
             res.status(HTTP_STATUS_ERROR).send(`You haven't sent any data to update the ${this.modelName} with!`);
@@ -326,10 +333,8 @@ export abstract class CrudController<T extends ModelT<any>> {
         let returning = false;
         let returningParam = req.query['returning'];
         if (returningParam) {
-            if (returningParam == true || returningParam == 'true')
-                returning = true;
-            else if (returningParam == false || returningParam == 'false')
-                returning = false;
+            if (returningParam === true || returningParam === 'true') returning = true;
+            else if (returningParam === false || returningParam === 'false') returning = false;
             else {
                 res.status(HTTP_STATUS_ERROR).send(`Invalid ${this.modelName} returning parameter: ${returningParam}; must be boolean`);
                 return;
@@ -342,14 +347,14 @@ export abstract class CrudController<T extends ModelT<any>> {
         let [updated, results] = await this.performUpdate(req, res, id, data, returning);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
-        if (res.statusCode !== initialStatusCode || res.headersSent) return;
-        
         if (!updated) {
             res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
             return;
         }
         else {
+            results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            
             let result = returning ? results[0] : undefined;
             await this.afterUpdate(req, res, id, result);
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
@@ -375,10 +380,11 @@ export abstract class CrudController<T extends ModelT<any>> {
         if (destroyed) {
             await this.afterDestroy(req, res, id);
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
+            
             res.status(HTTP_STATUS_OK).end();
         }
         else {
-            res.status(HTTP_STATUS_ERROR).send({ msg: `Failed to delete ${this.singularName} with ID ${id}.` });
+            res.status(HTTP_STATUS_ERROR).send({ msg: `Failed to delete ${this._singularName} with ID ${id}.` });
         }
     }
 }

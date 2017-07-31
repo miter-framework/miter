@@ -8,6 +8,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Features
 
 * **crud-controller:** add transformInclude hook as a temporary replacement for scopes
+* **crud-controller:** add unit tests for CRUD operations and lifecycle hooks
 
 ### Bug Fixes
 

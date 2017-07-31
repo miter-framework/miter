@@ -23,8 +23,8 @@ export interface Db<T> {
     all(query?: QueryT): Promise<T[]>;
     count(query?: CountQueryT): Promise<number>;
     
-    max<T>(field: string): Promise<T>;
-    min<T>(field: string): Promise<T>;
+    max<T>(field: string): Promise<number>;
+    min<T>(field: string): Promise<number>;
     sum<T>(field: string): Promise<number>;
     
     save(t: T): Promise<T>;
