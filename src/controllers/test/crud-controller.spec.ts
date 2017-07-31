@@ -8,8 +8,12 @@ use(sinonChai);
 import { CrudController } from '../crud-controller';
 
 import { Injectable } from '../../decorators/services/injectable.decorator';
+import { Request, Response } from 'express';
 import { PolicyDescriptor } from '../../core/policy';
 import { Db } from '../../core/db';
+import { FakeRequest } from '../../router/test/fake-request';
+import { FakeResponse } from '../../router/test/fake-response';
+import { HTTP_STATUS_ERROR, HTTP_STATUS_OK } from '../../util/http-status-type';
 
 class TestModel {
     id: number;
@@ -185,52 +189,118 @@ describe('CrudController', () => {
     
     describe('create', () => {
         describe('.create', () => {
+            let req: Request;
+            let res: Response;
+            let payload: any = Symbol();
+            beforeEach(() => {
+                req = FakeRequest();
+                res = FakeResponse();
+                req.body = payload;
+            });
+            
             it('should return a promise', () => {
                 let result = (<any>inst).create();
                 expect(result).to.be.an.instanceOf(Promise);
             });
             describe('that promise', () => {
-                xit('should invoke transformCreateQuery', async () => {
-                    
+                it('should invoke transformCreateQuery', async () => {
+                    sinon.stub(inst, 'transformCreateQuery');
+                    await inst.create(req, res);
+                    expect((<any>inst).transformCreateQuery).to.have.been.calledOnce;
                 });
-                xit('should use the original create query if transformCreateQuery returns a falsey value', async () => {
-                    
+                it('should use the original create query if transformCreateQuery returns a falsey value', async () => {
+                    sinon.spy(inst, 'performCreate');
+                    sinon.stub(inst, 'transformCreateQuery').returns(undefined);
+                    await inst.create(req, res);
+                    expect((<any>inst).performCreate).to.have.been.calledOnce.calledWith(req, res, payload);
                 });
-                xit('should short circuit if transformCreateQuery sends a response', async () => {
-                    
+                it('should use the transformed query returned by transformCreateQuery', async () => {
+                    sinon.spy(inst, 'performCreate');
+                    let newPayload = Symbol();
+                    sinon.stub(inst, 'transformCreateQuery').returns(newPayload);
+                    await inst.create(req, res);
+                    expect((<any>inst).performCreate).to.have.been.calledOnce.calledWith(req, res, newPayload);
                 });
-                xit('should send HTTP_STATUS_ERROR if there is no create query', async () => {
-                    
+                it('should short circuit if transformCreateQuery sends a response', async () => {
+                    sinon.stub(inst, 'beforeCreate');
+                    sinon.stub(inst, 'transformCreateQuery').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.create(req, res);
+                    expect((<any>inst).beforeCreate).not.to.have.been.called;
                 });
-                xit('should throw an error if the create body is an array', async () => {
-                    
+                it('should send HTTP_STATUS_ERROR if there is no create query', async () => {
+                    delete req.body;
+                    await inst.create(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should invoke beforeCreate', async () => {
-                    
+                it('should throw an error if the create body is an array', async () => {
+                    req.body = [{}, {}];
+                    try { await inst.create(req, res); }
+                    catch (e) {
+                        if (e instanceof Error && e.message.match(/createMany not supported/i)) return;
+                    }
+                    expect(false).to.be.true;
                 });
-                xit('should short circuit if beforeCreate sends a response', async () => {
-                    
+                it('should invoke beforeCreate', async () => {
+                    sinon.stub(inst, 'beforeCreate');
+                    await inst.create(req, res);
+                    expect((<any>inst).beforeCreate).to.have.been.calledOnce;
                 });
-                xit('should invoke performCreate', async () => {
-                    
+                it('should short circuit if beforeCreate sends a response', async () => {
+                    sinon.stub(inst, 'beforeCreate').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    sinon.stub(inst, 'performCreate');
+                    await inst.create(req, res);
+                    expect((<any>inst).performCreate).not.to.have.been.called;
                 });
-                xit('should short circuit if performCreate sends a response', async () => {
-                    
+                it('should invoke performCreate', async () => {
+                    sinon.stub(inst, 'performCreate');
+                    await inst.create(req, res);
+                    expect((<any>inst).performCreate).to.have.been.calledOnce;
                 });
-                xit('should invoke transformCreateResult', async () => {
-                    
+                it('should short circuit if performCreate sends a response', async () => {
+                    sinon.stub(inst, 'performCreate').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    sinon.stub(inst, 'transformCreateResult');
+                    await inst.create(req, res);
+                    expect((<any>inst).transformCreateResult).not.to.have.been.called;
                 });
-                xit('should short circuit if transformCreateResult sends a response', async () => {
-                    
+                it('should invoke transformCreateResult', async () => {
+                    sinon.stub(inst, 'transformCreateResult');
+                    await inst.create(req, res);
+                    expect((<any>inst).transformCreateResult).to.have.been.calledOnce;
                 });
-                xit('should invoke afterCreate', async () => {
-                    
+                it('should short circuit if transformCreateResult sends a response', async () => {
+                    sinon.stub(inst, 'transformCreateResult').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    sinon.stub(inst, 'afterCreate');
+                    await inst.create(req, res);
+                    expect((<any>inst).afterCreate).not.to.have.been.called;
                 });
-                xit('should short circuit if afterCreate sends a response', async () => {
-                    
+                it('should invoke afterCreate', async () => {
+                    sinon.stub(inst, 'afterCreate');
+                    await inst.create(req, res);
+                    expect((<any>inst).afterCreate).to.have.been.calledOnce;
                 });
-                xit('should send HTTP_STATUS_OK with the value returned by transformCreateResult', async () => {
-                    
+                it('should short circuit if afterCreate sends a response', async () => {
+                    sinon.stub(inst, 'afterCreate').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.create(req, res);
+                    expect(res.statusCode).to.eq(123);
+                });
+                it('should send HTTP_STATUS_OK with the value returned by transformCreateResult', async () => {
+                    sinon.spy(res, 'status');
+                    sinon.spy(res, 'json');
+                    let expectedResult = Symbol();
+                    sinon.stub(inst, 'transformCreateResult').returns(expectedResult);
+                    await inst.create(req, res);
+                    expect(res.status).to.have.been.calledOnce.calledWith(HTTP_STATUS_OK);
+                    expect(res.json).to.have.been.calledOnce.calledWith(expectedResult);
                 });
             });
         });
