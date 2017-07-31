@@ -11,6 +11,7 @@ import { Injectable } from '../../decorators/services/injectable.decorator';
 import { Request, Response } from 'express';
 import { PolicyDescriptor } from '../../core/policy';
 import { Db } from '../../core/db';
+import { FakeDb } from '../../orm/test/fake-db';
 import { FakeRequest } from '../../router/test/fake-request';
 import { FakeResponse } from '../../router/test/fake-response';
 import { HTTP_STATUS_ERROR, HTTP_STATUS_OK } from '../../util/http-status-type';
@@ -25,24 +26,6 @@ class TestCrudController extends CrudController<TestModel> {
     constructor(pluralName?: string, singularName?: string) {
         super(TestModel, `TestModel`, pluralName, singularName);
     }
-}
-class FakeDb<T> implements Db<T> {
-    async create(t: any) { return t; }
-    async findById(id: string | number, options?: any): Promise<T | null> { return null; }
-    async findOne(query: any): Promise<T | null> { return null; }
-    async findOrCreate(query: any, defaults?: Object | T | undefined): Promise<[T, boolean]> { return [<any>defaults, true]; }
-    async findAndCountAll(query?: any): Promise<any> { return <any>void(0); }
-    async findAll(query?: any): Promise<T[]> { return []; }
-    async all(query?: any): Promise<T[]> { return []; }
-    async count(query?: any): Promise<number> { return 0; }
-    async max<T>(field: string): Promise<number> { return 0; }
-    async min<T>(field: string): Promise<number> { return 0; }
-    async sum<T>(field: string): Promise<number> { return 0; }
-    async save(t: T): Promise<T> { return t; }
-    async update(query: any, replace: any, returning?: any) { return <any>void(0); }
-    async updateOrCreate(query: any, defaults: Object | T): Promise<[T, boolean]> { return [<any>defaults, true]; }
-    async destroy(query: any) { return <any>void(0); }
-    fromJson(json: any): T { return <any>json; }
 }
 
 describe('CrudController', () => {
