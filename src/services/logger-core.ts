@@ -69,30 +69,36 @@ export class LoggerCore {
     
     log(subsystem: string | null, message?: any, ...optionalParams: any[]): void { 
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}]: ${message}`);
+        directLogger.clearLine();
         directLogger.log(this.logLabelMessage(subsystem), message, ...optionalParams);
     }
     trace(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}]: ${message}`);
+        directLogger.clearLine();
         directLogger.trace(this.logLabelMessage(subsystem), message, ...optionalParams);
     }
     
     error(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] error: ${message}`);
+        directLogger.clearLine();
         directLogger.error(this.logLabelMessage(subsystem), clc.error(`error:`), message, ...optionalParams);
     }
     info(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] info: ${message}`);
         if (!this.logLevelCheck(subsystem, 'info')) return;
+        directLogger.clearLine();
         directLogger.info(this.logLabelMessage(subsystem), clc.info(`info:`), message, ...optionalParams);
     }
     warn(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] warn: ${message}`);
         if (!this.logLevelCheck(subsystem, 'warn')) return;
+        directLogger.clearLine();
         directLogger.warn(this.logLabelMessage(subsystem), clc.warn(`warn:`), message, ...optionalParams);
     }
     verbose(subsystem: string | null, message?: any, ...optionalParams: any[]): void {
         this.writeToFile(`[${new Date().toISOString()}:${subsystem}] verbose: ${message}`);
         if (!this.logLevelCheck(subsystem, 'verbose')) return;
+        directLogger.clearLine();
         directLogger.log(this.logLabelMessage(subsystem), 'verbose:', message, ...optionalParams);
     }
 }
