@@ -585,22 +585,48 @@ describe('CrudController', () => {
         });
         
         describe('.transformQueryResults', () => {
+            let transformQueryResults: (req: Request, res: Response, results: { results: any[], count: number }) => Promise<{ results: any[], count: number }>;
+            let req: Request;
+            let res: Response;
+            let payload: any = Symbol();
+            beforeEach(() => {
+                transformQueryResults = (<any>inst).transformQueryResults.bind(inst);
+                req = FakeRequest();
+                res = FakeResponse();
+                req.body = payload;
+            });
+            
             it('should return a promise', () => {
-                let result = (<any>inst).transformQueryResults();
+                let result = transformQueryResults(req, res, { results: [], count: 0 });
                 expect(result).to.be.an.instanceOf(Promise);
             });
             describe('that promise', () => {
-                xit('should call transformResult on each result', async () => {
-                    
+                it('should call transformResult on each result', async () => {
+                    let results = [1, 2, 3, 4, 5, 6];
+                    let trStub = sinon.stub(inst, 'transformResult');
+                    await transformQueryResults(req, res, { results: results, count: results.length });
+                    expect(trStub.callCount).to.eq(results.length);
                 });
-                xit('should not include results that are removed by transformResult', async () => {
-                    
+                it('should not include results that are removed by transformResult', async () => {
+                    let results = [1, 2, 3, 4, 5, 6];
+                    let trStub = sinon.stub(inst, 'transformResult').callsFake((req, res, val: number) => val % 2 === 0 ? val : undefined);
+                    let finalResults = await transformQueryResults(req, res, { results: results, count: results.length });
+                    expect(finalResults.results).to.deep.eq([2, 4, 6]);
                 });
-                xit('should return an updated count if any results are trimmed', async () => {
-                    
+                it('should not change the result count even if any results are trimmed', async () => {
+                    let results = [1, 2, 3, 4, 5, 6];
+                    let trStub = sinon.stub(inst, 'transformResult').callsFake((req, res, val: number) => val % 2 === 0 ? val : undefined);
+                    let finalResults = await transformQueryResults(req, res, { results: results, count: results.length });
+                    expect(finalResults.count).to.eq(6);
                 });
-                xit('should short circuit if transformResult sets a new status code or sends headers', async () => {
-                    
+                it('should short circuit if transformResult sets a new status code or sends headers', async () => {
+                    let results = [1, 2, 3, 4, 5, 6];
+                    let trStub = sinon.stub(inst, 'transformResult').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    let finalResults = await transformQueryResults(req, res, { results: results, count: results.length });
+                    expect(trStub.callCount).to.eq(1);
+                    expect(finalResults).not.to.be.ok;
                 });
             });
         });
