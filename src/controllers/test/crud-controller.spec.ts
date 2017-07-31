@@ -622,29 +622,70 @@ describe('CrudController', () => {
                 expect(result).to.be.an.instanceOf(Promise);
             });
             describe('that promise', () => {
-                xit('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
-                    
+                let req: Request;
+                let res: Response;
+                let payload: any;
+                beforeEach(() => {
+                    req = FakeRequest();
+                    res = FakeResponse();
+                    req.path = 'user/42';
+                    req.params.id = `42`;
                 });
-                xit('should send HTTP_STATUS_ERROR if there is an error parsing the include query', async () => {
-                    
+                
+                it('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
+                    req.params.id = '';
+                    await inst.get(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should invoke transformInclude', async () => {
-                    
+                it('should send HTTP_STATUS_ERROR if there is an error parsing the include query', async () => {
+                    req.query.include = '{Sdf38--s=-?';
+                    await inst.get(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should short circuit if transformInclude sends a response', async () => {
-                    
+                it('should invoke transformInclude', async () => {
+                    sinon.stub(inst, 'transformInclude');
+                    await inst.get(req, res);
+                    expect((<any>inst).transformInclude).to.have.been.calledOnce;
                 });
-                xit('should invoke db.findById with the query', async () => {
-                    
+                it('should use the standalone include array if it exists', async () => {
+                    let expectedInclude: string[] = ['one', 'deux', 'tres'];
+                    req.query.include = JSON.stringify(expectedInclude);
+                    sinon.stub(inst, 'transformInclude');
+                    await inst.get(req, res);
+                    expect((<any>inst).transformInclude).to.have.been.calledOnce.calledWith(req, res, expectedInclude);
                 });
-                xit('should invoke transformResult', async () => {
-                    
+                it('should short circuit if transformInclude sends a response', async () => {
+                    sinon.stub(TestModel.db, 'findById');
+                    sinon.stub(inst, 'transformInclude').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.get(req, res);
+                    expect(TestModel.db.findById).not.to.have.been.called;
                 });
-                xit('should short circuit if transformResult sends a response', async () => {
-                    
+                it('should invoke db.findById with the model ID', async () => {
+                    sinon.stub(TestModel.db, 'findById');
+                    await inst.get(req, res);
+                    expect(TestModel.db.findById).to.have.been.calledOnce.calledWith(+req.params.id);
                 });
-                xit('should send HTTP_STATUS_OK with the value returned by db.findById', async () => {
-                    
+                it('should invoke transformResult', async () => {
+                    sinon.stub(inst, 'transformResult');
+                    await inst.get(req, res);
+                    expect((<any>inst).transformResult).to.have.been.calledOnce;
+                });
+                it('should short circuit if transformResult sends a response', async () => {
+                    sinon.stub(inst, 'transformResult').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.get(req, res);
+                    expect(res.statusCode).to.eq(123);
+                });
+                it('should send HTTP_STATUS_OK with the value returned by transformResult', async () => {
+                    let expectedResult = Symbol();
+                    sinon.stub(res, 'json');
+                    sinon.stub(inst, 'transformResult').returns(expectedResult);
+                    await inst.get(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_OK);
+                    expect(res.json).to.have.been.calledOnce.calledWith(expectedResult);
                 });
             });
         });
