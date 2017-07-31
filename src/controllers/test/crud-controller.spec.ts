@@ -198,6 +198,7 @@ describe('CrudController', () => {
                 req = FakeRequest();
                 res = FakeResponse();
                 req.body = payload;
+                req.path = 'user/create';
             });
             
             it('should return a promise', () => {
@@ -564,24 +565,53 @@ describe('CrudController', () => {
                 let result = (<any>inst).count();
                 expect(result).to.be.an.instanceOf(Promise);
             });
-            describe('that promise', () => {
-                xit('should send HTTP_STATUS_ERROR if there is an error parsing request params', async () => {
-                    
+            describe('that promise', () => {let req: Request;
+                let res: Response;
+                let payload: any;
+                beforeEach(() => {
+                    req = FakeRequest();
+                    res = FakeResponse();
+                    req.query.query = JSON.stringify(payload = { column: 'POISSON' });
+                    req.path = 'users/count';
                 });
-                xit('should invoke transformQuery', async () => {
-                    
+                
+                it('should send HTTP_STATUS_ERROR if there is an error parsing request params', async () => {
+                    req.query.query = '{Sdf38--s=-?';
+                    await inst.count(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should use the original query if transformQuery returns a falsey value', async () => {
-                    
+                it('should invoke transformQuery', async () => {
+                    sinon.stub(inst, 'transformQuery');
+                    await inst.count(req, res);
+                    expect((<any>inst).transformQuery).to.have.been.calledOnce;
                 });
-                xit('should short circuit if transformQuery sends a response', async () => {
-                    
+                it('should use the original query if transformQuery returns a falsey value', async () => {
+                    let actualQuery: any;
+                    sinon.stub(inst, 'transformQuery').callsFake((req, res, query) => (actualQuery = query, undefined));
+                    sinon.stub(TestModel.db, 'count');
+                    await inst.count(req, res);
+                    expect(TestModel.db.count).to.have.been.calledOnce.calledWith(sinon.match.has('where', actualQuery));
                 });
-                xit('should invoke db.count with the query', async () => {
-                    
+                it('should short circuit if transformQuery sends a response', async () => {
+                    sinon.stub(TestModel.db, 'count');
+                    sinon.stub(inst, 'transformQuery').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.find(req, res);
+                    expect(TestModel.db.count).not.to.have.been.called;
                 });
-                xit('should send HTTP_STATUS_OK with the value returned by db.count', async () => {
-                    
+                it('should invoke db.count', async () => {
+                    sinon.stub(TestModel.db, 'count');
+                    await inst.count(req, res);
+                    expect(TestModel.db.count).to.have.been.calledOnce;
+                });
+                it('should send HTTP_STATUS_OK with the value returned by db.count', async () => {
+                    let expectedCount = 42;
+                    sinon.stub(TestModel.db, 'count').returns(expectedCount);
+                    sinon.stub(res, 'send');
+                    await inst.count(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_OK);
+                    expect(res.send).to.have.been.calledOnce.calledWith(`${expectedCount}`);
                 });
             });
         });
