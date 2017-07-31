@@ -15,6 +15,8 @@ import { FakeRequest } from '../../router/test/fake-request';
 import { FakeResponse } from '../../router/test/fake-response';
 import { HTTP_STATUS_ERROR, HTTP_STATUS_OK } from '../../util/http-status-type';
 
+let any = sinon.match.any;
+
 class TestModel {
     id: number;
     static db: Db<TestModel>;
@@ -384,77 +386,174 @@ describe('CrudController', () => {
                 expect(result).to.be.an.instanceOf(Promise);
             });
             describe('that promise', () => {
-                xit('should send HTTP_STATUS_ERROR if there is an error parsing request params', async () => {
-                    
+                let req: Request;
+                let res: Response;
+                let payload: any;
+                let performQueryStub: sinon.SinonStub;
+                beforeEach(() => {
+                    req = FakeRequest();
+                    res = FakeResponse();
+                    req.query.query = JSON.stringify(payload = { column: 'POISSON' });
+                    req.path = 'users/find';
+                    performQueryStub = sinon.stub(inst, 'performQuery').returns({ results: [1, 2, 3], count: 3 });
                 });
-                xit('should use the include array from the query if there is no standalone include array', async () => {
-                    
+                
+                it('should send HTTP_STATUS_ERROR if there is an error parsing request params', async () => {
+                    req.query.query = '{Sdf38--s=-?';
+                    await inst.find(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should use the order array from the query if there is no standalone order array', async () => {
-                    
+                it('should use the include array from the query if there is no standalone include array', async () => {
+                    let expectedInclude: string[] = ['one', 'deux', 'tres'];
+                    req.query.query = JSON.stringify({ column: 'POISSON', include: expectedInclude });
+                    sinon.stub(inst, 'transformInclude');
+                    await inst.find(req, res);
+                    expect((<any>inst).transformInclude).to.have.been.calledOnce.calledWith(req, res, expectedInclude);
                 });
-                xit('should invoke transformQuery', async () => {
-                    
+                it('should use the order array from the query if there is no standalone order array', async () => {
+                    let expectedOrder: [string, 'ASC' | 'DESC'][] = [['one', 'ASC'], ['deux', 'DESC'], ['tres', 'ASC']];
+                    req.query.query = JSON.stringify({ column: 'POISSON', order: expectedOrder });
+                    await inst.find(req, res);
+                    let actualOrder: any;
+                    expect(performQueryStub).to.have.been.calledOnce.calledWith(any, any, sinon.match.has('order', sinon.match((val: any) => actualOrder = val)));
+                    expect(actualOrder).to.deep.eq(expectedOrder);
                 });
-                xit('should use the original query if transformQuery returns a falsey value', async () => {
-                    
+                it('should use the standalone include array if it exists', async () => {
+                    let expectedInclude: string[] = ['one', 'deux', 'tres'];
+                    req.query.include = JSON.stringify(expectedInclude);
+                    sinon.stub(inst, 'transformInclude');
+                    await inst.find(req, res);
+                    expect((<any>inst).transformInclude).to.have.been.calledOnce.calledWith(req, res, expectedInclude);
                 });
-                xit('should short circuit if transformQuery sends a response', async () => {
-                    
+                it('should use the standalone order array if it exists', async () => {
+                    let expectedOrder: [string, 'ASC' | 'DESC'][] = [['one', 'ASC'], ['deux', 'DESC'], ['tres', 'ASC']];
+                    req.query.order = JSON.stringify(expectedOrder);
+                    await inst.find(req, res);
+                    let actualOrder: any;
+                    expect(performQueryStub).to.have.been.calledOnce.calledWith(any, any, sinon.match.has('order', sinon.match((val: any) => actualOrder = val)));
+                    expect(actualOrder).to.deep.eq(expectedOrder);
                 });
-                xit('should invoke transformInclude', async () => {
-                    
+                it('should invoke transformQuery', async () => {
+                    sinon.stub(inst, 'transformQuery');
+                    await inst.find(req, res);
+                    expect((<any>inst).transformQuery).to.have.been.calledOnce;
                 });
-                xit('should use the original include array if transformInclude returns a falsey value', async () => {
-                    
+                it('should use the original query if transformQuery returns a falsey value', async () => {
+                    let actualQuery: any;
+                    sinon.stub(inst, 'transformQuery').callsFake((req, res, query) => (actualQuery = query, undefined));
+                    await inst.find(req, res);
+                    expect((<any>inst).performQuery).to.have.been.calledOnce.calledWith(any, any, sinon.match.has('where', actualQuery));
                 });
-                xit('should short circuit if transformInclude sends a response', async () => {
-                    
+                it('should short circuit if transformQuery sends a response', async () => {
+                    sinon.stub(inst, 'transformInclude');
+                    sinon.stub(inst, 'transformQuery').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.find(req, res);
+                    expect((<any>inst).transformInclude).not.to.have.been.called;
+                });
+                it('should invoke transformInclude', async () => {
+                    sinon.stub(inst, 'transformInclude');
+                    await inst.find(req, res);
+                    expect((<any>inst).transformInclude).to.have.been.calledOnce;
+                });
+                it('should use the original include array if transformInclude returns a falsey value', async () => {
+                    let actualInclude: any;
+                    sinon.stub(inst, 'transformInclude').callsFake((req, res, include) => (actualInclude = include, undefined));
+                    await inst.find(req, res);
+                    expect((<any>inst).performQuery).to.have.been.calledOnce.calledWith(any, any, sinon.match.has('include', actualInclude));
+                });
+                it('should short circuit if transformInclude sends a response', async () => {
+                    sinon.stub(inst, 'transformInclude').callsFake((req, res) => {
+                        res.status(123).send('FISH');
+                    });
+                    await inst.find(req, res);
+                    expect((<any>inst).performQuery).not.to.have.been.called;
                 });
                 
                 describe('when the query is a find-one query', () => {
                     beforeEach(() => {
-                        //TODO: ensure req.path ends with 'find-one'
+                        req.path = req.path.replace(/find$/, 'find-one');
                     });
                     
-                    xit('should invoke performFindOneQuery', async () => {
-                        
+                    it('should invoke performFindOneQuery', async () => {
+                        sinon.stub(inst, 'performFindOneQuery');
+                        await inst.find(req, res);
+                        expect((<any>inst).performFindOneQuery).to.have.been.calledOnce;
                     });
-                    xit('should short circuit if performFindOneQuery sends a response', async () => {
-                        
+                    it('should short circuit if performFindOneQuery sends a response', async () => {
+                        sinon.stub(inst, 'transformResult');
+                        sinon.stub(inst, 'performFindOneQuery').callsFake((req, res) => {
+                            res.status(123).send('FISH');
+                        });
+                        await inst.find(req, res);
+                        expect((<any>inst).transformResult).not.to.have.been.called;
                     });
-                    xit('should invoke transformResult', async () => {
-                        
+                    it('should invoke transformResult', async () => {
+                        sinon.stub(inst, 'transformResult');
+                        await inst.find(req, res);
+                        expect((<any>inst).transformResult).to.have.been.calledOnce;
                     });
-                    xit('should short circuit if transformResult sends a response', async () => {
-                        
+                    it('should short circuit if transformResult sends a response', async () => {
+                        sinon.stub(inst, 'transformResult').callsFake((req, res) => {
+                            res.status(123).send('FISH');
+                        });
+                        await inst.find(req, res);
+                        expect(res.statusCode).to.eq(123);
                     });
-                    xit('should send HTTP_STATUS_OK with the value returned by transformResult', async () => {
-                        
+                    it('should send HTTP_STATUS_OK with the value returned by transformResult', async () => {
+                        sinon.stub(res, 'json');
+                        let expectedResult = Symbol();
+                        sinon.stub(inst, 'transformResult').returns(expectedResult);
+                        await inst.find(req, res);
+                        expect(res.statusCode).to.eq(HTTP_STATUS_OK);
+                        expect(res.json).to.have.been.calledOnce.calledWith(expectedResult);
                     });
                 });
                 
                 describe('when the query is a find-many query', () => {
-                    xit('should default to page 0 with 10 items per page', () => {
-                        
+                    it('should default to page 0 with 10 items per page', async () => {
+                        sinon.stub(res, 'json');
+                        await inst.find(req, res);
+                        expect(res.json).to.have.been.calledOnce.calledWith(sinon.match.has('perPage', 10).and(sinon.match.has('page', 0)));
                     });
-                    xit('should use the page and per-page values included in the query, if they exist', () => {
-                        
+                    it('should use the page and per-page values included in the query, if they exist', async () => {
+                        [req.query.perPage, req.query.page] = ['14', '12'];
+                        sinon.stub(res, 'json');
+                        await inst.find(req, res);
+                        expect(res.json).to.have.been.calledOnce.calledWith(sinon.match.has('perPage', 14).and(sinon.match.has('page', 12)));
                     });
-                    xit('should invoke performQuery', async () => {
-                        
+                    it('should invoke performQuery', async () => {
+                        await inst.find(req, res);
+                        expect((<any>inst).performQuery).to.have.been.calledOnce;
                     });
-                    xit('should short circuit if performQuery sends a response', async () => {
-                        
+                    it('should short circuit if performQuery sends a response', async () => {
+                        sinon.stub(inst, 'transformQueryResults');
+                        performQueryStub.callsFake((req, res) => {
+                            res.status(123).send('FISH');
+                        });
+                        await inst.find(req, res);
+                        expect((<any>inst).transformQueryResults).not.to.have.been.called;
                     });
-                    xit('should invoke transformQueryResults', async () => {
-                        
+                    it('should invoke transformQueryResults', async () => {
+                        sinon.spy(inst, 'transformQueryResults');
+                        await inst.find(req, res);
+                        expect((<any>inst).transformQueryResults).to.have.been.calledOnce;
                     });
-                    xit('should short circuit if transformQueryResults sends a response', async () => {
-                        
+                    it('should short circuit if transformQueryResults sends a response', async () => {
+                        sinon.stub(inst, 'transformQueryResults').callsFake((req, res) => {
+                            res.status(123).send('FISH');
+                        });
+                        await inst.find(req, res);
+                        expect(res.statusCode).to.eq(123);
                     });
-                    xit('should send HTTP_STATUS_OK with the value returned by transformQueryResults', async () => {
-                        
+                    it('should send HTTP_STATUS_OK with the value returned by transformQueryResults', async () => {
+                        sinon.stub(res, 'json');
+                        let expectedResult = { results: [1, 2, 3], count: 3 };
+                        sinon.stub(inst, 'transformQueryResults').returns(expectedResult);
+                        await inst.find(req, res);
+                        expect(res.statusCode).to.eq(HTTP_STATUS_OK);
+                        expect(res.json).to.have.been.calledOnce.calledWith(sinon.match.has('results', expectedResult.results).and(sinon.match.has('total', expectedResult.count)));
                     });
                 });
             });

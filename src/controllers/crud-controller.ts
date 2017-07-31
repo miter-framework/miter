@@ -230,6 +230,7 @@ export abstract class CrudController<T extends ModelT<any>> {
                 include: include,
                 order: order
             });
+            if (res.statusCode !== initialStatusCode || res.headersSent) return;
             
             result = await this.transformResult(req, res, result);
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
