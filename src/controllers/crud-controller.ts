@@ -348,11 +348,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         let [updated, results] = await this.performUpdate(req, res, id, data, returning);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        if (!updated) {
-            res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
-            return;
-        }
-        else {
+        if (updated) {
             results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
             
@@ -361,6 +357,10 @@ export abstract class CrudController<T extends ModelT<any>> {
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
             
             res.status(HTTP_STATUS_OK).json(result);
+        }
+        else {
+            res.status(HTTP_STATUS_ERROR).send(`Can't find the ${this.modelName} with id ${id} to update it.`);
+            return;
         }
     }
     

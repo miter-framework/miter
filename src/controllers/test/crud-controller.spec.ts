@@ -824,8 +824,20 @@ describe('CrudController', () => {
                 expect(result).to.be.an.instanceOf(Promise);
             });
             describe('that promise', () => {
-                xit('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
-                    
+                let req: Request;
+                let res: Response;
+                let payload: any;
+                beforeEach(() => {
+                    req = FakeRequest();
+                    res = FakeResponse();
+                    req.path = 'user/42';
+                    req.params.id = `42`;
+                });
+                
+                it('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
+                    req.params.id = '';
+                    await inst.update(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
                 xit('should invoke transformUpdateQuery', async () => {
                     
@@ -877,6 +889,10 @@ describe('CrudController', () => {
                 });
                 
                 describe('when performUpdate indicates that the model was not updated', () => {
+                    beforeEach(() => {
+                        sinon.stub(TestModel.db, 'update').returns([false, []]);
+                    });
+                    
                     xit('should send HTTP_STATUS_ERROR', async () => {
                         
                     });
@@ -962,34 +978,71 @@ describe('CrudController', () => {
                 expect(result).to.be.an.instanceOf(Promise);
             });
             describe('that promise', () => {
-                xit('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
-                    
+                let req: Request;
+                let res: Response;
+                let payload: any;
+                beforeEach(() => {
+                    req = FakeRequest();
+                    res = FakeResponse();
+                    req.path = 'user/42';
+                    req.params.id = `42`;
                 });
-                xit('should invoke db.destroy with the ID', async () => {
-                    
+                
+                it('should send HTTP_STATUS_ERROR if the ID is missing or invalid', async () => {
+                    req.params.id = '';
+                    await inst.destroy(req, res);
+                    expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                 });
-                xit('should invoke beforeDestroy', async () => {
-                    
+                it('should invoke beforeDestroy', async () => {
+                    sinon.stub(inst, 'beforeDestroy');
+                    await inst.destroy(req, res);
+                    expect((<any>inst).beforeDestroy).to.have.been.calledOnce;
                 });
-                xit('should short circuit if beforeDestroy sends a response', async () => {
-                    
+                it('should short circuit if beforeDestroy sends a response', async () => {
+                    sinon.stub(TestModel.db, 'destroy');
+                    sinon.stub(inst, 'beforeDestroy').callsFake((req, res) => {
+                        res.status(123).send(`Il n'est pas mort`);
+                    });
+                    await inst.destroy(req, res);
+                    expect(TestModel.db.destroy).not.to.have.been.called;
+                });
+                it('should invoke db.destroy with the ID', async () => {
+                    sinon.stub(TestModel.db, 'destroy');
+                    await inst.destroy(req, res);
+                    expect(TestModel.db.destroy).to.have.been.calledOnce.calledWith(+req.params.id);
                 });
                 
                 describe('when db.destroy returns true', () => {
-                    xit('should invoke afterDestroy', async () => {
-                        
+                    beforeEach(() => {
+                        sinon.stub(TestModel.db, 'destroy').returns(true);
                     });
-                    xit('should short circuit if afterDestroy sends a response', async () => {
-                        
+                    
+                    it('should invoke afterDestroy', async () => {
+                        sinon.stub(inst, 'afterDestroy');
+                        await inst.destroy(req, res);
+                        expect((<any>inst).afterDestroy).to.have.been.calledOnce;
                     });
-                    xit('should send HTTP_STATUS_OK', async () => {
-                        
+                    it('should short circuit if afterDestroy sends a response', async () => {
+                        sinon.stub(inst, 'afterDestroy').callsFake((req, res) => {
+                            res.status(123).send('Il est mort');
+                        });
+                        await inst.destroy(req, res);
+                        expect(res.statusCode).to.eq(123);
+                    });
+                    it('should send HTTP_STATUS_OK', async () => {
+                        await inst.destroy(req, res);
+                        expect(res.statusCode).to.eq(HTTP_STATUS_OK);
                     });
                 });
                 
                 describe('when db.destroy returns false', () => {
-                    xit('should send HTTP_STATUS_ERROR', async () => {
-                        
+                    beforeEach(() => {
+                        sinon.stub(TestModel.db, 'destroy').returns(false);
+                    });
+                    
+                    it('should send HTTP_STATUS_ERROR', async () => {
+                        await inst.destroy(req, res);
+                        expect(res.statusCode).to.eq(HTTP_STATUS_ERROR);
                     });
                 });
             });
