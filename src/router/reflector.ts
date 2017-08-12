@@ -247,6 +247,7 @@ export class RouterReflector {
                 throw e; //This ensures that the transaction is rolled back
             }
             finally {
+                --this.unfinishedRoutes;
                 if (!failed && res.statusCode === initialStatusCode && !res.headersSent) {
                     this.logger.error(`{${requestIndex}} route failed to send a response.`);
                     let errorResult: boolean | Promise<boolean> = this.errorHandler.handleNoRouteResponse(req, res);
@@ -256,8 +257,8 @@ export class RouterReflector {
                         res.status(HTTP_STATUS_NOT_FOUND);
                         res.send(`Not found.`);
                     }
-                    this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                 }
+                this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${this.unfinishedRoutes}`);  
             }
         };
         
