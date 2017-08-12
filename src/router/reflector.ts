@@ -14,6 +14,7 @@ import { RouteMetadata, RouteMetadataSym } from '../metadata/router/route';
 import { RouterMetadata } from '../metadata/server/router';
 
 import { Logger } from '../services/logger';
+import { ErrorHandler } from '../services/error-handler';
 import { TransactionService } from '../services/transaction.service';
 import { RouterService } from '../services/router.service';
 
@@ -30,6 +31,7 @@ export class RouterReflector {
     constructor(
         private injector: Injector,
         private logger: Logger,
+        private errorHandler: ErrorHandler,
         private routerMeta: RouterMetadata,
         private _router: RouterService,
         private transactionService: TransactionService
@@ -207,11 +209,17 @@ export class RouterReflector {
                     this.logger.verbose(`{${requestIndex}} policy ${policyName} returned with result ${JSON.stringify(result)}`);
                 }
                 catch (e) {
-                    this.logger.error(`{${requestIndex}} policy (${policyName}) threw an exception. Serving 500 - Internal server error`);
+                    this.logger.error(`{${requestIndex}} policy (${policyName}) threw an exception.`);
                     this.logger.error(e);
-                    res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
-                    res.send('Internal server error');
-                    this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                    let errorResult: boolean | Promise<boolean> = this.errorHandler.handleRouteError(e, req, res);
+                    if (typeof errorResult !== 'boolean' && typeof errorResult !== 'undefined' && errorResult !== null) errorResult = await errorResult;
+                    if (res.statusCode === initialStatusCode) {
+                        this.logger.error(`Error handler did not send a response. Serving 500 - Internal server error`);
+                        res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
+                        res.send('Internal server error');
+                        this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                    }
+                    if (!errorResult) throw e;
                     return;
                 }
                 allResults.push(result);
@@ -226,9 +234,15 @@ export class RouterReflector {
                 this.logger.verbose(`{${requestIndex}} route complete`);
             }
             catch (e) {
-                this.logger.error(`{${requestIndex}} route threw an exception. Serving 500 - Internal server error. unfinishedRoutes: ${--this.unfinishedRoutes}`);
-                res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
-                res.send('Internal server error');
+                this.logger.error(`{${requestIndex}} route threw an exception. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                let errorResult: boolean | Promise<boolean> = this.errorHandler.handleRouteError(e, req, res);
+                if (typeof errorResult !== 'boolean' && typeof errorResult !== 'undefined' && errorResult !== null) errorResult = await errorResult;
+                if (initialStatusCode === res.statusCode) {
+                    this.logger.error(`Error handler did not send a response. Serving 500 - Internal server error`);
+                    res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR);
+                    res.send('Internal server error');
+                }
+                (<any>res).errorResult = errorResult;
                 failed = true;
                 throw e; //This ensures that the transaction is rolled back
             }
@@ -252,6 +266,7 @@ export class RouterReflector {
             }
             catch (e) {
                 self.logger.error(e);
+                if (!(<any>res).errorResult) throw e;
             }
         }
     }

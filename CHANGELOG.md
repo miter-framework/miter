@@ -11,6 +11,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **crud-controller:** add unit tests for CRUD operations and lifecycle hooks
 * **logger:** ensure logger methods write over progress bars in the console
 * **services:** add ErrorHandler service
+* **router:** allow ErrorHandler to attempt to handle errors before they propogate
 
 ### Bug Fixes
 

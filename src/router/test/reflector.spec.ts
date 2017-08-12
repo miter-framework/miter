@@ -19,6 +19,7 @@ import { ControllerMetadata } from '../../metadata/router/controller';
 import { RouteMetadata } from '../../metadata/router/route';
 
 import { LoggerCore } from '../../services/logger-core';
+import { ErrorHandler } from '../../services/error-handler';
 import { RouterService } from '../../services/router.service';
 import { FakeRouterService } from '../../services/test/fake-router.service';
 import { TransactionService } from '../../services/transaction.service';
@@ -41,6 +42,7 @@ import { FakeResponse } from './fake-response';
 describe('RouterReflector', () => {
     let injector: Injector;
     let routerReflector: RouterReflector;
+    let errorHandler: ErrorHandler;
     beforeEach(() => {
         let loggerCore = new LoggerCore('abc', 'error', false);
         injector = new Injector(loggerCore);
@@ -53,6 +55,7 @@ describe('RouterReflector', () => {
         injector.provide({ provide: RouterService, useClass: FakeRouterService });
         injector.provide({ provide: TransactionService, useClass: FakeTransactionService });
         routerReflector = injector.resolveInjectable(RouterReflector)!;
+        errorHandler = injector.resolveInjectable(ErrorHandler)!;
     });
     
     describe('.reflectRoutes', () => {
@@ -346,9 +349,18 @@ describe('RouterReflector', () => {
                 expect(policy1Inst.handle).not.to.have.been.called;
                 expect(controller.route).not.to.have.been.called;
             });
+            it(`should not catch errors thrown in route policies if the error handler fails`, async () => {
+                let policyInst = injector.resolveInjectable(ThrowPolicy)!;
+                sinon.spy(policyInst, 'handle');
+                let resultFn = fn([[ThrowPolicy, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
+                await expect(resultFn(FakeRequest(), FakeResponse())).to.eventually.be.rejected;
+                expect(policyInst.handle).to.have.been.calledOnce;
+                expect(controller.route).not.to.have.been.called;
+            });
             it(`should catch errors thrown in route policies`, async () => {
                 let policyInst = injector.resolveInjectable(ThrowPolicy)!;
                 sinon.spy(policyInst, 'handle');
+                sinon.stub(errorHandler, 'handleRouteError').returns(Promise.resolve(true));
                 let resultFn = fn([[ThrowPolicy, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
                 await expect(resultFn(FakeRequest(), FakeResponse())).not.to.eventually.be.rejected;
                 expect(policyInst.handle).to.have.been.calledOnce;
@@ -359,7 +371,19 @@ describe('RouterReflector', () => {
                 let resultFn = fn([[ThrowPolicy, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
                 let res = FakeResponse();
                 sinon.spy(res, 'status');
+                sinon.stub(errorHandler, 'handleRouteError').returns(Promise.resolve(true));
                 let result = await resultFn(FakeRequest(), res);
+                expect(res.status).to.have.been.calledWith(500);
+            });
+            it(`should send an 'internal server error' status when a policy throws an error even if the error handler fails`, async () => {
+                let policyInst = injector.resolveInjectable(ThrowPolicy)!;
+                let resultFn = fn([[ThrowPolicy, policyInst.handle.bind(policyInst)]], boundRoute, 'tname', { path: 'fish' });
+                let res = FakeResponse();
+                sinon.spy(res, 'status');
+                let errored = false;
+                try { await resultFn(FakeRequest(), res); }
+                catch (e) { errored = true; }
+                expect(errored).to.be.true;
                 expect(res.status).to.have.been.calledWith(500);
             });
             it(`should send a '404 not found' status if the handler does not send a response`, async () => {
@@ -375,7 +399,15 @@ describe('RouterReflector', () => {
                 controller.routeImpl = async (req: Request, res: Response) => {
                     throw new Error(`Going up!`);
                 };
+                sinon.stub(errorHandler, 'handleRouteError').returns(Promise.resolve(true));
                 await expect(resultFn(FakeRequest(), FakeResponse())).not.to.eventually.be.rejected;
+            });
+            it('should not catch errors thrown in the route handler if the error handler fails', async () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                controller.routeImpl = async (req: Request, res: Response) => {
+                    throw new Error(`Going up!`);
+                };
+                await expect(resultFn(FakeRequest(), FakeResponse())).to.eventually.be.rejected;
             });
             it(`should send an 'internal server error' status when the handler throws an error`, async () => {
                 let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
@@ -384,7 +416,21 @@ describe('RouterReflector', () => {
                 controller.routeImpl = async (req: Request, res: Response) => {
                     throw new Error(`Going up!`);
                 };
+                sinon.stub(errorHandler, 'handleRouteError').returns(Promise.resolve(true));
                 let result = await resultFn(FakeRequest(), res);
+                expect(res.status).to.have.been.calledWith(500);
+            });
+            it(`should send an 'internal server error' status when the handler throws an error even if the error handler fails`, async () => {
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let res = FakeResponse();
+                sinon.spy(res, 'status');
+                controller.routeImpl = async (req: Request, res: Response) => {
+                    throw new Error(`Going up!`);
+                };
+                let errored = false;
+                try { await resultFn(FakeRequest(), res); }
+                catch (e) { errored = true; }
+                expect(errored).to.be.true;
                 expect(res.status).to.have.been.calledWith(500);
             });
         });
