@@ -12,6 +12,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **logger:** ensure logger methods write over progress bars in the console
 * **services:** add ErrorHandler service
 * **router:** allow ErrorHandler to attempt to handle errors before they propogate
+* **router:** allow ErrorHandler to attempt to handle routes that did not send a response
 
 ### Bug Fixes
 

@@ -248,9 +248,14 @@ export class RouterReflector {
             }
             finally {
                 if (!failed && res.statusCode === initialStatusCode && !res.headersSent) {
-                    this.logger.error(`{${requestIndex}} route failed to send a response. Serving 404 - Not Found`);
-                    res.status(HTTP_STATUS_NOT_FOUND);
-                    res.send(`Not found.`);
+                    this.logger.error(`{${requestIndex}} route failed to send a response.`);
+                    let errorResult: boolean | Promise<boolean> = this.errorHandler.handleNoRouteResponse(req, res);
+                    if (typeof errorResult !== 'boolean' && typeof errorResult !== 'undefined' && errorResult !== null) errorResult = await errorResult;
+                    if (initialStatusCode === res.statusCode) {
+                        this.logger.error(`Error handler did not send a response. Serving 404 - Not Found`);
+                        res.status(HTTP_STATUS_NOT_FOUND);
+                        res.send(`Not found.`);
+                    }
                     this.logger.verbose(`{${requestIndex}} ending request. unfinishedRoutes: ${--this.unfinishedRoutes}`);
                 }
             }

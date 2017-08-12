@@ -11,7 +11,7 @@ export class ErrorHandler {
     async handleRouteError(e: any, req: Request, res: Response) {
         return false;
     }
-    async handleNoRouteResponse(e: any, req: Request, res: Response) {
+    async handleNoRouteResponse(req: Request, res: Response) {
         return false;
     }
 }
