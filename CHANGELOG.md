@@ -10,6 +10,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **crud-controller:** add transformInclude hook as a temporary replacement for scopes
 * **crud-controller:** add unit tests for CRUD operations and lifecycle hooks
 * **logger:** ensure logger methods write over progress bars in the console
+* **services:** add ErrorHandler service
 
 ### Bug Fixes
 

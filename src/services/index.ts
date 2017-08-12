@@ -2,6 +2,8 @@
 
 export * from './reflector';
 
+export * from './error-handler';
+
 export * from './logger';
 export * from './logger-core';
 
