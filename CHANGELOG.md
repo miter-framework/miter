@@ -14,6 +14,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** allow ErrorHandler to attempt to handle errors before they propogate
 * **router:** allow ErrorHandler to attempt to handle routes that did not send a response
 * **crud-controller:** add policies returned from getDestroyPolicies to the destroy route
+* **router:** allow policies to have their own policies; flatten duplicate policies
 
 ### Bug Fixes
 

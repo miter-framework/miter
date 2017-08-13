@@ -12,6 +12,7 @@ import { Name } from '../decorators/services/name.decorator';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../metadata/router/controller';
 import { RouteMetadata, RouteMetadataSym } from '../metadata/router/route';
 import { RouterMetadata } from '../metadata/server/router';
+import { PolicyMetadata, PolicyMetadataSym } from '../metadata/policies/policy';
 
 import { Logger } from '../services/logger';
 import { ErrorHandler } from '../services/error-handler';
@@ -126,6 +127,7 @@ export class RouterReflector {
         if (typeof controller.transformRoutePolicies === 'function') {
             policyDescriptors = controller.transformRoutePolicies(routeFnName, fullPath, policyDescriptors) || policyDescriptors;
         }
+        policyDescriptors = this.flattenPolicies(policyDescriptors);
         let policies = this.resolvePolicies(policyDescriptors);
         if (!controller[routeFnName]) throw new Error(`There is no route handler for ${controllerName}.${routeFnName}`);
         if (typeof controller[routeFnName] !== 'function') throw new Error(`The route handler for ${controllerName}.${routeFnName} is not a function`);
@@ -157,6 +159,28 @@ export class RouterReflector {
             policies.push(...(pm.policies || []));
         }
         return policies;
+    }
+    private flattenPolicies(descriptors: PolicyDescriptor[]): PolicyDescriptor[] {
+        let aggregate: PolicyDescriptor[] = [];
+        this.flattenPolicies_recursive(descriptors, aggregate);
+        return aggregate;
+    }
+    private flattenPolicies_recursive(descriptors: PolicyDescriptor[], aggregate: PolicyDescriptor[]) {
+        for (let policy of descriptors) {
+            if (this.isPolicyCtor(policy)) {
+                let policyMeta: PolicyMetadata = Reflect.getOwnMetadata(PolicyMetadataSym, policy.prototype) || {};
+                let nestedPolicies = policyMeta.policies;
+                if (nestedPolicies) this.flattenPolicies_recursive(nestedPolicies, aggregate);
+            }
+            let found = false;
+            for (let q = 0; q < aggregate.length; q++) {
+                if (aggregate[q] === policy) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) aggregate.push(policy);
+        }
     }
     private resolvePolicies(descriptors: PolicyDescriptor[]): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][] {
         return descriptors.map((desc): [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }] => {
