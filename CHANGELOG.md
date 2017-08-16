@@ -15,11 +15,17 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** allow ErrorHandler to attempt to handle routes that did not send a response
 * **crud-controller:** add policies returned from getDestroyPolicies to the destroy route
 * **router:** allow policies to have their own policies; flatten duplicate policies
+* **crud-controller:** add policies returned from getQueryPolicies to the find and count routes
 
 ### Bug Fixes
 
 * **orm:** fix Db.sum typings
 * **router:** account for routes completed when they complete without an error
+
+### Breaking Changes
+
+* Policies returned from `CrudController.getReadPolicies` are not added to the `find` or `count` routes.
+    If you need to add a policy to both of these routes, override `CrudController.getQueryPolicies`
 
 
 

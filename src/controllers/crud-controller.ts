@@ -79,16 +79,20 @@ export abstract class CrudController<T extends ModelT<any>> {
         case 'create':
         case 'update':
             return [...policies, ...this.getReadPolicies(), ...this.getMutatePolicies()];
-        case 'find':
-        case 'count':
         case 'get':
             return [...policies, ...this.getReadPolicies()];
+        case 'find':
+        case 'count':
+            return [...policies, ...this.getQueryPolicies()];
         default:
             return policies;
         }
     }
     
     protected getReadPolicies(): PolicyDescriptor[] {
+        return [];
+    }
+    protected getQueryPolicies(): PolicyDescriptor[] {
         return [];
     }
     protected getMutatePolicies(): PolicyDescriptor[] {

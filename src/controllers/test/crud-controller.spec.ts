@@ -136,25 +136,27 @@ describe('CrudController', () => {
     });
     
     describe('.transformRoutePolicies', () => {
-        let routes: [string, boolean, boolean, boolean][] = [
-            ['destroy', true, true, true],
-            ['create', true, true, false],
-            ['update', true, true, false],
-            ['find', true, false, false],
-            ['count', true, false, false],
-            ['get', true, false, false],
-            ['', false, false, false]
+        let routes: [string, boolean, boolean, boolean, boolean][] = [
+            ['destroy', true, true, true, false],
+            ['create', true, true, false, false],
+            ['update', true, true, false, false],
+            ['get', true, false, false, false],
+            ['find', false, false, false, true],
+            ['count', false, false, false, true],
+            ['', false, false, false, false]
         ];
         let defaultPolicy: PolicyDescriptor = <any>Symbol();
         let readPolicy: PolicyDescriptor = <any>Symbol();
         let mutatePolicy: PolicyDescriptor = <any>Symbol();
         let destroyPolicy: PolicyDescriptor = <any>Symbol();
+        let queryPolicy: PolicyDescriptor = <any>Symbol();
         beforeEach(() => {
             sinon.stub(inst, 'getReadPolicies').returns([readPolicy]);
             sinon.stub(inst, 'getMutatePolicies').returns([mutatePolicy]);
             sinon.stub(inst, 'getDestroyPolicies').returns([destroyPolicy]);
+            sinon.stub(inst, 'getQueryPolicies').returns([queryPolicy]);
         });
-        routes.forEach(([routeFnName, includeReadPolicies, includeMutatePolicies, includeDestroyPolicies]) => {
+        routes.forEach(([routeFnName, includeReadPolicies, includeMutatePolicies, includeDestroyPolicies, includeQueryPolicies]) => {
             describe(`when transforming policies for ${routeFnName ? 'the \'' + routeFnName + '\'' : 'any other'} route`, () => {
                 it('should include the policies passed in', () => {
                     let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
@@ -174,6 +176,11 @@ describe('CrudController', () => {
                     let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
                     if (includeDestroyPolicies) expect(policies.indexOf(destroyPolicy)).not.to.eq(-1);
                     else expect(policies.indexOf(destroyPolicy)).to.eq(-1);
+                });
+                it(`should ${includeQueryPolicies ? '' : 'not '}include the query policies`, () => {
+                    let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
+                    if (includeQueryPolicies) expect(policies.indexOf(queryPolicy)).not.to.eq(-1);
+                    else expect(policies.indexOf(queryPolicy)).to.eq(-1);
                 });
             });
         });
