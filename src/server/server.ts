@@ -60,6 +60,8 @@ export class Server {
         return this.initPromise;
     }
     async initImpl() {
+        this.startTime = new Date();
+        
         try {
             this.logger.info(`Initializing miter server...`);
             if (this.meta.router) await this.createExpressApp();
@@ -75,7 +77,9 @@ export class Server {
         
         if (this.meta.router) this.listen();
     }
-    private initPromise: Promise<void>
+    private initPromise: Promise<void>;
+    startTime: Date | null = null;
+    
     errorCode: number = 0;
     private async onSIGINT() {
         this.logger.error(`Received SIGINT kill signal...`);
