@@ -25,7 +25,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Breaking Changes
 
 * Policies returned from `CrudController.getReadPolicies` are not added to the `find` or `count` routes.
-    If you need to add a policy to both of these routes, override `CrudController.getQueryPolicies`
+    If you need to add a policy to both of these routes, override `CrudController.getQueryPolicies`.
+* Additionally, CrudController read policies are not added to mutate or destroy routes;
+    and mutate policies are not added to destroy routes.
+    If you need to add a policy to either of these, override `CrudController.getMutatePolicies` or `CrudController.getDestroyPolicies`.
 
 
 

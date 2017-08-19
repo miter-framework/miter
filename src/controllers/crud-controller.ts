@@ -75,10 +75,10 @@ export abstract class CrudController<T extends ModelT<any>> {
     transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
         switch (routeFnName) {
         case 'destroy':
-            return [...policies, ...this.getReadPolicies(), ...this.getMutatePolicies(), ...this.getDestroyPolicies()];
+            return [...policies, ...this.getDestroyPolicies()];
         case 'create':
         case 'update':
-            return [...policies, ...this.getReadPolicies(), ...this.getMutatePolicies()];
+            return [...policies, ...this.getMutatePolicies()];
         case 'get':
             return [...policies, ...this.getReadPolicies()];
         case 'find':
