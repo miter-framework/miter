@@ -60,6 +60,12 @@ Miter is a relatively young framework, and there are bound to be many ways that 
 
 [See what's new][whats_new] in recent versions of Miter.
 
+## Attribution
+
+Special thanks to [BrowserStack][browserstack] for generously hosting our cross-browser integration tests!
+
+[![BrowserStack](./attribution/browser-stack.png)][browserstack]
+
 [rails]: http://rubyonrails.org/
 [sails]: http://sailsjs.com/
 [express]: https://expressjs.com/
@@ -68,3 +74,4 @@ Miter is a relatively young framework, and there are bound to be many ways that 
 [create_issue]: https://github.com/miter-framework/miter/issues/new
 [fork_miter]: https://github.com/miter-framework/miter/pulls#fork-destination-box
 [whats_new]: https://github.com/miter-framework/miter/blob/master/CHANGELOG.md
+[browserstack]: https://www.browserstack.com
