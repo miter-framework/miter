@@ -136,52 +136,43 @@ describe('CrudController', () => {
     });
     
     describe('.transformRoutePolicies', () => {
-        let routes: [string, boolean, boolean, boolean, boolean][] = [
-            ['destroy', false, false, true, false],
-            ['create', false, true, false, false],
-            ['update', false, true, false, false],
-            ['get', true, false, false, false],
-            ['find', false, false, false, true],
-            ['count', false, false, false, true],
-            ['', false, false, false, false]
+        let routes: [string, string][] = [
+            ['destroy', 'getDestroyPolicies'],
+            ['create', 'getCreatePolicies'],
+            ['update', 'getMutatePolicies'],
+            ['get', 'getReadPolicies'],
+            ['find', 'getQueryPolicies'],
+            ['count', 'getQueryPolicies'],
+            ['', '']
         ];
         let defaultPolicy: PolicyDescriptor = <any>Symbol();
-        let readPolicy: PolicyDescriptor = <any>Symbol();
-        let mutatePolicy: PolicyDescriptor = <any>Symbol();
-        let destroyPolicy: PolicyDescriptor = <any>Symbol();
-        let queryPolicy: PolicyDescriptor = <any>Symbol();
-        beforeEach(() => {
-            sinon.stub(inst, 'getReadPolicies').returns([readPolicy]);
-            sinon.stub(inst, 'getMutatePolicies').returns([mutatePolicy]);
-            sinon.stub(inst, 'getDestroyPolicies').returns([destroyPolicy]);
-            sinon.stub(inst, 'getQueryPolicies').returns([queryPolicy]);
-        });
-        routes.forEach(([routeFnName, includeReadPolicies, includeMutatePolicies, includeDestroyPolicies, includeQueryPolicies]) => {
+        let extraPolicy: PolicyDescriptor = <any>Symbol();
+        routes.forEach(([routeFnName, extraPolicyFnName]) => {
             describe(`when transforming policies for ${routeFnName ? 'the \'' + routeFnName + '\'' : 'any other'} route`, () => {
+                let stub: sinon.SinonStub | null = null;
+                beforeEach(() => {
+                    if (extraPolicyFnName) stub = sinon.stub(inst, extraPolicyFnName).returns([extraPolicy]);
+                });
+                afterEach(() => {
+                    if (stub) stub.restore();
+                });
+                
                 it('should include the policies passed in', () => {
                     let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
                     expect(policies.indexOf(defaultPolicy)).not.to.eq(-1);
                 });
-                it(`should ${includeReadPolicies ? '' : 'not '}include the read policies`, () => {
-                    let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
-                    if (includeReadPolicies) expect(policies.indexOf(readPolicy)).not.to.eq(-1);
-                    else expect(policies.indexOf(readPolicy)).to.eq(-1);
-                });
-                it(`should ${includeMutatePolicies ? '' : 'not '}include the mutate policies`, () => {
-                    let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
-                    if (includeMutatePolicies) expect(policies.indexOf(mutatePolicy)).not.to.eq(-1);
-                    else expect(policies.indexOf(mutatePolicy)).to.eq(-1);
-                });
-                it(`should ${includeDestroyPolicies ? '' : 'not '}include the destroy policies`, () => {
-                    let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
-                    if (includeDestroyPolicies) expect(policies.indexOf(destroyPolicy)).not.to.eq(-1);
-                    else expect(policies.indexOf(destroyPolicy)).to.eq(-1);
-                });
-                it(`should ${includeQueryPolicies ? '' : 'not '}include the query policies`, () => {
-                    let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
-                    if (includeQueryPolicies) expect(policies.indexOf(queryPolicy)).not.to.eq(-1);
-                    else expect(policies.indexOf(queryPolicy)).to.eq(-1);
-                });
+                if (extraPolicyFnName) {
+                    it(`should include the policies from ${extraPolicyFnName}`, () => {
+                        let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
+                        expect(policies.indexOf(extraPolicy)).not.to.eq(-1);
+                    });
+                }
+                else {
+                    it(`should not include any other policies`, () => {
+                        let policies = inst.transformRoutePolicies(routeFnName || 'zzyzx', `one/two/three`, [defaultPolicy]);
+                        expect(policies.length).to.eq(1);
+                    });
+                }
             });
         });
     });

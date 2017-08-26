@@ -14,8 +14,9 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** allow ErrorHandler to attempt to handle errors before they propogate
 * **router:** allow ErrorHandler to attempt to handle routes that did not send a response
 * **crud-controller:** add policies returned from getDestroyPolicies to the destroy route
-* **router:** allow policies to have their own policies; flatten duplicate policies
+* **crud-controller:** add policies returned from getCreatePolicies to the create route
 * **crud-controller:** add policies returned from getQueryPolicies to the find and count routes
+* **router:** allow policies to have their own policies; flatten duplicate policies
 * **server:** add startTime to the Server
 
 ### Bug Fixes
@@ -27,9 +28,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * Policies returned from `CrudController.getReadPolicies` are not added to the `find` or `count` routes.
     If you need to add a policy to both of these routes, override `CrudController.getQueryPolicies`.
-* Additionally, CrudController read policies are not added to mutate or destroy routes;
+* Additionally, CrudController read policies are not added to mutate, create or destroy routes;
     and mutate policies are not added to destroy routes.
-    If you need to add a policy to either of these, override `CrudController.getMutatePolicies` or `CrudController.getDestroyPolicies`.
+    If you need to add a policy to any of these, override `CrudController.getMutatePolicies`,
+    `CrudController.getCreatePolicies` or `CrudController.getDestroyPolicies`.
 
 
 

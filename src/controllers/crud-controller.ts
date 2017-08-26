@@ -77,6 +77,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         case 'destroy':
             return [...policies, ...this.getDestroyPolicies()];
         case 'create':
+            return [...policies, ...this.getCreatePolicies()];
         case 'update':
             return [...policies, ...this.getMutatePolicies()];
         case 'get':
@@ -93,6 +94,9 @@ export abstract class CrudController<T extends ModelT<any>> {
         return [];
     }
     protected getQueryPolicies(): PolicyDescriptor[] {
+        return [];
+    }
+    protected getCreatePolicies(): PolicyDescriptor[] {
         return [];
     }
     protected getMutatePolicies(): PolicyDescriptor[] {
