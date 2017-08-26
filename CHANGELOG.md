@@ -17,6 +17,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **crud-controller:** add policies returned from getCreatePolicies to the create route
 * **crud-controller:** add policies returned from getQueryPolicies to the find and count routes
 * **router:** allow policies to have their own policies; flatten duplicate policies
+* **router:** log router reflector overview rather than listing all controllers by default
 * **server:** add startTime to the Server
 
 ### Bug Fixes

@@ -42,10 +42,14 @@ export class RouterReflector {
         return this._router;
     }
     
+    private controllersReflected: number = 0;
+    private routesReflected: number = 0;
     reflectServerRoutes(app: ExpressApp) {
         this.logger.verbose(`Loading routes...`);
         this.reflectRoutes(this.routerMeta.controllers);
         app.use(this.router.expressRouter);
+        this.logger.info(`${this.controllersReflected} controllers reflected.`);
+        this.logger.info(`${this.routesReflected} routes reflected.`);
         this.logger.info(`Finished loading routes.`);
     }
     reflectRoutes(controllers: any[], parentControllers?: any[]) {
@@ -65,7 +69,8 @@ export class RouterReflector {
         
         let meta: ControllerMetadata = Reflect.getOwnMetadata(ControllerMetadataSym, controllerProto);
         if (!meta) throw new Error(`Expecting class with @Controller decorator, could not reflect routes for ${controllerFn.name || controllerFn}.`);
-        this.logger.info(`Reflecting routes for controller ${controllerFn.name || controllerFn}`);
+        this.logger.verbose(`Reflecting routes for controller ${controllerFn.name || controllerFn}`);
+        this.controllersReflected++;
         
         parentControllers = parentControllers || [];
         let parentMeta: ControllerMetadata[] = parentControllers.map(pc => Reflect.getOwnMetadata(ControllerMetadataSym, pc.prototype));
@@ -135,6 +140,7 @@ export class RouterReflector {
         
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose(`& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
+        this.routesReflected++;
         
         let addRouteFn = (<any>this.router.expressRouter)[routeMeta.method].bind(this.router.expressRouter);
         let fullRouterFn = this.createFullRouterFn(policies, boundRoute, transactionName);
