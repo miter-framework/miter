@@ -258,7 +258,7 @@ export class RouterReflector {
                 this.logger.verbose(`{${requestIndex}} route complete`);
             }
             catch (e) {
-                this.logger.error(`{${requestIndex}} route threw an exception. unfinishedRoutes: ${--this.unfinishedRoutes}`);
+                this.logger.error(`{${requestIndex}} route threw an exception. unfinishedRoutes: ${this.unfinishedRoutes}`);
                 let errorResult: boolean | Promise<boolean> = this.errorHandler.handleRouteError(e, req, res);
                 if (typeof errorResult !== 'boolean' && typeof errorResult !== 'undefined' && errorResult !== null) errorResult = await errorResult;
                 if (initialStatusCode === res.statusCode) {

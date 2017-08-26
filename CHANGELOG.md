@@ -23,6 +23,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **orm:** fix Db.sum typings
 * **router:** account for routes completed when they complete without an error
+* **router:** only account for routes completing once even when they complete with an error
 
 ### Breaking Changes
 
