@@ -366,7 +366,15 @@ export abstract class CrudController<T extends ModelT<any>> {
             results = await Promise.all(results.map((result: any) => this.transformUpdateResult(req, res, result)));
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
             
-            let result = returning ? results[0] : undefined;
+            let result: T | undefined;
+            if (returning) {
+                result = results[0];
+                if (result) {
+                    result = (await this.transformResult(req, res, result))!;
+                    if (res.statusCode !== initialStatusCode || res.headersSent) return;
+                }
+            }
+            
             await this.afterUpdate(req, res, id, result);
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
             
