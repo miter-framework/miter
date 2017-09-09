@@ -18,6 +18,7 @@ export function Sanitize<T extends ModelT<PkType>>(fn: SanitizeFn<T>) {
         
         proto.toJSON = function(this: T) {
             let clone = _.cloneDeep(this);
+            clone = Object.assign({}, clone);
             fn.call(this, clone);
             return clone;
         };

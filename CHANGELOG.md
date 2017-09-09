@@ -20,6 +20,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** allow policies to have their own policies; flatten duplicate policies
 * **router:** log router reflector overview rather than listing all controllers by default
 * **server:** add startTime to the Server
+* **decorators:** esnure the Sanitize decorator drops the prototype when cloning the model
 
 ### Bug Fixes
 
