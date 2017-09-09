@@ -206,7 +206,10 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
     }
     
     async save(t: T, transaction?: TransactionImpl) {
-        let [result, created] = await this.findOrCreate({ id: t.id }, t, transaction);
+        let result: T;
+        let _: any;
+        if (!t.id) result = await this.create(t, transaction);
+        else [_, result] = await this.update(t.id, t, true, transaction);
         return result;
     }
     
