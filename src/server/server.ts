@@ -13,7 +13,7 @@ import { TemplateService } from '../services/template.service';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
 import { wrapCallback } from '../util/wrap-callback';
-import { monkeypatchRequest } from './static-middleware';
+import { monkeypatchResponseSendFile, monkeypatchResponseRender } from './static-middleware';
 
 import * as http from 'http';
 import * as https from 'https';
@@ -115,13 +115,13 @@ export class Server {
         this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
         if (this.meta.allowCrossOrigin) {
             this.logger.warn(`Server starting with cross-origin policy enabled. This should not be enabled in production.`);
-            this._app.use(function(req: Request, res: Response, next) {
+            this._app.use(function(req: Request, res: Response, next: Function) {
                 res.header("Access-Control-Allow-Origin", "*");
                 res.header("Access-Control-Allow-Headers", req.header("Access-Control-Request-Headers"));
                 next();
             });
         }
-        this._app.use(monkeypatchRequest);
+        this._app.use(monkeypatchResponseSendFile);
         if (this.meta.router && this.meta.router.middleware && this.meta.router.middleware.length) {
             this._app.use(...this.meta.router.middleware);
         }
@@ -130,18 +130,12 @@ export class Server {
             if (viewsMeta.fileRoot) this._app.set('views', viewsMeta.fileRoot);
             if (typeof viewsMeta.engine === 'string') this._app.set('view engine', viewsMeta.engine);
             else if (viewsMeta.engine) {
-                this._app.set('view engine', 'pug');
                 this.injector.provide({
                     provide: TemplateService,
                     useClass: viewsMeta.engine
                 });
+                this._app.use(monkeypatchResponseRender(this.injector, this._app));
             }
-            //TODO: remove dependency on pug
-            this._app.engine('pug', wrapCallback(async (path: string, opts: any) => {
-                let templateService = this.injector.resolveInjectable(TemplateService);
-                if (!templateService) throw new Error(`Cannot render using the miter view engine. No TemplateService provided`);
-                return await templateService.render(path, opts);
-            }));
         }
     }
     
