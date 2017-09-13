@@ -6,6 +6,7 @@ import { Injectable } from '../../decorators/services/injectable.decorator';
 import { OrmMetadataT, OrmMetadata } from './orm';
 import { SSLMetadataT, SSLMetadata } from './ssl';
 import { RouterMetadataT, RouterMetadata } from './router';
+import { ViewsMetadataT, ViewsMetadata } from './views';
 
 import { ProvideMetadata } from './provide';
 
@@ -26,6 +27,7 @@ export type ServerMetadataT = {
     orm?: OrmMetadataT,
     
     services?: CtorT<ServiceT>[],
+    views?: ViewsMetadataT | null,
     
     inject?: ProvideMetadata<any>[],
     
@@ -45,6 +47,9 @@ export class ServerMetadata implements ServerMetadataT {
         
         if (this._meta.router) this._router = new RouterMetadata(this._meta.router || {}, injector);
         else if (injector) injector.provide({ provide: RouterMetadata, useValue: this._router });
+        
+        if (this._meta.views) this._views = new ViewsMetadata(this._meta.views || {}, injector);
+        else if (injector) injector.provide({ provide: ViewsMetadata, useValue: this._views });
         
         if (this._meta.jwt) this._jwt = new JwtMetadata(this._meta.jwt, injector);
         else if (injector) injector.provide({ provide: JwtMetadata, useValue: this._jwt });
@@ -69,6 +74,11 @@ export class ServerMetadata implements ServerMetadataT {
     private _router: RouterMetadata | null = null;
     get router() {
         return this._router;
+    }
+    
+    private _views: ViewsMetadata | null = null;
+    get views() {
+        return this._views;
     }
     
     private _orm: OrmMetadata;

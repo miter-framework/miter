@@ -16,4 +16,6 @@ export * from './cls-namespace.service';
 
 export * from './router.service';
 
+export * from './template.service';
+
 export * from './transaction.service';

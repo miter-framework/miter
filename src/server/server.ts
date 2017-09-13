@@ -9,8 +9,10 @@ import { ServerMetadataT, ServerMetadata } from '../metadata/server/server';
 import { OrmReflector } from '../orm/reflector';
 import { ServiceReflector } from '../services/reflector';
 import { LoggerCore } from '../services/logger-core';
+import { TemplateService } from '../services/template.service';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
+import { wrapCallback } from '../util/wrap-callback';
 import { monkeypatchRequest } from './static-middleware';
 
 import * as http from 'http';
@@ -122,6 +124,23 @@ export class Server {
         this._app.use(monkeypatchRequest);
         if (this.meta.router && this.meta.router.middleware && this.meta.router.middleware.length) {
             this._app.use(...this.meta.router.middleware);
+        }
+        if (this.meta.views) {
+            let viewsMeta = this.meta.views;
+            if (viewsMeta.fileRoot) this._app.set('views', viewsMeta.fileRoot);
+            if (typeof viewsMeta.engine === 'string') this._app.set('view engine', viewsMeta.engine);
+            else if (viewsMeta.engine) {
+                this._app.set('view engine', 'miter');
+                this.injector.provide({
+                    provide: TemplateService,
+                    useClass: viewsMeta.engine
+                });
+            }
+            this._app.engine('miter', wrapCallback(async (path: string, opts: any) => {
+                let templateService = this.injector.resolveInjectable(TemplateService);
+                if (!templateService) throw new Error(`Cannot render using the miter view engine. No TemplateService provided`);
+                return await templateService.render(path, opts);
+            }));
         }
     }
     

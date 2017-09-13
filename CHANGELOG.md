@@ -21,6 +21,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** log router reflector overview rather than listing all controllers by default
 * **server:** add startTime to the Server
 * **decorators:** esnure the Sanitize decorator drops the prototype when cloning the model
+* **services:** add TemplateService and add views metadata to server metadata
 
 ### Bug Fixes
 
