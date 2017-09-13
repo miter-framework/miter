@@ -130,13 +130,14 @@ export class Server {
             if (viewsMeta.fileRoot) this._app.set('views', viewsMeta.fileRoot);
             if (typeof viewsMeta.engine === 'string') this._app.set('view engine', viewsMeta.engine);
             else if (viewsMeta.engine) {
-                this._app.set('view engine', 'miter');
+                this._app.set('view engine', 'pug');
                 this.injector.provide({
                     provide: TemplateService,
                     useClass: viewsMeta.engine
                 });
             }
-            this._app.engine('miter', wrapCallback(async (path: string, opts: any) => {
+            //TODO: remove dependency on pug
+            this._app.engine('pug', wrapCallback(async (path: string, opts: any) => {
                 let templateService = this.injector.resolveInjectable(TemplateService);
                 if (!templateService) throw new Error(`Cannot render using the miter view engine. No TemplateService provided`);
                 return await templateService.render(path, opts);
