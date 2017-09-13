@@ -72,7 +72,7 @@
     "contributors": [
         "Brandon Slade <brandonyoyoslade@gmail.com>"
     ],
-    "license": "ISC",
+    "license": "MIT",
     "private": false,
     "repository": {
         "type": "git",
