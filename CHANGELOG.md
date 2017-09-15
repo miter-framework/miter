@@ -22,6 +22,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **server:** add startTime to the Server
 * **decorators:** esnure the Sanitize decorator drops the prototype when cloning the model
 * **services:** add TemplateService and add views metadata to server metadata
+* **dependencies:** change express to be a peer dependency
 
 ### Bug Fixes
 
@@ -38,6 +39,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
     and mutate policies are not added to destroy routes.
     If you need to add a policy to any of these, override `CrudController.getMutatePolicies`,
     `CrudController.getCreatePolicies` or `CrudController.getDestroyPolicies`.
+* `express` is now a peer dependency, so you need to explicitly add it to your servers' package.json files.
 
 
 
