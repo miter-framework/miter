@@ -13,6 +13,7 @@ import { TemplateService } from '../services/template.service';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
 import { wrapCallback } from '../util/wrap-callback';
+import { getMiterVersion } from '../util/get-miter-version';
 import { monkeypatchResponseSendFile, monkeypatchResponseRender } from './static-middleware';
 
 import * as http from 'http';
@@ -65,7 +66,7 @@ export class Server {
         this.startTime = new Date();
         
         try {
-            this.logger.info(`Initializing miter server...`);
+            this.logger.info(`Initializing miter server. (Miter version ${getMiterVersion()})`);
             if (this.meta.router) await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();

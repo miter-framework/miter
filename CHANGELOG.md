@@ -5,6 +5,19 @@
 
 Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
+### Features
+
+* **server:** print Miter's package version when starting a server
+
+
+
+<a name="0.5.1"></a>
+## [0.5.1](https://github.com/miter-framework/miter/compare/0.5.0...0.5.1) (2017-10-16)
+
+### Features
+
+* **server:** print Miter's package version when starting a server
+
 
 
 <a name="0.5.0"></a>
