@@ -9,6 +9,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **server:** print Miter's package version when starting a server
 
+### Bug Fixes
+
+* **dependencies:** add express as both a peer dependency and a dev dependency to fix CI
+
 
 
 <a name="0.5.1"></a>
@@ -17,6 +21,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Features
 
 * **server:** print Miter's package version when starting a server
+
+### Bug Fixes
+
+* **dependencies:** add express as both a peer dependency and a dev dependency to fix CI
 
 
 
