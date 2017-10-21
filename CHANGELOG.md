@@ -12,6 +12,16 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Bug Fixes
 
 * **dependencies:** add express as both a peer dependency and a dev dependency to fix CI
+* **db:** transform association clauses as $in if they are arrays
+
+
+
+<a name="0.5.2"></a>
+## [0.5.2](https://github.com/miter-framework/miter/compare/0.5.1...0.5.2) (2017-10-20)
+
+### Bug Fixes
+
+* **db:** transform association clauses as $in if they are arrays
 
 
 

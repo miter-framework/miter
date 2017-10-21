@@ -469,30 +469,42 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
                             delete (<any>query)[transform.fieldName];
                         }
                         else {
-                            if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
                             let foreignDb = transform.foreignDb();
                             let $and: any;
-                            [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
+                            if (Array.isArray(fieldVal)) {
+                                let ids: number[] = [];
+                                for (let val of fieldVal) {
+                                    if (typeof val === 'number') ids.push(val);
+                                    else if (typeof val === 'object' && typeof val.id === 'number') ids.push(val.id);
+                                    else throw new Error(`Failed to parse $in array for element: ${val}`);
+                                }
+                                $and = { [transform.columnName]: { $in: ids } };
+                            }
+                            else {
+                                if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
+                                [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
+                            }
                             delete (<any>query)[transform.fieldName];
                             this.composeAnd(query, $and);
                         }
                     }
                     break;
                 case 'has-one':
-                    if (typeof fieldVal !== 'undefined') {
-                        if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
-                        let foreignDb = transform.foreignDb();
-                        let $and: any;
-                        [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
-                        delete (<any>query)[transform.fieldName];
-                        this.composeAnd(query, $and);
-                    }
-                    break;
                 case 'has-many':
                     if (typeof fieldVal !== 'undefined') {
                         if (implicitIncludes.indexOf(transformedPrefix) === -1) implicitIncludes.push(transformedPrefix);
                         let foreignDb = transform.foreignDb();
                         let $and: any;
+                        if (typeof fieldVal === 'number') fieldVal = [fieldVal];
+                        if (Array.isArray(fieldVal)) {
+                            let ids: number[] = [];
+                            for (let val of fieldVal) {
+                                if (typeof val === 'number') ids.push(val);
+                                else if (typeof val === 'object' && typeof val.id === 'number') ids.push(val.id);
+                                else throw new Error(`Failed to parse $in array for element: ${val}`);
+                            }
+                            fieldVal = { [transform.pkName]: ids };
+                        }
                         [$and, implicitIncludes] = foreignDb.transformQueryWhere(fieldVal, implicitIncludes, transformedPrefix);
                         delete (<any>query)[transform.fieldName];
                         this.composeAnd(query, $and);
