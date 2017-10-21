@@ -416,6 +416,7 @@ export class DbImpl<T extends ModelT<PkType>, TInstance, TAttributes> implements
         if (!query) throw new Error(`Cannot compose $and. Invalid query: ${query}.`);
         if (Array.isArray(query)) query.push({ $and: $and });
         else if (!query.$and) query.$and = $and;
+        else if (Array.isArray(query.$and)) query.$and.push($and);
         else query.$and = [query.$and, $and];
     }
     private addPrefix(query: any, prefix: string) {

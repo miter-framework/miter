@@ -13,6 +13,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **dependencies:** add express as both a peer dependency and a dev dependency to fix CI
 * **db:** transform association clauses as $in if they are arrays
+* **db:** correct invalid composition of 3 or more $and clauses
 
 
 
@@ -22,6 +23,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Bug Fixes
 
 * **db:** transform association clauses as $in if they are arrays
+* **db:** correct invalid composition of 3 or more $and clauses
 
 
 
