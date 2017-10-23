@@ -8,6 +8,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Features
 
 * **server:** print Miter's package version when starting a server
+* **jwt:** allow the JWT policies to specify where to find the authorization token
 
 ### Bug Fixes
 
@@ -19,6 +20,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 <a name="0.5.2"></a>
 ## [0.5.2](https://github.com/miter-framework/miter/compare/0.5.1...0.5.2) (2017-10-20)
+
+### Features
+
+* **jwt:** allow the JWT policies to specify where to find the authorization token
 
 ### Bug Fixes
 

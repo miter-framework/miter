@@ -21,7 +21,8 @@ export class JwtBasePolicy {
         this.jwtHandler = expressJwt({
             secret: jwtMeta.secret,
             userProperty: this.property,
-            credentialsRequired: false
+            credentialsRequired: false,
+            getToken: req => this.getToken(req)
         });
         this.logger = Logger.fromSubsystem(loggerCore, 'jwt-policy');
     }
@@ -43,8 +44,18 @@ export class JwtBasePolicy {
         return jwt;
     }
     
+    protected getToken(req: Request): string | null {
+        if (req.headers.authorization) {
+            let split = req.headers.authorization.split(' ');
+            if (split[0] === 'Bearer' && split.length === 2) {
+                return split[1];
+            }
+        }
+        return null;
+    }
+    
     private async getJwt(req: Request, res: Response) {
-        let reqProperty = this.property!
+        let reqProperty = this.property!;
         if (this.jwtHandler) {
             try {
                 await wrapPromise<void>(this.jwtHandler, req, res);
