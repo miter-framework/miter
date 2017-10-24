@@ -174,19 +174,19 @@ describe('RouterReflector', () => {
             let test = () => fn([], inst, 'a', {}, <any>{ path: 'x' });
             expect(test).to.throw(/no method set/i);
         });
-        it('should invoke transformPathPart with the route path if it exists on the controller instance', () => {
+        it('should invoke transformRoutePathPart with the route path if it exists on the controller instance', () => {
             let inst = injector.resolveInjectable(ComplexController)!;
-            sinon.spy(inst, 'transformPathPart');
+            sinon.spy(inst, 'transformRoutePathPart');
             routerReflector.reflectControllerRoutes([], ComplexController);
-            expect(inst.transformPathPart).to.have.been.calledWith('healthCheck', 'x');
-            expect(inst.transformPathPart).to.have.returned('healthCheckxxx');
+            expect(inst.transformRoutePathPart).to.have.been.calledWith('healthCheck', 'x');
+            expect(inst.transformRoutePathPart).to.have.returned('healthCheckxxx');
         });
-        it('should invoke transformPath with the full route if it exists on the controller instance', () => {
+        it('should invoke transformRoutePath with the full route if it exists on the controller instance', () => {
             let inst = injector.resolveInjectable(ComplexController)!;
-            sinon.spy(inst, 'transformPath');
+            sinon.spy(inst, 'transformRoutePath');
             routerReflector.reflectControllerRoutes([], ComplexController);
-            expect(inst.transformPath).to.have.been.calledWith('healthCheck', '/api/healthCheckxxx');
-            expect(inst.transformPath).to.have.returned('/API/HEALTHCHECKXXX');
+            expect(inst.transformRoutePath).to.have.been.calledWith('healthCheck', '/api/healthCheckxxx');
+            expect(inst.transformRoutePath).to.have.returned('/API/HEALTHCHECKXXX');
         });
         it('should invoke transformRoutePolicies with the full list of route policies if it exists on the controller instance', () => {
             let inst = injector.resolveInjectable(ComplexController)!;

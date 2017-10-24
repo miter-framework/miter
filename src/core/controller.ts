@@ -7,8 +7,8 @@ export type TransformRouteT = {
 };
 
 export interface ControllerT {
-    transformPathPart?: { (routeFnName: string, part: string): string },
-    transformPath?: { (routeFnName: string, path: string): string },
+    transformRoutePathPart?: { (routeFnName: string, part: string): string },
+    transformRoutePath?: { (routeFnName: string, path: string): string },
     transformRoutePolicies?: { (routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] },
     
     transformRoute?: { (route: TransformRouteT): boolean | void }
