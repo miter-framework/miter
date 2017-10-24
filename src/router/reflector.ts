@@ -109,6 +109,8 @@ export class RouterReflector {
         let controllerName = this.getControllerName(controller);
         let transactionName = `${controllerName}#${routeFnName}`;
         
+        if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
+        
         let pathPart = routeMeta.path;
         if (typeof controller.transformPathPart === 'function') {
             pathPart = controller.transformPathPart(routeFnName, pathPart) || pathPart;
@@ -132,13 +134,23 @@ export class RouterReflector {
         if (typeof controller.transformRoutePolicies === 'function') {
             policyDescriptors = controller.transformRoutePolicies(routeFnName, fullPath, policyDescriptors) || policyDescriptors;
         }
+        
+        if (typeof controller.transformRoute === 'function') {
+            let route = { routeFnName, fullPath, policyDescriptors };
+            let result = controller.transformRoute(route);
+            [routeFnName, fullPath, policyDescriptors] = [route.routeFnName, route.fullPath, route.policyDescriptors];
+            if (typeof result === 'boolean' && !result) {
+                this.logger.verbose(`... Skipping route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
+                return;
+            }
+        }
+        
         policyDescriptors = this.flattenPolicies(policyDescriptors);
         let policies = this.resolvePolicies(policyDescriptors);
         if (!controller[routeFnName]) throw new Error(`There is no route handler for ${controllerName}.${routeFnName}`);
         if (typeof controller[routeFnName] !== 'function') throw new Error(`The route handler for ${controllerName}.${routeFnName} is not a function`);
         let boundRoute = controller[routeFnName].bind(controller);
         
-        if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         this.logger.verbose(`& Adding route ${routeFnName} (${routeMeta.method.toUpperCase()} ${fullPath})`);
         this.routesReflected++;
         

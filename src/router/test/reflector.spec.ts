@@ -35,7 +35,10 @@ import { EmptyController,
          SimpleController, SimpleChildController, SimpleControllerRoot,
          MultiRouteController,
          PhishingController,
-         ComplexController } from './test-controllers';
+         ComplexController,
+         SkipRouteController,
+         KeepRouteController,
+         AmbivalentController } from './test-controllers';
 import { FakeRequest } from './fake-request';
 import { FakeResponse } from './fake-response';
 
@@ -165,6 +168,11 @@ describe('RouterReflector', () => {
         beforeEach(() => {
             fn = (<any>routerReflector).addRoute.bind(routerReflector);
         });
+        it('should throw an error if the route metadata has no method defined', () => {
+            let inst = injector.resolveInjectable(SimpleController)!;
+            let test = () => fn([], inst, 'a', {}, <any>{ path: 'x' });
+            expect(test).to.throw(/no method set/i);
+        });
         it('should invoke transformPathPart with the route path if it exists on the controller instance', () => {
             let inst = injector.resolveInjectable(ComplexController)!;
             sinon.spy(inst, 'transformPathPart');
@@ -186,15 +194,41 @@ describe('RouterReflector', () => {
             expect(inst.transformRoutePolicies).to.have.been.calledWith('healthCheck', '/API/HEALTHCHECKXXX', [Policy1, Policy2]);
             expect(inst.transformRoutePolicies).to.have.returned([Policy3, Policy1, Policy2]);
         });
+        it('should invoke transformRoute if it exists on the controller instance', () => {
+            let inst = injector.resolveInjectable(SkipRouteController)!;
+            sinon.spy(inst, 'transformRoute');
+            routerReflector.reflectControllerRoutes([], SkipRouteController);
+            expect(inst.transformRoute).to.have.been.calledWith({
+                routeFnName: 'healthCheck',
+                fullPath: '/health-check',
+                policyDescriptors: []
+            });
+        });
+        it('should not add a route if transformRoute returns false', () => {
+            let inst = injector.resolveInjectable(SkipRouteController)!;
+            let router = injector.resolveInjectable(RouterService)!;
+            sinon.stub(router.expressRouter, 'get');
+            routerReflector.reflectControllerRoutes([], SkipRouteController);
+            expect(router.expressRouter.get).not.to.have.been.called;
+        });
+        it('should add a route if transformRoute returns true', () => {
+            let inst = injector.resolveInjectable(KeepRouteController)!;
+            let router = injector.resolveInjectable(RouterService)!;
+            sinon.stub(router.expressRouter, 'get');
+            routerReflector.reflectControllerRoutes([], KeepRouteController);
+            expect(router.expressRouter.get).to.have.been.calledOnce;
+        });
+        it('should add a route if transformRoute returns a falsey value that is not false', () => {
+            let inst = injector.resolveInjectable(AmbivalentController)!;
+            let router = injector.resolveInjectable(RouterService)!;
+            sinon.stub(router.expressRouter, 'get');
+            routerReflector.reflectControllerRoutes([], AmbivalentController);
+            expect(router.expressRouter.get).to.have.been.calledOnce;
+        });
         it('should invoke resolvePolicies', () => {
             sinon.stub(routerReflector, 'resolvePolicies');
             routerReflector.reflectControllerRoutes([], ComplexController);
             expect((<any>routerReflector).resolvePolicies).to.have.been.calledWith([Policy3, Policy1, Policy2]);
-        });
-        it('should throw an error if the route metadata has no method defined', () => {
-            let inst = injector.resolveInjectable(SimpleController)!;
-            let test = () => fn([], inst, 'a', {}, <any>{ path: 'x' });
-            expect(test).to.throw(/no method set/i);
         });
         it('should throw an error if the route handler is not defined on the controller', () => {
             let inst = injector.resolveInjectable(EmptyController)!;

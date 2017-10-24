@@ -1,5 +1,6 @@
 import { Policy1, Policy2, Policy3 } from './test-policies';
 import { PolicyDescriptor } from '../../core/policy';
+import { TransformRouteT, ControllerT } from '../../core/controller';
 import { Controller } from '../../decorators/router/controller.decorator';
 import { Get } from '../../decorators/router/routes/get.decorator';
 import { Post } from '../../decorators/router/routes/post.decorator';
@@ -67,5 +68,40 @@ export class ComplexController {
     }
     transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
         return [Policy3, ...policies];
+    }
+    
+    transformRoute(route: TransformRouteT): boolean | void {
+        if (route.routeFnName === 'ambivalent') return;
+        return route.routeFnName !== 'skipThisRoute';
+    }
+}
+
+@Controller()
+export class SkipRouteController {
+    @Get('health-check')
+    async healthCheck(req: Request, res: Response) { }
+    
+    transformRoute(route: TransformRouteT): boolean | void {
+        return false;
+    }
+}
+
+@Controller()
+export class KeepRouteController {
+    @Get('health-check')
+    async healthCheck(req: Request, res: Response) { }
+    
+    transformRoute(route: TransformRouteT): boolean | void {
+        return true;
+    }
+}
+
+@Controller()
+export class AmbivalentController {
+    @Get('health-check')
+    async healthCheck(req: Request, res: Response) { }
+    
+    transformRoute(route: TransformRouteT): boolean | void {
+        return;
     }
 }
