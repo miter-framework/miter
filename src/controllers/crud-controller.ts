@@ -158,6 +158,10 @@ export abstract class CrudController<T extends ModelT<any>> {
         return result;
     }
     
+    protected async performDestroy(req: Request, res: Response, id: number) {
+        return await this.staticModel.db.destroy(id);
+    }
+    
     protected async beforeCreate(req: Request, res: Response, data: Object) {
     }
     protected async afterCreate(req: Request, res: Response, result: T) {
@@ -398,7 +402,8 @@ export abstract class CrudController<T extends ModelT<any>> {
         await this.beforeDestroy(req, res, id);
         if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
-        let destroyed = await this.staticModel.db.destroy(id);
+        let destroyed = await this.performDestroy(req, res, id);
+        if (res.statusCode !== initialStatusCode || res.headersSent) return;
         
         if (destroyed) {
             await this.afterDestroy(req, res, id);

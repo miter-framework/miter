@@ -1077,10 +1077,19 @@ describe('CrudController', () => {
                     await inst.destroy(req, res);
                     expect(TestModel.db.destroy).not.to.have.been.called;
                 });
-                it('should invoke db.destroy with the ID', async () => {
-                    sinon.stub(TestModel.db, 'destroy');
+                it('should invoke performDestroy with the ID', async () => {
+                    sinon.stub(inst, 'performDestroy');
                     await inst.destroy(req, res);
-                    expect(TestModel.db.destroy).to.have.been.calledOnce.calledWith(+req.params.id);
+                    expect((<any>inst).performDestroy).to.have.been.calledOnce.calledWith(req, res, +req.params.id);
+                });
+                it('should short circuit if performDestroy sends a response', async () => {
+                    sinon.stub(inst, 'afterDestroy');
+                    sinon.stub(inst, 'performDestroy').callsFake((req, res) => {
+                        res.status(123).send(`Il n'est pas mort`);
+                        return true;
+                    });
+                    await inst.destroy(req, res);
+                    expect((<any>inst).afterDestroy).not.to.have.been.called;
                 });
                 
                 describe('when db.destroy returns true', () => {
@@ -1139,6 +1148,22 @@ describe('CrudController', () => {
             describe('that promise', () => {
                 it('should resolve', async () => {
                     await (<any>inst).afterDestroy(void(0), void(0), 42, {});
+                });
+            });
+        });
+        
+        describe('.performDestroy', () => {
+            it('should return a promise', () => {
+                let result = (<any>inst).performDestroy();
+                expect(result).to.be.an.instanceOf(Promise);
+            });
+            describe('that promise', () => {
+                it('should resolve to the results of querying the model DB', async () => {
+                    let expectedResult = Symbol();
+                    sinon.stub(TestModel.db, 'destroy').returns(Promise.resolve(expectedResult));
+                    let promise = (<any>inst).performDestroy(void(0), void(0), 42);
+                    let result = await promise;
+                    expect(result).to.eq(expectedResult);
                 });
             });
         });

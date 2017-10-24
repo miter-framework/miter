@@ -9,6 +9,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **server:** print Miter's package version when starting a server
 * **jwt:** allow the JWT policies to specify where to find the authorization token
+* **crud-controller:** allow custom implementations of performDestroy
 
 ### Bug Fixes
 
@@ -24,6 +25,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Features
 
 * **jwt:** allow the JWT policies to specify where to find the authorization token
+* **crud-controller:** allow custom implementations of performDestroy
 
 ### Bug Fixes
 
