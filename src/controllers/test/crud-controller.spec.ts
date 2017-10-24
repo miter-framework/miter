@@ -122,15 +122,15 @@ describe('CrudController', () => {
         });
     });
     
-    describe('.transformPathPart', () => {
+    describe('.transformRoutePathPart', () => {
         it('should replace %%PLURAL_NAME%% with the plural route path', () => {
-            expect(inst.transformPathPart('blah', `one/%%PLURAL_NAME%%/three`)).to.eq(`one/${inst.pluralName}/three`);
+            expect(inst.transformRoutePathPart('blah', `one/%%PLURAL_NAME%%/three`)).to.eq(`one/${inst.pluralName}/three`);
         });
         it('should replace %%SINGULAR_NAME%% with the singular route path', () => {
-            expect(inst.transformPathPart('blah', `one/%%SINGULAR_NAME%%/three`)).to.eq(`one/${inst.singularName}/three`);
+            expect(inst.transformRoutePathPart('blah', `one/%%SINGULAR_NAME%%/three`)).to.eq(`one/${inst.singularName}/three`);
         });
         it('should replace all instances of both route paths', () => {
-            expect(inst.transformPathPart('blah', `one/%%SINGULAR_NAME%%/%%PLURAL_NAME%%/%%SINGULAR_NAME%%/%%PLURAL_NAME%%/three`))
+            expect(inst.transformRoutePathPart('blah', `one/%%SINGULAR_NAME%%/%%PLURAL_NAME%%/%%SINGULAR_NAME%%/%%PLURAL_NAME%%/three`))
                 .to.eq(`one/${inst.singularName}/${inst.pluralName}/${inst.singularName}/${inst.pluralName}/three`);
         });
     });

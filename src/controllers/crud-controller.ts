@@ -69,7 +69,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         return this._pluralName;
     }
     
-    transformPathPart(routeFnName: string, part: string): string {
+    transformRoutePathPart(routeFnName: string, part: string): string {
         return part.replace(/%%PLURAL_NAME%%/g, this._pluralName).replace(/%%SINGULAR_NAME%%/g, this._singularName);
     }
     transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {

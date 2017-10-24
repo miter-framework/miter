@@ -96,6 +96,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 * **miter:** remove dependency on root-require
 
+### Breaking Changes
+
+* `transformPath` and `transformPathPart` are now called `transformRoutePath` and `transformRoutePathPart`.
+
 
 
 <a name="0.5.4"></a>

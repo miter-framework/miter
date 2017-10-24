@@ -121,8 +121,8 @@ export class RouterReflector {
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         
         let pathPart = routeMeta.path;
-        if (typeof controller.transformPathPart === 'function') {
-            pathPart = controller.transformPathPart(routeFnName, pathPart) || pathPart;
+        if (typeof controller.transformRoutePathPart === 'function') {
+            pathPart = controller.transformRoutePathPart(routeFnName, pathPart) || pathPart;
         }
         let fullPath = joinRoutePaths(...[
             this.routerMeta.path,
@@ -130,8 +130,8 @@ export class RouterReflector {
             controllerMeta.path || '',
             pathPart
         ]);
-        if (controller.transformPath) {
-            fullPath = controller.transformPath(routeFnName, fullPath) || fullPath;
+        if (controller.transformRoutePath) {
+            fullPath = controller.transformRoutePath(routeFnName, fullPath) || fullPath;
         }
         
         let policyDescriptors = [
