@@ -60,10 +60,10 @@ export class ComplexController {
     })
     async healthCheck(req: Request, res: Response) { }
     
-    transformPathPart(routeFnName: string, part: string): string {
+    transformRoutePathPart(routeFnName: string, part: string): string {
         return routeFnName + part.repeat(3);
     }
-    transformPath(routeFnName: string, path: string): string {
+    transformRoutePath(routeFnName: string, path: string): string {
         return path.toUpperCase();
     }
     transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
