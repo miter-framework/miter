@@ -11,12 +11,22 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **jwt:** allow the JWT policies to specify where to find the authorization token
 * **crud-controller:** allow custom implementations of performDestroy
 * **router:** add transformRoute hook to allow controllers to programmatically modify or skip routes
+* **crud-controller:** allow CrudController.performQuery to return .total instead of .count
 
 ### Bug Fixes
 
 * **dependencies:** add express as both a peer dependency and a dev dependency to fix CI
 * **db:** transform association clauses as $in if they are arrays
 * **db:** correct invalid composition of 3 or more $and clauses
+
+
+
+<a name="0.5.3"></a>
+## [0.5.3](https://github.com/miter-framework/miter/compare/0.5.2...0.5.3) (2017-10-27)
+
+### Features
+
+* **crud-controller:** allow CrudController.performQuery to return .total instead of .count
 
 
 

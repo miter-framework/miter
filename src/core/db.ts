@@ -8,7 +8,9 @@ export type DestroyQueryT = Sql.DestroyOptions;
 
 export interface CountAllResults<T> {
     count: number;
-    results: T[]
+    results: T[];
+    page?: number;
+    perPage?: number;
 };
 export interface Db<T> {
     // create(t: (T | Object)[]): Promise<T[]>;

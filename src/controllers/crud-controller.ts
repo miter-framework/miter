@@ -123,14 +123,22 @@ export abstract class CrudController<T extends ModelT<any>> {
         let oldResults = results.results;
         let newResults: T[] = [];
         
+        let filteredCount = 0;
         for (let q = 0; q < oldResults.length; q++) {
             let transformed = await this.transformResult(req, res, oldResults[q]);
             if (res.statusCode !== initialStatusCode || res.headersSent) return;
             if (transformed) newResults.push(transformed);
+            else filteredCount++;
         }
+        let count = (typeof results.count === 'number' ? results.count :
+              typeof (<any>results).total === 'number' ? (<any>results).total :
+                                                         newResults.length);
+        count -= filteredCount;
         return {
             results: newResults,
-            count: results.count
+            count: count,
+            page: results.page,
+            perPage: results.perPage
         };
     }
     
@@ -273,8 +281,8 @@ export abstract class CrudController<T extends ModelT<any>> {
             
             res.status(HTTP_STATUS_OK).json({
                 results: results.results,
-                page: page,
-                perPage: perPage,
+                page: (<any>results).page || page,
+                perPage: (<any>results).perPage || perPage,
                 total: results.count
             });
         }
