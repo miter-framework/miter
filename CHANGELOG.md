@@ -21,8 +21,8 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 
 
-<a name="0.5.3"></a>
-## [0.5.3](https://github.com/miter-framework/miter/compare/0.5.2...0.5.3) (2017-10-27)
+<a name="0.5.4"></a>
+## [0.5.4](https://github.com/miter-framework/miter/compare/0.5.2...0.5.4) (2017-10-27)
 
 ### Features
 

@@ -132,7 +132,7 @@ export abstract class CrudController<T extends ModelT<any>> {
         }
         let count = (typeof results.count === 'number' ? results.count :
               typeof (<any>results).total === 'number' ? (<any>results).total :
-                                                         newResults.length);
+                                                         oldResults.length);
         count -= filteredCount;
         return {
             results: newResults,

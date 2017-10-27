@@ -771,11 +771,23 @@ describe('CrudController', () => {
                     let finalResults = await transformQueryResults(req, res, { results: results, count: results.length });
                     expect(finalResults.results).to.deep.eq([2, 4, 6]);
                 });
-                it('should not change the result count even if any results are trimmed', async () => {
+                it('should change the result count if any results are trimmed', async () => {
                     let results = [1, 2, 3, 4, 5, 6];
                     let trStub = sinon.stub(inst, 'transformResult').callsFake((req, res, val: number) => val % 2 === 0 ? val : undefined);
                     let finalResults = await transformQueryResults(req, res, { results: results, count: results.length });
-                    expect(finalResults.count).to.eq(6);
+                    expect(finalResults.count).to.eq(3);
+                });
+                it(`should return the original result's 'total' if it is defined but 'count' is not`, async () => {
+                    let results = [1, 2, 3, 4, 5, 6];
+                    let trStub = sinon.stub(inst, 'transformResult').callThrough();
+                    let finalResults = await transformQueryResults(req, res, <any>{ results: results, total: 42 });
+                    expect(finalResults.count).to.eq(42);
+                });
+                it(`should return length of the results array as 'count' if neither 'count' nor 'total' is defined`, async () => {
+                    let results = [1, 2, 3, 4, 5, 6];
+                    let trStub = sinon.stub(inst, 'transformResult').callThrough();
+                    let finalResults = await transformQueryResults(req, res, <any>{ results: results });
+                    expect(finalResults.count).to.eq(results.length);
                 });
                 it('should short circuit if transformResult sets a new status code or sends headers', async () => {
                     let results = [1, 2, 3, 4, 5, 6];
