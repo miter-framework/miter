@@ -79,10 +79,10 @@
     "private": false,
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/aboveyou00/miter.git"
+        "url": "git+https://github.com/miter-framework/miter.git"
     },
     "bugs": {
-        "url": "https://github.com/aboveyou00/miter/issues"
+        "url": "https://github.com/miter-framework/miter/issues"
     },
-    "homepage": "https://github.com/aboveyou00/miter#readme"
+    "homepage": "https://github.com/miter-framework/miter#readme"
 }
