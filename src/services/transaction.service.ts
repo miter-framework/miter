@@ -2,19 +2,23 @@ import { ClsNamespaceService } from './cls-namespace.service';
 import { TransactionT } from '../core/transaction';
 import { Service } from '../decorators/services/service.decorator';
 import { Name } from '../decorators/services/name.decorator';
-import { Sequelize } from '../orm/sequelize';
 import { Logger } from './logger';
+import { ORMService } from './orm.service';
 
 @Service()
 @Name('transactions')
 export class TransactionService {
-    constructor(private sequelize: Sequelize, private logger: Logger, private namespace: ClsNamespaceService) {
+    constructor(
+        private orm: ORMService,
+        private logger: Logger,
+        private namespace: ClsNamespaceService
+    ) {
     }
     
     async start() { }
     
     get current(): TransactionT | undefined {
-        return this.sequelize.currentTransaction;
+        return this.orm.currentTransaction;
     }
     
     run<T = void>(transactionName: string, fn: () => Promise<T>): Promise<T>;
@@ -25,7 +29,7 @@ export class TransactionService {
             detach = false;
         }
         return await this.namespace.runAndReturn(async () => {
-            let t = await this.sequelize.transaction(transactionName, detach ? null : this.current);
+            let t = await this.orm.transaction(transactionName, detach ? null : this.current);
             if (!t) return await fn!();
             
             this.logger.verbose(`creating transaction (${t.fullName})`);

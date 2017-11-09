@@ -1,10 +1,5 @@
-import * as Sql from 'sequelize';
 import { TransactionT } from './transaction';
-
-export type QueryT = Sql.FindOptions;
-export type FindOrCreateQueryT = Sql.FindOrInitializeOptions<any>;
-export type CountQueryT = Sql.CountOptions;
-export type DestroyQueryT = Sql.DestroyOptions;
+import { QueryT, FindOrCreateQueryT, CountQueryT, DestroyQueryT, WhereOptions } from '../metadata/orm/query';
 
 export interface CountAllResults<T> {
     count: number;
@@ -17,13 +12,13 @@ export interface Db<T> {
     create(t: (T | Object)[]): Promise<boolean>;
     create(t: T | Object): Promise<T>;
     
-    findById(id: string | number, options?: QueryT): Promise<T | null>;
-    findOne(query: QueryT): Promise<T | null>;
-    findOrCreate(query: string | Sql.WhereOptions, defaults?: Object | T): Promise<[T, boolean]>;
-    findAndCountAll(query?: QueryT): Promise<CountAllResults<T>>;
-    findAll(query?: QueryT): Promise<T[]>;
-    all(query?: QueryT): Promise<T[]>;
-    count(query?: CountQueryT): Promise<number>;
+    findById(id: string | number, options?: QueryT<T>): Promise<T | null>;
+    findOne(query: QueryT<T>): Promise<T | null>;
+    findOrCreate(query: string | WhereOptions<T>, defaults?: Object | T): Promise<[T, boolean]>;
+    findAndCountAll(query?: QueryT<T>): Promise<CountAllResults<T>>;
+    findAll(query?: QueryT<T>): Promise<T[]>;
+    all(query?: QueryT<T>): Promise<T[]>;
+    count(query?: CountQueryT<T>): Promise<number>;
     
     max<T>(field: string): Promise<number>;
     min<T>(field: string): Promise<number>;
@@ -32,12 +27,12 @@ export interface Db<T> {
     save(t: T): Promise<T>;
     update(id: number | string, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
     update(t: T, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
-    update(query: QueryT, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
-    updateOrCreate(query: string | Sql.WhereOptions, defaults: Object | T) : Promise<[T, boolean]>;
+    update(query: QueryT<T>, replace: Object, returning?: boolean): Promise<[boolean | number, any]>;
+    updateOrCreate(query: string | WhereOptions<T>, defaults: Object | T) : Promise<[T, boolean]>;
     
     destroy(id: string | number): Promise<boolean>;
     destroy(t: T): Promise<boolean>;
-    destroy(query: DestroyQueryT): Promise<number>;
+    destroy(query: DestroyQueryT<T>): Promise<number>;
     
     fromJson(json: any): T;
 }

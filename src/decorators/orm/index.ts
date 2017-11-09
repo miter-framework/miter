@@ -9,7 +9,4 @@ export * from './pk.decorator';
 export * from './prop.decorator';
 export * from './sanitize.decorator';
 
-import * as Types from './types';
-export { Types };
-
 export * from './transaction.decorator';

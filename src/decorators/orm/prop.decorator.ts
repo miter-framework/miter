@@ -1,6 +1,6 @@
 import { PropMetadata, PropMetadataSym } from '../../metadata/orm/prop';
 import { ModelPropertiesSym } from '../../metadata/orm/model';
-import * as sequelize from 'sequelize';
+import { Types } from '../../metadata/orm/types';
 import 'reflect-metadata';
 
 export function Prop(columnName?: PropMetadata | string) {
@@ -16,13 +16,13 @@ export function Prop(columnName?: PropMetadata | string) {
         if (!meta.type) {
             let reflectType = Reflect.getMetadata('design:type', model, propertyName);
             let sequelizeType: any = null;
-            if (reflectType === String) sequelizeType = sequelize.STRING;
+            if (reflectType === String) sequelizeType = Types.string;
             else if (reflectType === Number) {
-                if (meta.primaryKey || meta.autoIncrement) sequelizeType = sequelize.INTEGER;
-                else sequelizeType = sequelize.FLOAT;
+                if (meta.primaryKey || meta.autoIncrement) sequelizeType = Types.integer;
+                else sequelizeType = Types.float;
             }
-            else if (reflectType === Date) sequelizeType = sequelize.DATE;
-            else if (reflectType === Boolean) sequelizeType = sequelize.BOOLEAN;
+            else if (reflectType === Date) sequelizeType = Types.date;
+            else if (reflectType === Boolean) sequelizeType = Types.boolean;
             else throw new Error(`Could not infer column type for model property: ${propertyName}`);
             meta.type = sequelizeType;
         }
