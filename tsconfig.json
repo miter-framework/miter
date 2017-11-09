@@ -21,7 +21,6 @@
             "express",
             "lodash",
             "node",
-            "sequelize",
             "pluralize"
         ]
     },

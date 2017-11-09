@@ -9,7 +9,7 @@ function isForeignModelSource(test: any): test is ForeignModelSource {
     return test && (isStaticModelT(test) || !!(<any>test).modelName || !!(<any>test).tableName || typeof test === 'function');
 }
 
-export function HasOne(propMeta?: HasOneMetadata | StaticModelT<ModelT<any>> | string) {
+export function HasOne(propMeta?: HasOneMetadata | StaticModelT<ModelT<any>>) {
     let meta: HasOneMetadata = {};
     if (isForeignModelSource(propMeta)) meta = { foreignModel: propMeta };
     else if (propMeta) meta = propMeta;

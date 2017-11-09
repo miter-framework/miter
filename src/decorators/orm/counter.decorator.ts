@@ -1,6 +1,6 @@
 import { PropMetadata } from '../../metadata/orm/prop';
 import { Prop } from './prop.decorator';
-import * as Types from './types';
+import { Types } from '../../metadata/orm/types';
 import * as _ from 'lodash';
 
 export function Counter(columnName?: PropMetadata | string) {
@@ -9,7 +9,7 @@ export function Counter(columnName?: PropMetadata | string) {
     else meta = columnName || {};
     
     return Prop(_.merge<PropMetadata>({
-        type: Types.INTEGER,
+        type: Types.integer,
         defaultValue: 0,
         allowNull: false
     }, meta));

@@ -6,7 +6,7 @@ export type TransformRouteT = {
     policyDescriptors: PolicyDescriptor[]
 };
 
-export interface ControllerT {
+export type ControllerT = {
     transformRoutePathPart?: { (routeFnName: string, part: string): string },
     transformRoutePath?: { (routeFnName: string, path: string): string },
     transformRoutePolicies?: { (routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] },

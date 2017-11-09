@@ -1,13 +1,14 @@
-import { DataTypeAbstract, DefineAttributeColumnReferencesOptions, DefineValidateOptions } from 'sequelize';
+// import { DataTypeAbstract, DefineAttributeColumnReferencesOptions, DefineValidateOptions } from 'sequelize';
+import { Types } from './types';
 
 export type ReferenceCallbackAction = 'CASCADE' | 'RESTRICT' | 'SET DEFAULT' | 'SET NULL' | 'NO ACTION';
 
 export type PropMetadata = {
     columnName?: string,
-    type?: string | DataTypeAbstract,
+    type?: Types,
     defaultValue?: any,
     
-    validate?: DefineValidateOptions,
+    // validate?: DefineValidateOptions,
     unique?: boolean | string | { name: string, msg: string },
     values?: string[],
     allowNull?: boolean,
@@ -17,7 +18,7 @@ export type PropMetadata = {
     
     comment?: string,
     
-    references?: DefineAttributeColumnReferencesOptions,
+    // references?: DefineAttributeColumnReferencesOptions,
     onUpdate?: ReferenceCallbackAction,
     onDelete?: ReferenceCallbackAction,
     

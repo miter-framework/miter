@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import _ = require('lodash');
-import { Model as SqlModel } from 'sequelize';
+// import { Model as SqlModel } from 'sequelize';
 
 import { StaticModelT, ModelT, PkType } from '../core/model';
 import { TransactionT } from '../core/transaction';
@@ -18,11 +18,11 @@ import { ModelHasOneAssociationsSym, HasOneMetadataSym, HasOneMetadata } from '.
 
 import { LoggerCore } from '../services/logger-core';
 import { Logger } from '../services/logger';
-import { Sequelize } from './sequelize';
+// import { Sequelize } from './sequelize';
 import { OrmTransformService } from '../services/orm-transform.service';
 import { TransactionService } from '../services/transaction.service';
 
-import { DbImpl } from './impl/db-impl';
+// import { DbImpl } from './impl/db-impl';
 
 type AssociationTypeDef = {
     sqlName: string,
@@ -40,25 +40,21 @@ export class OrmReflector {
         private loggerCore: LoggerCore,
         private ormMeta: OrmMetadata,
         private transactionService: TransactionService,
-        private ormTransform: OrmTransformService,
-        private sql: Sequelize
+        private ormTransform: OrmTransformService
     ) {
-        this.dbImplLogger = this.loggerCore.getSubsystem('db-impl');
     }
     
-    private dbImplLogger: Logger;
-    
     async init() {
-        this.logger.verbose(`Initializing ORM...`);
-        await this.sql.init();
+        // this.logger.verbose(`Initializing ORM...`);
+        // await this.sql.init();
         
-        let models = this.ormMeta.models;
-        this.reflectModels(models);
-        this.reflectAssociations(models);
-        this.createDbImpls(models);
+        // let models = this.ormMeta.models;
+        // this.reflectModels(models);
+        // this.reflectAssociations(models);
+        // this.createDbImpls(models);
         
-        await this.sql.sync();
-        this.logger.info(`Finished initializing ORM.`);
+        // await this.sql.sync();
+        // this.logger.info(`Finished initializing ORM.`);
     }
     
     reflectModels(models: StaticModelT<ModelT<PkType>>[]) {

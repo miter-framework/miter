@@ -16,6 +16,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **services:** add .listen service lifecycle hook
 * **injector:** allow the server to provide metadata defaults programmatically
 * **server-metadata:** invert control of server metadata objects
+* **orm:** extract the ORM functionality into a service which can be implemented in a separate package.
 
 ### Bug Fixes
 
@@ -88,6 +89,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 ### Breaking Changes
 
+* Sequelize has been removed from the main miter package. If you want to use Miter's ORM, you have to import
+  and configure a separate package manually. Currently, the only Miter ORM implementation is
+  [miter-sequelize](http://github.com/miter-framework/miter-sequelize). Installation and usage instructions are
+  documented there.
 * `transformPath` and `transformPathPart` are now called `transformRoutePath` and `transformRoutePathPart`.
 
 
