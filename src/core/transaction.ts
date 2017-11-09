@@ -1,4 +1,4 @@
-import * as Sql from 'sequelize';
+
 
 export interface TransactionT {
     readonly name: string;

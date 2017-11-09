@@ -7,6 +7,7 @@ export * from './error-handler';
 export * from './logger';
 export * from './logger-core';
 
+export * from './orm.service';
 export * from './orm-transform.service';
 export * from './snake-case-orm-transform.service';
 
