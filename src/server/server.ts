@@ -17,6 +17,7 @@ import { DatabaseMetadata } from '../metadata/server/database';
 import { OrmReflector } from '../orm/reflector';
 import { ServiceReflector } from '../services/reflector';
 import { LoggerCore } from '../services/logger-core';
+import { ORMService } from '../services/orm.service';
 import { TemplateService } from '../services/template.service';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
@@ -167,6 +168,8 @@ export class Server {
         if (ormMeta && (typeof ormMeta.enabled === 'undefined' || ormMeta.enabled) && dbMeta) {
             this.ormReflector = this._injector.resolveInjectable(OrmReflector)!;
             await this.ormReflector.init();
+            let serviceReflector = this._injector.resolveInjectable(ServiceReflector)!;
+            serviceReflector.reflectServices([ORMService]);
         }
         else if (ormMeta.models.length) {
             this.logger.warn(`Models included in server metadata, but no orm configuration defined.`);
@@ -176,6 +179,7 @@ export class Server {
     private serviceReflector: ServiceReflector;
     private async startServices() {
         this.serviceReflector = this._injector.resolveInjectable(ServiceReflector)!;
+        this.serviceReflector.reflectServices();
         await this.serviceReflector.startServices();
     }
     private async listenServices() {
