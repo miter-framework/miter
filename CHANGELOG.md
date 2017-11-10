@@ -18,6 +18,16 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **dependencies:** add express as both a peer dependency and a dev dependency to fix CI
 * **db:** transform association clauses as $in if they are arrays
 * **db:** correct invalid composition of 3 or more $and clauses
+* **miter:** remove dependency on root-require
+
+
+
+<a name="0.5.5"></a>
+## [0.5.5](https://github.com/miter-framework/miter/compare/0.5.4...0.5.5) (2017-11-10)
+
+### Bug Fixes
+
+* **miter:** remove dependency on root-require
 
 
 
