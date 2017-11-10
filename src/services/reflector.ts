@@ -20,20 +20,44 @@ export class ServiceReflector {
         private logger: Logger
     ) { }
     
-    async startServices() {
-        this.logger.verbose(`Starting services...`);
-        await this.reflectServices(this.serverMeta.services || []);
-        this.logger.info(`Finished starting services.`);
+    private _reflectedServices: ServiceT[] = [];
+    reflectServices(services: CtorT<ServiceT>[] = this.serverMeta.services) {
+        this.reflectServicesImpl(services);
+    }
+    private reflectServicesImpl(services: CtorT<ServiceT>[]) {
+        for (let serviceCtor of services) {
+            this.reflectService(serviceCtor);
+        }
+    }
+    reflectService(serviceFn: CtorT<ServiceT>): void {
+        let serviceName = serviceFn.name || serviceFn;
+        try {
+            let service = this.injector.resolveInjectable(serviceFn);
+            if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceName}`);
+            this._reflectedServices.push(service);
+        }
+        catch (e) {
+            this.logger.error(`Exception occurred when trying to inject service: ${serviceName}`);
+            this.logger.error(e);
+        }
     }
     
     private _startedServices: ServiceT[] = [];
-    async reflectServices(services: CtorT<ServiceT>[]) {
-        services = services || [];
+    async startServices() {
+        this.logger.verbose(`Starting services...`);
+        let result = await this.startServicesImpl();
+        this.logger.info(`Finished starting services.`);
+        return result;
+    }
+    async startServicesImpl() {
+        let services = this._reflectedServices;
+        this._reflectedServices = [];
         let failures = 0;
-        for (let q = 0; q < services.length; q++) {
-            let result = await this.reflectService(services[q]);
+        for (let service of services) {
+            let serviceName = service.constructor.name || service.constructor;
+            let result = await this.startService(service);
             if (!result) {
-                this.logger.error(`Failed to start service: ${services[q].name || services[q]}`);
+                this.logger.error(`Failed to start service: ${serviceName}`);
                 failures++;
             }
         }
@@ -47,11 +71,9 @@ export class ServiceReflector {
             return true;
         }
     }
-    async reflectService(serviceFn: CtorT<ServiceT>): Promise<boolean> {
-        let serviceName = serviceFn.name || serviceFn;
+    async startService(service: ServiceT) {
+        let serviceName = service.constructor.name || service.constructor;
         try {
-            let service = this.injector.resolveInjectable(serviceFn);
-            if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceName}`);
             let result = await service.start();
             if (typeof result === 'boolean' && !result) return false;
             this._startedServices.push(service);
@@ -130,7 +152,7 @@ export class ServiceReflector {
             return true;
         }
     }
-    async shutdownService(service: ServiceT): Promise<boolean> {
+    private async shutdownService(service: ServiceT): Promise<boolean> {
         let serviceName = `${service}`;
         try {
             if (typeof service.stop !== 'undefined') await service.stop();
