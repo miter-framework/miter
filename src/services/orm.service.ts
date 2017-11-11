@@ -10,6 +10,8 @@ export class ORMService {
         if (this.constructor === ORMService) throw new Error(`Failed to start ORM service. There is no default implementation. Did you look into miter-sequelize?`);
     }
     
+    async start() { }
+    
     get currentTransaction(): TransactionT | undefined {
         return this.namespace.get('transaction');
     }
