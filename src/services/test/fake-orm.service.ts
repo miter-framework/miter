@@ -1,10 +1,13 @@
 import { TransactionT } from '../../core/transaction';
 import { ORMService } from '../orm.service';
+import { ClsNamespaceService } from '../cls-namespace.service';
 import { FakeTransaction } from './fake-transaction';
 
 export class FakeORMService extends ORMService {
-    constructor() {
-        super();
+    constructor(
+        namespace: ClsNamespaceService
+    ) {
+        super(namespace);
     }
     
     async transaction(transactionName: string, transaction?: TransactionT): Promise<TransactionT> {
