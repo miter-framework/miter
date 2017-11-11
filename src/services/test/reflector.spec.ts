@@ -8,6 +8,7 @@ use(sinonChai);
 import { ServiceReflector } from '../reflector';
 import { LoggerCore } from '../logger-core';
 import { Injector } from '../../core/injector';
+import { ServiceT } from '../../core/service';
 import { ServerMetadata } from '../../metadata/server/server';
 import { Service } from '../../decorators/services/service.decorator';
 
@@ -137,23 +138,28 @@ describe('ServiceReflector', () => {
     });
     
     describe('.shutdownService', () => {
+        let fn: (service: ServiceT) => Promise<boolean>;
+        beforeEach(() => {
+            fn = (<any>serviceReflector).shutdownService.bind(serviceReflector);
+        });
+        
         it(`should invoke the service's stop function if it has one`, async () => {
             let lws = injector.resolveInjectable(LifecycleWorkService)!;
             let startStub = sinon.stub(lws, 'stop').callThrough();
-            await serviceReflector.shutdownService(lws);
+            await fn(lws);
             expect(lws.stop).to.have.been.calledOnce;
         });
         it('should return true if the service has no stop function', async () => {
             let nls = injector.resolveInjectable(NoLifecycleService)!;
-            expect(await serviceReflector.shutdownService(nls)).to.be.true;
+            expect(await fn(nls)).to.be.true;
         });
         it('should return true if the service stop function returns without throwing', async () => {
             let lws = injector.resolveInjectable(LifecycleWorkService)!;
-            expect(await serviceReflector.shutdownService(lws)).to.be.true;
+            expect(await fn(lws)).to.be.true;
         });
         it('should return false if the service stop function throws an error', async () => {
             let lts = injector.resolveInjectable(LifecycleThrowStopService)!;
-            expect(await serviceReflector.shutdownService(lts)).to.be.false;
+            expect(await fn(lts)).to.be.false;
         });
     });
 });
