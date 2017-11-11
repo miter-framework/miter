@@ -18,7 +18,7 @@ describe('TransactionService', () => {
     beforeEach(() => {
         let loggerCore = new LoggerCore('abc', 'error', false);
         let clsNamespace = new ClsNamespaceService(<any>{ name: 'abc' });
-        let fakeOrmService: ORMService = new FakeORMService();
+        let fakeOrmService: ORMService = new FakeORMService(clsNamespace);
         transactService = new TransactionService(fakeOrmService, Logger.fromSubsystem(loggerCore, 'transactions'), clsNamespace);
     });
     
