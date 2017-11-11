@@ -9,6 +9,8 @@ import { TransactionService } from '../transaction.service';
 import { LoggerCore } from '../logger-core';
 import { Logger } from '../logger';
 import { ClsNamespaceService } from '../cls-namespace.service';
+import { Injector } from '../../core/injector';
+import { ServerMetadata } from '../../metadata/server';
 import { TransactionT } from '../../core/transaction';
 import { ORMService } from '../orm.service';
 import { FakeORMService } from './fake-orm.service';
@@ -17,9 +19,10 @@ describe('TransactionService', () => {
     let transactService: TransactionService;
     beforeEach(() => {
         let loggerCore = new LoggerCore('abc', 'error', false);
-        let clsNamespace = new ClsNamespaceService(<any>{ name: 'abc' });
-        let fakeOrmService: ORMService = new FakeORMService(clsNamespace);
-        transactService = new TransactionService(fakeOrmService, Logger.fromSubsystem(loggerCore, 'transactions'), clsNamespace);
+        let injector = new Injector(loggerCore);
+        injector.provide({ provide: ServerMetadata, useValue: <any>{ name: 'abc' } });
+        injector.provide({ provide: ORMService, useClass: FakeORMService });
+        transactService = injector.resolveInjectable(TransactionService)!;
     });
     
     it('should start with no transaction', () => {
