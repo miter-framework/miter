@@ -1,13 +1,17 @@
+import { Injector } from '../../core/injector';
+import { Injectable } from '../../decorators/services/injectable.decorator';
 import { TransactionT } from '../../core/transaction';
 import { ORMService } from '../orm.service';
 import { ClsNamespaceService } from '../cls-namespace.service';
 import { FakeTransaction } from './fake-transaction';
 
+@Injectable()
 export class FakeORMService extends ORMService {
     constructor(
+        injector: Injector,
         namespace: ClsNamespaceService
     ) {
-        super(namespace);
+        super(injector, namespace);
     }
     
     async transaction(transactionName: string, transaction?: TransactionT): Promise<TransactionT> {
