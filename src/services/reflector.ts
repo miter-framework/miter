@@ -21,15 +21,16 @@ export class ServiceReflector {
     ) { }
     
     private _reflectedServices: ServiceT[] = [];
-    reflectServices(services: CtorT<ServiceT>[] = this.serverMeta.services) {
-        this.reflectServicesImpl(services);
+    reflectServices(services?: CtorT<ServiceT>[]) {
+        if (typeof services === 'undefined') services = this.serverMeta.services;
+        this.reflectServicesImpl(services || []);
     }
     private reflectServicesImpl(services: CtorT<ServiceT>[]) {
         for (let serviceCtor of services) {
             this.reflectService(serviceCtor);
         }
     }
-    reflectService(serviceFn: CtorT<ServiceT>): void {
+    private reflectService(serviceFn: CtorT<ServiceT>): void {
         let serviceName = serviceFn.name || serviceFn;
         try {
             let service = this.injector.resolveInjectable(serviceFn);
@@ -49,7 +50,7 @@ export class ServiceReflector {
         this.logger.info(`Finished starting services.`);
         return result;
     }
-    async startServicesImpl() {
+    private async startServicesImpl() {
         let services = this._reflectedServices;
         this._reflectedServices = [];
         let failures = 0;
@@ -71,7 +72,7 @@ export class ServiceReflector {
             return true;
         }
     }
-    async startService(service: ServiceT) {
+    private async startService(service: ServiceT) {
         let serviceName = service.constructor.name || service.constructor;
         try {
             let result = await service.start();
@@ -131,7 +132,7 @@ export class ServiceReflector {
         this.logger.info(`Finished shutting down services.`);
         return result;
     }
-    async shutdownServicesImpl() {
+    private async shutdownServicesImpl() {
         let services = this._startedServices;
         this._startedServices = [];
         let failures = 0;

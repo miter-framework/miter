@@ -8,6 +8,7 @@ use(sinonChai);
 import { ServiceReflector } from '../reflector';
 import { LoggerCore } from '../logger-core';
 import { Injector } from '../../core/injector';
+import { CtorT } from '../../core/ctor';
 import { ServiceT } from '../../core/service';
 import { ServerMetadata } from '../../metadata/server/server';
 import { Service } from '../../decorators/services/service.decorator';
@@ -66,72 +67,121 @@ describe('ServiceReflector', () => {
     });
     
     describe('.reflectServices', () => {
-        it('should return true if no services are passed in', async () => {
-            expect(await serviceReflector.reflectServices([])).to.be.true;
-            expect(await serviceReflector.reflectServices(<any>null)).to.be.true;
+        it('should not fail if no services are reflected', async () => {
+            expect(() => serviceReflector.reflectServices([])).not.to.throw;
         });
-        it('should return true if no services fail to start', async () => {
-            expect(await serviceReflector.reflectServices([
-                LifecycleWorkService,
-                LifecycleWork2Service,
-                LifecycleWork3Service
-            ])).to.be.true;
+        it('should not fail if services is not an array', async () => {
+            expect(() => serviceReflector.reflectServices(<any>null)).not.to.throw;
         });
-        it('should return false if any services fail to start', async () => {
-            expect(await serviceReflector.reflectServices([
+        it('should invoke reflectService on each service passed in', async () => {
+            sinon.stub(serviceReflector, 'reflectService');
+            serviceReflector.reflectServices([
                 LifecycleWorkService,
                 LifecycleFailService
-            ])).to.be.false;
+            ]);
+            expect((<any>serviceReflector).reflectService).to.have.been.calledTwice;
         });
     });
     
     describe('.reflectService', () => {
+        let fn: (service: CtorT<ServiceT>) => void;
+        beforeEach(() => {
+            fn = (<any>serviceReflector).reflectService.bind(serviceReflector);
+        });
+        
+        it(`should resolve the service using the server's injector`, async () => {
+            sinon.stub(injector, 'resolveInjectable').callThrough();
+            await fn(NoLifecycleService);
+            expect(injector.resolveInjectable).to.have.been.calledOnce;
+        });
+        it('should not fail if the injector fails to resolve the service', async () => {
+            sinon.stub(injector, 'resolveInjectable').returns(null);
+            await fn(NoLifecycleService);
+        });
+    });
+    
+    describe('.startServices', () => {
+        it('should return true if no services have been reflected', async () => {
+            serviceReflector.reflectServices([]);
+            expect(await serviceReflector.startServices()).to.be.true;
+            serviceReflector.reflectServices(<any>null);
+            expect(await serviceReflector.startServices()).to.be.true;
+        });
+        it('should return true if no services fail to start', async () => {
+            serviceReflector.reflectServices([
+                LifecycleWorkService,
+                LifecycleWork2Service,
+                LifecycleWork3Service
+            ]);
+            expect(await serviceReflector.startServices()).to.be.true;
+        });
+        it('should return false if any services fail to start', async () => {
+            serviceReflector.reflectServices([
+                LifecycleWorkService,
+                LifecycleFailService
+            ]);
+            expect(await serviceReflector.startServices()).to.be.false;
+        });
+    });
+    
+    describe('.startService', () => {
+        let fn: (service: ServiceT) => Promise<boolean>;
+        beforeEach(() => {
+            fn = (<any>serviceReflector).startService.bind(serviceReflector);
+        });
+        
         it(`should invoke the service's start function if it has one`, async () => {
             let lws = injector.resolveInjectable(LifecycleWorkService)!;
             let startStub = sinon.stub(lws, 'start').callThrough();
-            await serviceReflector.reflectService(LifecycleWorkService);
+            await fn(lws);
             expect(lws.start).to.have.been.calledOnce;
         });
         it('should return true if the service has no start function', async () => {
-            expect(await serviceReflector.reflectService(NoLifecycleService)).to.be.true;
+            let service = injector.resolveInjectable(NoLifecycleService)!;
+            expect(await fn(service)).to.be.true;
         });
         it('should return true if the service start function returns true', async () => {
-            expect(await serviceReflector.reflectService(LifecycleWorkService)).to.be.true;
+            let service = injector.resolveInjectable(LifecycleWorkService)!;
+            expect(await fn(service)).to.be.true;
         });
         it('should return false if the service start function throws an error', async () => {
-            expect(await serviceReflector.reflectService(LifecycleThrowStartService)).to.be.false;
+            let service = injector.resolveInjectable(LifecycleThrowStartService)!;
+            expect(await fn(service)).to.be.false;
         });
         it('should return false if the service start function returns false', async () => {
-            expect(await serviceReflector.reflectService(LifecycleFailService)).to.be.false;
+            let service = injector.resolveInjectable(LifecycleFailService)!;
+            expect(await fn(service)).to.be.false;
         });
     });
     
     describe('.shutdownServices', () => {
         it('should return true if no services are started', async () => {
-            await serviceReflector.reflectServices([]);
+            serviceReflector.reflectServices([]);
+            await serviceReflector.startServices();
             expect(await serviceReflector.shutdownServices()).to.be.true;
         });
         it(`should return true if it doesn't fail to stop any services`, async () => {
-            await serviceReflector.reflectServices([
+            serviceReflector.reflectServices([
                 LifecycleWorkService,
                 LifecycleWork2Service,
                 LifecycleWork3Service
             ]);
+            await serviceReflector.startServices();
             expect(await serviceReflector.shutdownServices()).to.be.true;
         });
         it('should return false if it fails to stop any services', async () => {
-            await serviceReflector.reflectServices([
+            serviceReflector.reflectServices([
                 LifecycleWorkService,
                 LifecycleThrowStopService
             ]);
+            await serviceReflector.startServices();
             expect(await serviceReflector.shutdownServices()).to.be.false;
         });
         it('should not shutdown a service that failed to start', async () => {
             let lts = injector.resolveInjectable(LifecycleThrowStartService)!;
             let stopStub = sinon.stub(lts, 'stop').callThrough();
-            await serviceReflector.reflectServices([
-                LifecycleThrowStartService
-            ]);
+            serviceReflector.reflectServices([LifecycleThrowStartService]);
+            await serviceReflector.startServices();
             expect(await serviceReflector.shutdownServices()).to.be.true;
             expect(stopStub).not.to.have.been.called;
         });
