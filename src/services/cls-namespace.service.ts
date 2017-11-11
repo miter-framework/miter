@@ -37,10 +37,10 @@ export class ClsNamespaceService {
         this._namespace.set(key, val);
     }
     
-    run(callback: <T>(...args: any[]) => T) {
+    run<T = void>(callback: (...args: any[]) => T) {
         return this._namespace.run(callback);
     }
-    runAndReturn<T>(callback: (...args: any[]) => T) {
+    runAndReturn<T = void>(callback: (...args: any[]) => T): T {
         return this._namespace.runAndReturn(callback);
     }
     bind(callback: any, context?: Context) {
