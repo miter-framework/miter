@@ -11,7 +11,7 @@ import { Injectable } from '../../decorators/services/injectable.decorator';
 import { Request, Response } from 'express';
 import { PolicyDescriptor } from '../../core/policy';
 import { Db } from '../../core/db';
-import { FakeDb } from '../../orm/test/fake-db';
+import { FakeDb } from '../../core/test/fake-db';
 import { FakeRequest } from '../../router/test/fake-request';
 import { FakeResponse } from '../../router/test/fake-response';
 import { HTTP_STATUS_ERROR, HTTP_STATUS_OK } from '../../util/http-status-type';
