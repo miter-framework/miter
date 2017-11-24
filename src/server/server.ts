@@ -70,15 +70,16 @@ export class Server {
             if (this.meta.router) await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();
-            if (this.meta.router) this.reflectRoutes();
+            if (this.meta.router) {
+                this.reflectRoutes();
+                await this.listen();
+            }
         }
         catch (e) {
             this.logger.error(`FATAL ERROR: Failed to launch server.`);
             this.logger.error(e);
             return;
         }
-        
-        if (this.meta.router) this.listen();
     }
     private initPromise: Promise<void>;
     startTime: Date | null = null;
@@ -95,6 +96,7 @@ export class Server {
         }
     }
     async shutdown() {
+        let shutdownSuccessful = true;
         try {
             try {
                 this.logger.info(`Shutting down miter server...`);
@@ -108,7 +110,9 @@ export class Server {
         catch (e) {
             this.logger.error(`FATAL ERROR: Failed to gracefully shutdown server.`);
             this.logger.error(e);
+            shutdownSuccessful = false;
         }
+        if (shutdownSuccessful) this.logger.info(`Miter server shut down successfully.`);
     }
     
     createExpressApp() {
@@ -168,17 +172,41 @@ export class Server {
     }
     
     private webServer: http.Server | https.Server| undefined;
-    private listen() {
+    private listen(): Promise<void> {
         this.logger.info(`Serving`);
         
-        if (this.meta.ssl.enabled) {
-            this.webServer = https.createServer({key: this._meta.ssl.privateKey, cert: this._meta.ssl.certificate}, this.app);
-        }
-        else {
-            this.webServer = http.createServer(this.app);
-        }
-        this.webServer.listen(this.meta.port, () => this.onListening());
-        this.webServer.on("error", (err: any) => this.onError(err));
+        return new Promise<void>((resolve, reject) => {
+            let isResolved = false;
+            
+            try {
+                if (this.meta.ssl.enabled) {
+                    this.webServer = https.createServer({key: this._meta.ssl.privateKey, cert: this._meta.ssl.certificate}, this.app);
+                }
+                else {
+                    this.webServer = http.createServer(this.app);
+                }
+                
+                this.webServer.listen(this.meta.port, () => {
+                    this.onListening();
+                    if (!isResolved) {
+                        isResolved = true;
+                        resolve();
+                    }
+                });
+                this.webServer.on("error", async (err: any) => {
+                    await this.onError(err);
+                    if (!isResolved) {
+                        isResolved = true;
+                        reject(err);
+                    }
+                });
+            }
+            catch (e) {
+                if (isResolved) throw e;
+                isResolved = true;
+                reject(e);
+            }
+        });
     }
     private async stopListening() {
         this.logger.verbose(`Closing HTTP server...`);
@@ -188,7 +216,7 @@ export class Server {
         });
         this.logger.info(`Finished closing HTTP server.`);
     }
-    private onError(error: Error & { syscall?: string, code?: string }) {
+    private async onError(error: Error & { syscall?: string, code?: string }) {
         if (error.syscall !== "listen") {
             throw error;
         }
@@ -199,19 +227,19 @@ export class Server {
         switch (error.code) {
         case "EACCES":
             this.logger.error(`${bind} requires elevated privileges`);
-            this.errorCode = 1;
-            this.webServer = undefined;
-            this.shutdown();
             break;
         case "EADDRINUSE":
             this.logger.error(`${bind} is already in use`);
-            this.errorCode = 1;
-            this.webServer = undefined;
-            this.shutdown();
             break;
         default:
-            throw error;
+            this.logger.error(`An unknown error occurred in the http server.`);
+            this.logger.error(error);
         }
+        
+        this.errorCode = 1;
+        this.webServer = undefined;
+        await this.shutdown();
+        throw error;
     }
     private onListening() {
         if (!this.webServer) throw new Error(`onListening called, but there is no httpServer!`);
