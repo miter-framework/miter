@@ -221,9 +221,18 @@ export abstract class CrudController<T extends ModelT<any>> {
         let include: string[] = [];
         let order: [string, string][] = [];
         try {
-            if (req.query['query']) query = JSON.parse(req.query['query'] || '{}');
-            if (req.query['include']) include = JSON.parse(req.query['include'] || '[]');
-            if (req.query['order']) order = JSON.parse(req.query['order'] || '[]');
+            if (req.query['query']) {
+                if (typeof req.query['query'] === 'string') query = JSON.parse(req.query['query'] || '{}');
+                else query = req.query['query'];
+            }
+            if (req.query['include']) {
+                if (typeof req.query['include'] === 'string') include = JSON.parse(req.query['include'] || '[]');
+                else include = req.query['include'];
+            }
+            if (req.query['order']) {
+                if (typeof req.query['order'] === 'string') order = JSON.parse(req.query['order'] || '[]');
+                else order = req.query['order'];
+            }
         }
         catch (e) {
             res.status(HTTP_STATUS_ERROR).send(`Could not parse request parameters.`);
@@ -292,7 +301,10 @@ export abstract class CrudController<T extends ModelT<any>> {
     async count(req: Request, res: Response) {
         let query: any = {};
         try {
-            if (req.query['query']) query = JSON.parse(req.query['query'] || '{}');
+            if (req.query['query']) {
+                if (typeof req.query['query'] === 'string') query = JSON.parse(req.query['query'] || '{}');
+                else query = req.query['query'];
+            }
         }
         catch(e) {
             res.status(HTTP_STATUS_ERROR).send(`Could not parse query parameters`);
@@ -319,7 +331,10 @@ export abstract class CrudController<T extends ModelT<any>> {
         
         let include: string[] = [];
         try {
-            if (req.query['include']) include = JSON.parse(req.query['include'] || '[]');
+            if (req.query['include']) {
+                if (typeof req.query['include'] === 'string') include = JSON.parse(req.query['include'] || '[]');
+                else include = req.query['include'];
+            }
         }
         catch (e) {
             res.status(HTTP_STATUS_ERROR).send(`Could not parse request parameters.`);

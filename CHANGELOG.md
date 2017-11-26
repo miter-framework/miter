@@ -12,6 +12,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **crud-controller:** allow custom implementations of performDestroy
 * **router:** add transformRoute hook to allow controllers to programmatically modify or skip routes
 * **crud-controller:** allow CrudController.performQuery to return .total instead of .count
+* **crud-controller:** allow query, include, and order to be objects
 
 ### Bug Fixes
 
@@ -20,6 +21,15 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **db:** correct invalid composition of 3 or more $and clauses
 * **miter:** remove dependency on root-require
 * **miter:** ensure the server is started up or shutdown entirely before resolving the init promise
+
+
+
+<a name="0.5.7"></a>
+## [0.5.7](https://github.com/miter-framework/miter/compare/0.5.6...0.5.7) (2017-11-25)
+
+### Features
+
+* **crud-controller:** allow query, include, and order to be objects
 
 
 
