@@ -161,6 +161,10 @@ export class Server {
         this.serviceReflector = this._injector.resolveInjectable(ServiceReflector)!;
         await this.serviceReflector.startServices();
     }
+    private async listenServices() {
+        if (!this.webServer) throw new Error(`onListening called, but there is no httpServer!`);
+        await this.serviceReflector.listenServices(this.webServer);
+    }
     private async stopServices() {
         await this.serviceReflector.shutdownServices();
     }
@@ -171,7 +175,7 @@ export class Server {
         this.routerReflector.reflectServerRoutes(this.app);
     }
     
-    private webServer: http.Server | https.Server| undefined;
+    private webServer: http.Server | https.Server | undefined;
     private listen(): Promise<void> {
         this.logger.info(`Serving`);
         
@@ -186,12 +190,11 @@ export class Server {
                     this.webServer = http.createServer(this.app);
                 }
                 
-                this.webServer.listen(this.meta.port, () => {
-                    this.onListening();
-                    if (!isResolved) {
-                        isResolved = true;
-                        resolve();
-                    }
+                this.webServer.listen(this.meta.port, async () => {
+                    if (isResolved) return;
+                    isResolved = true;
+                    await this.onListening();
+                    resolve();
                 });
                 this.webServer.on("error", async (err: any) => {
                     await this.onError(err);
@@ -241,10 +244,11 @@ export class Server {
         await this.shutdown();
         throw error;
     }
-    private onListening() {
+    private async onListening() {
         if (!this.webServer) throw new Error(`onListening called, but there is no httpServer!`);
         let addr = this.webServer.address();
         let bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
         this.logger.info(`Listening on ${bind}`);
+        await this.listenServices();
     }
 }

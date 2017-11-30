@@ -43,6 +43,8 @@ export class FakeRouterService {
         this._router = <any>new FakeExpressRouter();
     }
     
+    async start() { }
+    
     private _router: CoreRouter;
     get expressRouter(): CoreRouter {
         return this._router;

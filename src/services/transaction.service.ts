@@ -11,6 +11,8 @@ export class TransactionService {
     constructor(private sequelize: Sequelize, private logger: Logger, private namespace: ClsNamespaceService) {
     }
     
+    async start() { }
+    
     get current(): TransactionT | undefined {
         return this.sequelize.currentTransaction;
     }

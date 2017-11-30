@@ -6,6 +6,8 @@ export class FakeTransactionService {
     constructor() {
     }
     
+    async start() { }
+    
     get current(): TransactionT | undefined {
         return undefined;
     }

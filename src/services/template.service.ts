@@ -6,6 +6,8 @@ export type Locals = { [prop: string]: any };
 export class TemplateService {
     constructor() { }
     
+    async start() { }
+    
     public renderRaw(body: string, locals?: Locals): Promise<string> {
         throw new Error(`You have no TemplateService selected, or it does not implement renderRaw.`);
     }

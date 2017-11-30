@@ -9,24 +9,26 @@ import { ServiceReflector } from '../reflector';
 import { LoggerCore } from '../logger-core';
 import { Injector } from '../../core/injector';
 import { ServerMetadata } from '../../metadata/server/server';
-import { Injectable } from '../../decorators/services/injectable.decorator';
+import { Service } from '../../decorators/services/service.decorator';
 
-@Injectable()
-class NoLifecycleService { }
+@Service()
+class NoLifecycleService {
+    async start() { }
+}
 
-@Injectable()
+@Service()
 class LifecycleWorkService {
     async start() {
         return true;
     }
     async stop() { }
 }
-@Injectable()
+@Service()
 class LifecycleWork2Service extends LifecycleWorkService { }
-@Injectable()
+@Service()
 class LifecycleWork3Service extends LifecycleWorkService { }
 
-@Injectable()
+@Service()
 class LifecycleFailService {
     async start() {
         return false;
@@ -34,7 +36,7 @@ class LifecycleFailService {
     async stop() { }
 }
 
-@Injectable()
+@Service()
 class LifecycleThrowStartService {
     async start() {
         throw new Error('Throwing up!');
@@ -42,7 +44,7 @@ class LifecycleThrowStartService {
     async stop() { }
 }
 
-@Injectable()
+@Service()
 class LifecycleThrowStopService {
     async start() {
         return true;

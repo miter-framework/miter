@@ -7,6 +7,8 @@ import { AssociationMetadata } from '../metadata/orm/associations/association';
 export class OrmTransformService {
     constructor() { }
     
+    async start() { }
+    
     public transformModel(modelMeta: ModelMetadata): ModelMetadata | null {
         return modelMeta;
     }

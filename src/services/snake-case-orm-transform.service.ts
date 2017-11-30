@@ -9,6 +9,10 @@ export class SnakeCaseOrmTransformService extends OrmTransformService {
         super();
     }
     
+    async start() {
+        await super.start();
+    }
+    
     public transformModel(modelMeta: ModelMetadata): ModelMetadata | null {
         modelMeta.underscored = true;
         return modelMeta;

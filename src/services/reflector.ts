@@ -1,4 +1,6 @@
 import * as _ from 'lodash';
+import * as http from 'http';
+import * as https from 'https';
 
 import { CtorT } from '../core/ctor';
 import { ServiceT } from '../core/service';
@@ -50,15 +52,52 @@ export class ServiceReflector {
         try {
             let service = this.injector.resolveInjectable(serviceFn);
             if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceName}`);
-            if (typeof service.start !== 'undefined') {
-                let result = await service.start();
-                if (typeof result === 'boolean' && !result) return false;
-            }
+            let result = await service.start();
+            if (typeof result === 'boolean' && !result) return false;
             this._startedServices.push(service);
             return true;
         }
         catch (e) {
             this.logger.error(`Exception occurred when trying to start service: ${serviceName}`);
+            this.logger.error(e);
+            return false;
+        }
+    }
+    
+    async listenServices(webServer: http.Server | https.Server) {
+        this.logger.verbose(`Sending services 'listen' lifecycle hook...`);
+        let result = await this.listenServicesImpl(webServer);
+        this.logger.verbose(`Finished sending services 'listen' lifecycle hook.`);
+        return result;
+    }
+    async listenServicesImpl(webServer: http.Server | https.Server) {
+        let services = [...this._startedServices];
+        let failures = 0;
+        for (let q = 0; q < services.length; q++) {
+            let result = await this.listenService(services[q], webServer);
+            if (!result) {
+                this.logger.error(`Failed to send 'listen' lifecycle hook for service: ${services[q]}`);
+                failures++;
+            }
+        }
+        
+        if (!!failures) {
+            this.logger.error(`${services.length - failures} services recieved 'listen' lifecycle hook correctly out of ${services.length}`);
+            return false;
+        }
+        else {
+            this.logger.verbose(`${services.length - failures} services recieved 'listen' lifecycle hook correctly out of ${services.length}`);
+            return true;
+        }
+    }
+    async listenService(service: ServiceT, webServer: http.Server | https.Server): Promise<boolean> {
+        let serviceName = `${service}`;
+        try {
+            if (typeof service.listen !== 'undefined') await service.listen(webServer);
+            return true;
+        }
+        catch (e) {
+            this.logger.error(`Exception occurred when trying to stop service: ${serviceName}`);
             this.logger.error(e);
             return false;
         }

@@ -13,6 +13,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **router:** add transformRoute hook to allow controllers to programmatically modify or skip routes
 * **crud-controller:** allow CrudController.performQuery to return .total instead of .count
 * **crud-controller:** allow query, include, and order to be objects
+* **services:** add .listen service lifecycle hook
 
 ### Bug Fixes
 
@@ -21,6 +22,23 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **db:** correct invalid composition of 3 or more $and clauses
 * **miter:** remove dependency on root-require
 * **miter:** ensure the server is started up or shutdown entirely before resolving the init promise
+
+### Breaking Changes
+
+* Services are now required to have a `.start()` method
+
+
+
+<a name="0.5.8"></a>
+## [0.5.8](https://github.com/miter-framework/miter/compare/0.5.7...0.5.8) (2017-11-30)
+
+### Features
+
+* **services:** add .listen service lifecycle hook
+
+### Breaking Changes
+
+* Services are now required to have a `.start()` method
 
 
 

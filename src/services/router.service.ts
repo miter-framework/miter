@@ -11,6 +11,8 @@ export class RouterService /*implements CoreRouter*/ {
         this._router = ExpressRouter();
     }
     
+    async start() { }
+    
     private _router: CoreRouter;
     get expressRouter() {
         return this._router;
