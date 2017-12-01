@@ -33,7 +33,7 @@ export class ServiceReflector {
     private reflectService(serviceFn: CtorT<ServiceT>): void {
         let serviceName = serviceFn.name || serviceFn;
         try {
-            let service = this.injector.resolveInjectable(serviceFn);
+            let service = this.injector.resolveInjectable(serviceFn, 'service');
             if (typeof service === 'undefined') throw new Error(`Failed to inject service: ${serviceName}`);
             this._reflectedServices.push(service);
         }

@@ -26,7 +26,7 @@ export class Injector {
     private cache: Map<CtorT<any>, any> = new Map<CtorT<any>, any>();
     private metaStack: MetaStackFrame[] = [];
     private metaDefaults = new Map<string, any>();
-    resolveInjectable<T>(ctorFn: CtorT<T>): T | undefined {
+    resolveInjectable<T>(ctorFn: CtorT<T>, resolveType?: string): T | undefined {
         if (!ctorFn) {
             throw new Error('Attempted to inject a falsey type.');
         }
@@ -37,6 +37,14 @@ export class Injector {
         
         if (!this.cache.has(ctorFn)) {
             let injectableMeta: InjectableMetadata<any> = Reflect.getOwnMetadata(InjectableMetadataSym, ctorFn.prototype) || {};
+            let restriction = injectableMeta.restriction || 'none';
+            if (restriction !== 'none' && resolveType !== restriction) {
+                this.logger.warn(`Resolving ${this.stringifyDependency(ctorFn)} (a ${restriction} injectable) for the first time in a context that is not expecting a ${restriction}.`);
+                if (restriction === 'service') this.logger.warn(`Did you add it to the list of services in Miter.launch?`);
+                this.logger.warn(`Resolving as undefined instead of resolving the injectable.`);
+                this.cache.set(ctorFn, () => undefined);
+                return undefined;
+            }
             if (injectableMeta.provide) {
                 let source: any = injectableMeta.provide;
                 source.provide = ctorFn;
