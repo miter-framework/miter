@@ -56,10 +56,15 @@ export class Sequelize {
             if ((<string>process.env.NODE_ENV || '') == 'production') throw new Error('Server launched with config value orm.recreate enabled. As a security feature, this causes a crash when NODE_ENV = production.');
             this.logger.warn(`Warning: recreating database tables. Note: this option should not be enabled in production.`);
         }
+        
+        if (!this.sql) throw new Error(`Cannot sync the database: the ORM is disabled.`);
+        
         return await this.sql.sync({force: recreate});
     }
     
     define(modelName: string, attributes: __Sequelize.DefineAttributes, options: __Sequelize.DefineOptions<{}>) {
+        if (!this.sql) throw new Error(`Cannot define new models: the ORM is disabled.`);
+        
         return this.sql.define(modelName, attributes, options);
     }
     
@@ -70,9 +75,11 @@ export class Sequelize {
         this.namespace.set('transaction', val);
     }
     
-    async transaction(transactionName: string, transaction?: TransactionT | null): Promise<TransactionT> {
+    async transaction(transactionName: string, transaction?: TransactionT | null): Promise<TransactionT | undefined> {
         let parentTransaction = transaction;
         if (typeof parentTransaction === 'undefined') parentTransaction = this.currentTransaction;
+        if (!this.sql) return parentTransaction || undefined;
+        
         let sqlTransact = parentTransaction && (<TransactionImpl>parentTransaction).sync();
         if (!sqlTransact) sqlTransact = await this.sql.transaction();
         else sqlTransact = await this.sql.transaction(<any>{ transaction: sqlTransact }); //Cast to any is cheating, because the typings are wrong

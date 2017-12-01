@@ -26,6 +26,8 @@ export class TransactionService {
         }
         return await this.namespace.runAndReturn(async () => {
             let t = await this.sequelize.transaction(transactionName, detach ? null : this.current);
+            if (!t) return await fn!();
+            
             this.logger.verbose(`creating transaction (${t.fullName})`);
             let failed = false;
             try {

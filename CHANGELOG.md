@@ -22,10 +22,20 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **db:** correct invalid composition of 3 or more $and clauses
 * **miter:** remove dependency on root-require
 * **miter:** ensure the server is started up or shutdown entirely before resolving the init promise
+* **orm:** prevent controller routes from crashing when the ORM is disabled
 
 ### Breaking Changes
 
 * Services are now required to have a `.start()` method
+
+
+
+<a name="0.5.9"></a>
+## [0.5.9](https://github.com/miter-framework/miter/compare/0.5.8...0.5.9) (2017-11-30)
+
+### Bug Fixes
+
+* **orm:** prevent controller routes from crashing when the ORM is disabled
 
 
 
