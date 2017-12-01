@@ -25,6 +25,7 @@ export class Injector {
     private temporaryValue = Symbol.for('recursive-injection');
     private cache: Map<CtorT<any>, any> = new Map<CtorT<any>, any>();
     private metaStack: MetaStackFrame[] = [];
+    private metaDefaults = new Map<string, any>();
     resolveInjectable<T>(ctorFn: CtorT<T>): T | undefined {
         if (!ctorFn) {
             throw new Error('Attempted to inject a falsey type.');
@@ -137,6 +138,7 @@ export class Injector {
         let [ctor, map] = metaFrame;
         if (map && map.has(name)) return map.get(name);
         if (ctor && name === 'name') return `${ctor.name || ctor}`;
+        if (this.metaDefaults.has(name)) return this.metaDefaults.get(name);
         return undefined;
     }
     provide<T>(provideMeta: ProvideMetadata<any>): this {
@@ -164,6 +166,10 @@ export class Injector {
         
         this.cache.set(ctorFn, tFn);
         return this;
+    }
+    provideMetadata(name: string, value: any) {
+        if (this.metaDefaults.has(name)) throw new Error(`A value has already been provided for metadata '${name}'`);
+        this.metaDefaults.set(name, value);
     }
     
     private isClassSource<T>(meta: ProvideMetadata<T>): meta is ProvideMetadataClassSource<T, any> {

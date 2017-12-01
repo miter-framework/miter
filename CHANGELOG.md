@@ -14,6 +14,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **crud-controller:** allow CrudController.performQuery to return .total instead of .count
 * **crud-controller:** allow query, include, and order to be objects
 * **services:** add .listen service lifecycle hook
+* **injector:** allow the server to provide metadata defaults programmatically
 
 ### Bug Fixes
 
@@ -32,6 +33,10 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 <a name="0.5.9"></a>
 ## [0.5.9](https://github.com/miter-framework/miter/compare/0.5.8...0.5.9) (2017-11-30)
+
+### Features
+
+* **injector:** allow the server to provide metadata defaults programmatically
 
 ### Bug Fixes
 
