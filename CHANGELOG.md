@@ -24,6 +24,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **miter:** remove dependency on root-require
 * **miter:** ensure the server is started up or shutdown entirely before resolving the init promise
 * **orm:** prevent controller routes from crashing when the ORM is disabled
+* **injector:** ensure unresolved dependencies are listed even if they are undefined
 
 ### Breaking Changes
 
@@ -41,6 +42,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Bug Fixes
 
 * **orm:** prevent controller routes from crashing when the ORM is disabled
+* **injector:** ensure unresolved dependencies are listed even if they are undefined
 
 
 

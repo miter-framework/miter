@@ -125,6 +125,7 @@ export class Injector {
         return <SimpleDependencySource>dep;
     }
     private stringifyDependency(type: SimpleDependencySource) {
+        if (typeof type === 'undefined') return 'undefined';
         if (typeof type === 'string') return `'${type}'`;
         return (type && type.name) || type;
     }
