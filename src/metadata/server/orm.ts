@@ -14,7 +14,7 @@ import { StaticModelT, ModelT, PkType } from '../../core/model';
         cache: true
     }
 })
-export class OrmMetadata implements OrmMetadataT {
+export class OrmMetadata {
     constructor(
         private _meta?: OrmMetadataT
     ) { }

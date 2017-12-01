@@ -13,7 +13,7 @@ import { ServiceT } from '../../core/service';
         cache: true
     }
 })
-export class ServerMetadata implements ServerMetadataT {
+export class ServerMetadata {
     constructor(
         private _meta: ServerMetadataT
     ) { }

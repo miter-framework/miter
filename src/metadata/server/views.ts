@@ -15,7 +15,7 @@ import { TemplateService } from '../../services/template.service';
         cache: true
     }
 })
-export class ViewsMetadata implements ViewsMetadataT {
+export class ViewsMetadata {
     constructor(
         private _meta: ViewsMetadataT
     ) { }

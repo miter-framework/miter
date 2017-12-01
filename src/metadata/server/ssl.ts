@@ -13,7 +13,7 @@ import { SSLMetadataT } from './ssl-t';
         cache: true
     }
 })
-export class SSLMetadata implements SSLMetadataT {
+export class SSLMetadata {
     constructor(
         private _meta?: SSLMetadataT
     ) { }

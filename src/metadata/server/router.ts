@@ -17,7 +17,7 @@ import { ControllerT } from '../../core/controller';
         cache: true
     }
 })
-export class RouterMetadata implements RouterMetadataT {
+export class RouterMetadata {
     constructor(
         private _meta: RouterMetadataT
     ) { }
