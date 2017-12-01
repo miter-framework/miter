@@ -60,7 +60,7 @@ describe('ServiceReflector', () => {
     beforeEach(() => {
         let loggerCore = new LoggerCore('abc', 'error', false);
         injector = new Injector(loggerCore);
-        new ServerMetadata({ name: 'abc' }, injector);
+        injector.provide({ provide: ServerMetadata, useValue: new ServerMetadata({ name: 'abc' }) });
         serviceReflector = injector.resolveInjectable(ServiceReflector)!;
     });
     

@@ -1,6 +1,7 @@
 import { Injectable } from '../decorators/services/injectable.decorator';
 import { Name } from '../decorators/services/name.decorator';
 import { OrmMetadata } from '../metadata/server/orm';
+import { DatabaseMetadata } from '../metadata/server/database';
 import { Logger } from '../services/logger';
 import { LoggerCore } from '../services/logger-core';
 import { ClsNamespaceService } from '../services/cls-namespace.service';
@@ -13,6 +14,7 @@ import * as __Sequelize from 'sequelize';
 export class Sequelize {
     constructor(
         private ormMeta: OrmMetadata,
+        private dbMeta: DatabaseMetadata,
         private loggerCore: LoggerCore,
         private logger: Logger,
         private namespace: ClsNamespaceService
@@ -27,10 +29,9 @@ export class Sequelize {
         if (this._initialized) return;
         this._initialized = true;
         
-        let orm = this.ormMeta;
-        if (!orm.enabled || !orm.db) return;
-        let db = orm.db;
+        if (!this.ormMeta.enabled || !this.dbMeta) return;
         
+        let db = this.dbMeta;
         this.sql = new __Sequelize(db.name, db.user, db.password, {
             host: db.host.domain,
             port: db.host.port,

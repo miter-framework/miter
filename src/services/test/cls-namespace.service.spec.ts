@@ -8,7 +8,7 @@ use(sinonChai);
 import { ClsNamespaceService } from '../cls-namespace.service';
 import { ServerMetadata } from '../../metadata/server/server';
 
-const testServerMeta = new ServerMetadata({ name: 'abc-xyz' }, <any>null);
+const testServerMeta = new ServerMetadata({ name: 'abc-xyz' });
 
 function delay(millis: number) {
     return new Promise((resolve, reject) => {

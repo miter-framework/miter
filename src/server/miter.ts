@@ -1,5 +1,5 @@
-import { ServerMetadataT, LogLevel } from '../metadata/server/server';
-import { Task, TaskMetadataT } from '../metadata/server/task';
+import { ServerMetadataT, LogLevel } from '../metadata/server/server-t';
+import { Task, TaskMetadataT } from '../metadata/server/task-t';
 import { Server } from './server';
 import { Service } from '../decorators/services/service.decorator';
 

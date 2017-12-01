@@ -5,7 +5,15 @@ import { Request, Response, Application as ExpressApp } from 'express';
 import * as bodyParser from 'body-parser';
 import { Injector } from '../core/injector';
 import { Injectable } from '../decorators/services/injectable.decorator';
-import { ServerMetadataT, ServerMetadata } from '../metadata/server/server';
+
+import { ServerMetadataT } from '../metadata/server/server-t';
+import { ServerMetadata } from '../metadata/server/server';
+import { RouterMetadata } from '../metadata/server/router';
+import { ViewsMetadata } from '../metadata/server/views';
+import { OrmMetadata } from '../metadata/server/orm';
+import { SSLMetadata } from '../metadata/server/ssl';
+import { DatabaseMetadata } from '../metadata/server/database';
+
 import { OrmReflector } from '../orm/reflector';
 import { ServiceReflector } from '../services/reflector';
 import { LoggerCore } from '../services/logger-core';
@@ -23,20 +31,21 @@ let debug = debug_module('express:server');
 
 @Injectable()
 export class Server {
-    constructor(meta: ServerMetadataT) {
-        this._loggerCore = new LoggerCore(meta.name || null, meta.logLevel);
+    constructor(private _origMeta: ServerMetadataT) {
+        this._loggerCore = new LoggerCore(_origMeta.name || null, _origMeta.logLevel);
         this._injector = new Injector(this._loggerCore);
         this._injector.provide({ provide: Server, useValue: this });
-        this._meta = new ServerMetadata(meta, this._injector);
-        for (let q = 0; q < this.meta.inject.length; q++) {
-            this._injector.provide(this.meta.inject[q]);
+        this._injector.provideMetadata('server-meta', _origMeta);
+        
+        let meta: ServerMetadata;
+        meta = this._injector.resolveInjectable(ServerMetadata)!;
+        for (let q = 0; q < meta.inject.length; q++) {
+            this._injector.provide(meta.inject[q]);
         }
-        if (!this._meta.router) this._injector.provide({ provide: RouterReflector, useValue: null });
     }
     
-    private _meta: ServerMetadata;
-    get meta() {
-        return this._meta;
+    get originalMeta() {
+        return this._origMeta;
     }
     
     private _loggerCore: LoggerCore;
@@ -67,10 +76,12 @@ export class Server {
         
         try {
             this.logger.info(`Initializing miter server. (Miter version ${getMiterVersion()})`);
-            if (this.meta.router) await this.createExpressApp();
+            
+            let routerMeta = this.injector.resolveInjectable(RouterMetadata)!;
+            if (routerMeta) await this.createExpressApp();
             await this.reflectOrm();
             await this.startServices();
-            if (this.meta.router) {
+            if (routerMeta) {
                 this.reflectRoutes();
                 await this.listen();
             }
@@ -100,7 +111,8 @@ export class Server {
         try {
             try {
                 this.logger.info(`Shutting down miter server...`);
-                if (this.meta.router) await this.stopListening();
+                let routerMeta = this.injector.resolveInjectable(RouterMetadata)!;
+                if (routerMeta) await this.stopListening();
                 await this.stopServices();
             }
             finally {
@@ -118,7 +130,12 @@ export class Server {
     createExpressApp() {
         this._app = createExpressApp();
         this._app.use(bodyParser.urlencoded({ extended: true }), bodyParser.json());
-        if (this.meta.allowCrossOrigin) {
+        
+        let meta = this.injector.resolveInjectable(ServerMetadata)!;
+        let routerMeta = this.injector.resolveInjectable(RouterMetadata)!;
+        let viewsMeta = this.injector.resolveInjectable(ViewsMetadata)!;
+        
+        if (meta.allowCrossOrigin) {
             this.logger.warn(`Server starting with cross-origin policy enabled. This should not be enabled in production.`);
             this._app.use(function(req: Request, res: Response, next: Function) {
                 res.header("Access-Control-Allow-Origin", "*");
@@ -127,11 +144,10 @@ export class Server {
             });
         }
         this._app.use(monkeypatchResponseSendFile);
-        if (this.meta.router && this.meta.router.middleware && this.meta.router.middleware.length) {
-            this._app.use(...this.meta.router.middleware);
+        if (routerMeta && routerMeta.middleware && routerMeta.middleware.length) {
+            this._app.use(...routerMeta.middleware);
         }
-        if (this.meta.views) {
-            let viewsMeta = this.meta.views;
+        if (viewsMeta) {
             if (viewsMeta.fileRoot) this._app.set('views', viewsMeta.fileRoot);
             if (typeof viewsMeta.engine === 'string') this._app.set('view engine', viewsMeta.engine);
             else if (viewsMeta.engine) {
@@ -146,12 +162,13 @@ export class Server {
     
     private ormReflector: OrmReflector;
     async reflectOrm() {
-        let orm = this.meta.orm;
-        if (orm && (typeof orm.enabled === 'undefined' || orm.enabled) && orm.db) {
+        let ormMeta = this.injector.resolveInjectable(OrmMetadata)!;
+        let dbMeta = this.injector.resolveInjectable(DatabaseMetadata)!;
+        if (ormMeta && (typeof ormMeta.enabled === 'undefined' || ormMeta.enabled) && dbMeta) {
             this.ormReflector = this._injector.resolveInjectable(OrmReflector)!;
             await this.ormReflector.init();
         }
-        else if (this.meta.orm.models.length) {
+        else if (ormMeta.models.length) {
             this.logger.warn(`Models included in server metadata, but no orm configuration defined.`);
         }
     }
@@ -179,18 +196,21 @@ export class Server {
     private listen(): Promise<void> {
         this.logger.info(`Serving`);
         
+        let meta = this.injector.resolveInjectable(ServerMetadata)!;
+        let sslMeta = this.injector.resolveInjectable(SSLMetadata)!;
+        
         return new Promise<void>((resolve, reject) => {
             let isResolved = false;
             
             try {
-                if (this.meta.ssl.enabled) {
-                    this.webServer = https.createServer({key: this._meta.ssl.privateKey, cert: this._meta.ssl.certificate}, this.app);
+                if (sslMeta.enabled) {
+                    this.webServer = https.createServer({key: sslMeta.privateKey, cert: sslMeta.certificate}, this.app);
                 }
                 else {
                     this.webServer = http.createServer(this.app);
                 }
                 
-                this.webServer.listen(this.meta.port, async () => {
+                this.webServer.listen(meta.port, async () => {
                     if (isResolved) return;
                     isResolved = true;
                     await this.onListening();
@@ -224,7 +244,9 @@ export class Server {
             throw error;
         }
         
-        let bind = (typeof this.meta.port === "string") ? `pipe ${this.meta.port}` : `port ${this.meta.port}`;
+        let meta = this.injector.resolveInjectable(ServerMetadata)!;
+        
+        let bind = (typeof meta.port === "string") ? `pipe ${meta.port}` : `port ${meta.port}`;
         
         // handle specific listen errors with friendly messages
         switch (error.code) {

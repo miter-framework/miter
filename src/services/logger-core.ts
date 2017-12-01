@@ -1,4 +1,4 @@
-import { LogLevel } from '../metadata/server/server';
+import { LogLevel } from '../metadata/server/server-t';
 import { clc } from '../util/clc';
 import { directLogger } from '../util/direct-logger';
 import { Logger } from './logger';

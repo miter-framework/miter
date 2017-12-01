@@ -12,7 +12,7 @@ export class FakeSequelize extends Sequelize {
             enabled: true,
             models: [...models],
             recreate: false
-        }, core, core.getSubsystem('orm'), clsNamespace);
+        }, <any>{}, core, core.getSubsystem('orm'), clsNamespace);
     }
     
     async init() { }

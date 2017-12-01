@@ -49,12 +49,13 @@ describe('RouterReflector', () => {
     beforeEach(() => {
         let loggerCore = new LoggerCore('abc', 'error', false);
         injector = new Injector(loggerCore);
-        new RouterMetadata({
+        let routerMeta = new RouterMetadata({
             controllers: [
                 EmptyController,
                 EmptyControllerRoot
             ]
-        }, injector);
+        });
+        injector.provide({ provide: RouterMetadata, useValue: routerMeta });
         injector.provide({ provide: RouterService, useClass: FakeRouterService });
         injector.provide({ provide: TransactionService, useClass: FakeTransactionService });
         routerReflector = injector.resolveInjectable(RouterReflector)!;

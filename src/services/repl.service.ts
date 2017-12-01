@@ -1,6 +1,8 @@
 import { Service } from '../decorators/services/service.decorator';
 import { Name } from '../decorators/services/name.decorator';
 import { Server } from '../server/server';
+import { ServerMetadata } from '../metadata/server/server';
+import { OrmMetadata } from '../metadata/server/orm';
 import { Logger } from './logger';
 import { cin } from '../util/cin';
 import { cout } from '../util/cout';
@@ -13,8 +15,12 @@ const ELLIPSIS_CHANGE_MILLIS = 50;
 @Service()
 @Name('repl')
 export class ReplService {
-    constructor(private server: Server, private logger: Logger) {
-    }
+    constructor(
+        private server: Server,
+        private logger: Logger,
+        private meta: ServerMetadata,
+        private ormMeta: OrmMetadata
+    ) { }
     
     private context: vm.Context;
     private loopPromise: Promise<void>;
@@ -43,13 +49,13 @@ export class ReplService {
     }
     private makeContext() {
         this.context = vm.createContext();
-        let models = this.server.meta.orm.models;
+        let models = this.ormMeta.models;
         if (models) {
             for (let q = 0; q < models.length; q++) {
                 (<any>this.context)[models[q].name] = this.proxyModel(models[q]);
             }
         }
-        let services = this.server.meta.services;
+        let services = this.meta.services;
         if (services) {
             for (let q = 0; q < services.length; q++) {
                 (<any>this.context)[services[q].name] = this.server.injector.resolveInjectable(services[q]);

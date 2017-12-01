@@ -15,6 +15,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **crud-controller:** allow query, include, and order to be objects
 * **services:** add .listen service lifecycle hook
 * **injector:** allow the server to provide metadata defaults programmatically
+* **server-metadata:** invert control of server metadata objects
 
 ### Bug Fixes
 
@@ -38,6 +39,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 ### Features
 
 * **injector:** allow the server to provide metadata defaults programmatically
+* **server-metadata:** invert control of server metadata objects
 
 ### Bug Fixes
 

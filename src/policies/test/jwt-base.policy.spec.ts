@@ -28,7 +28,7 @@ describe('JwtBasePolicy', () => {
     beforeEach(() => {
         let logger = new LoggerCore('abc', 'error', false);
         ctor = (jwtMeta: any, credentialsRequired: boolean) => {
-            return jwtBasePolicy = new JwtBasePolicy(jwtMeta && new JwtMetadata(jwtMeta, <any>null), logger, credentialsRequired);
+            return jwtBasePolicy = new JwtBasePolicy(jwtMeta && new JwtMetadata(jwtMeta), logger, credentialsRequired);
         };
         req = FakeRequest();
         res = FakeResponse();

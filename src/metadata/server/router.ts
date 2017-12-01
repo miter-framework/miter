@@ -1,21 +1,29 @@
+import { Injectable } from '../../decorators/services/injectable.decorator';
+import { ServerMetadata } from './server';
+import { RouterMetadataT } from './router-t';
+
 import { Handler } from 'express';
 import { PolicyDescriptor } from '../../core/policy';
 import { CtorT } from '../../core/ctor';
 import { ControllerT } from '../../core/controller';
-import { Injector } from '../../core/injector';
-import { Injectable } from '../../decorators/services/injectable.decorator';
 
-export type RouterMetadataT = {
-    path?: string,
-    middleware?: Handler[],
-    policies?: PolicyDescriptor[],
-    controllers?: CtorT<ControllerT>[]
-}
-
-@Injectable()
+@Injectable({
+    provide: {
+        useCallback: function(meta: ServerMetadata) {
+            let routerMeta = meta.originalMeta.router;
+            return !!routerMeta ? new RouterMetadata(routerMeta) : null;
+        },
+        deps: [ServerMetadata],
+        cache: true
+    }
+})
 export class RouterMetadata implements RouterMetadataT {
-    constructor(private _meta: RouterMetadataT, injector: Injector) {
-        if (injector) injector.provide({ provide: RouterMetadata, useValue: this });
+    constructor(
+        private _meta: RouterMetadataT
+    ) { }
+    
+    get originalMeta() {
+        return this._meta;
     }
     
     get path() {

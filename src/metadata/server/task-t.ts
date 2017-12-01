@@ -6,10 +6,10 @@ import { CtorT } from '../../core/ctor';
 import { StaticModelT, ModelT, PkType } from '../../core/model';
 import { ServiceT } from '../../core/service';
 
-import { OrmMetadataT } from './orm';
+import { OrmMetadataT } from './orm-t';
 import { ProvideMetadata } from './provide';
 
-import { LogLevel } from './server';
+import { LogLevel } from './server-t';
 
 export type Task = (server: Server, ...args: string[]) => Promise<void>;
 

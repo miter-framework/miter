@@ -26,7 +26,16 @@ import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../uti
 
 import './extend-req-res';
 
-@Injectable()
+@Injectable({
+    provide: {
+        useCallback: function(injector: Injector, logger: Logger, errorHandler: ErrorHandler, routerMeta: RouterMetadata, _router: RouterService, transactionService: TransactionService) {
+            if (!routerMeta) return null;
+            return new RouterReflector(injector, logger, errorHandler, routerMeta, _router, transactionService);
+        },
+        deps: [Injector, Logger, ErrorHandler, RouterMetadata, RouterService, TransactionService],
+        cache: true
+    }
+})
 @Name('router')
 export class RouterReflector {
     constructor(

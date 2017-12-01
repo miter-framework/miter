@@ -1,15 +1,24 @@
-import { Injector } from '../../core/injector';
 import { Injectable } from '../../decorators/services/injectable.decorator';
+import { ServerMetadata } from './server';
+import { JwtMetadataT } from './jwt-t';
 
-export type JwtMetadataT = {
-    secret: string | Buffer,
-    tokenProperty?: string
-}
-
-@Injectable()
-export class JwtMetadata implements JwtMetadataT {
-    constructor(private _meta: JwtMetadataT, injector: Injector) {
-        if (injector) injector.provide({ provide: JwtMetadata, useValue: this });
+@Injectable({
+    provide: {
+        useCallback: function(meta: ServerMetadata) {
+            let jwtMeta = meta.originalMeta.jwt;
+            return !!jwtMeta ? new JwtMetadata(jwtMeta) : null;
+        },
+        deps: [ServerMetadata],
+        cache: true
+    }
+})
+export class JwtMetadata {
+    constructor(
+        private _meta: JwtMetadataT
+    ) { }
+    
+    get originalMeta() {
+        return this._meta;
     }
     
     get secret() {
