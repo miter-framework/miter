@@ -17,7 +17,6 @@ export class Miter {
             
             delete (launchMeta as any).task;
             delete launchMeta.port;
-            delete launchMeta.jwt;
             delete launchMeta.router;
             delete launchMeta.allowCrossOrigin;
             

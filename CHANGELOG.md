@@ -26,10 +26,20 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **miter:** ensure the server is started up or shutdown entirely before resolving the init promise
 * **orm:** prevent controller routes from crashing when the ORM is disabled
 * **injector:** ensure unresolved dependencies are listed even if they are undefined
+* **miter:** leave JwtMetadata in the launch config for tasks
 
 ### Breaking Changes
 
 * Services are now required to have a `.start()` method
+
+
+
+<a name="0.5.10"></a>
+## [0.5.10](https://github.com/miter-framework/miter/compare/0.5.9...0.5.10) (2018-01-06)
+
+### Bug Fixes
+
+* **miter:** leave JwtMetadata in the launch config for tasks
 
 
 
