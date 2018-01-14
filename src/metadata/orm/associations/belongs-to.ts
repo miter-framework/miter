@@ -1,4 +1,3 @@
-// import * as Sql from 'sequelize';
 import { AssociationMetadata } from './association';
 
 export interface BelongsToMetadata extends AssociationMetadata {

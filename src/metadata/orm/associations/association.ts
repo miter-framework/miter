@@ -7,4 +7,6 @@ export type ForeignModelSource = StaticModelT<ModelT<any>>
 
 export interface AssociationMetadata {
     foreignModel?: ForeignModelSource;
+    
+    constraints?: boolean;
 };

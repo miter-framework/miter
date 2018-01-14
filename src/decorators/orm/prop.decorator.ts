@@ -15,16 +15,16 @@ export function Prop(columnName?: PropMetadata | string) {
         
         if (!meta.type) {
             let reflectType = Reflect.getMetadata('design:type', model, propertyName);
-            let sequelizeType: any = null;
-            if (reflectType === String) sequelizeType = Types.string;
+            let columnType: any = null;
+            if (reflectType === String) columnType = Types.string;
             else if (reflectType === Number) {
-                if (meta.primaryKey || meta.autoIncrement) sequelizeType = Types.integer;
-                else sequelizeType = Types.float;
+                if (meta.primaryKey || meta.autoIncrement) columnType = Types.integer;
+                else columnType = Types.float;
             }
-            else if (reflectType === Date) sequelizeType = Types.date;
-            else if (reflectType === Boolean) sequelizeType = Types.boolean;
+            else if (reflectType === Date) columnType = Types.date;
+            else if (reflectType === Boolean) columnType = Types.boolean;
             else throw new Error(`Could not infer column type for model property: ${propertyName}`);
-            meta.type = sequelizeType;
+            meta.type = columnType;
         }
         Reflect.defineMetadata(PropMetadataSym, meta, model, propertyName);
     }

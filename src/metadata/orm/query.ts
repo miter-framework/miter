@@ -1,4 +1,5 @@
 import { TransactionT } from '../../core/transaction';
+import { ModelT } from '../../core/model';
 
 class MyClass {
     id: number;
@@ -39,9 +40,25 @@ export type WhereLogic = Partial<{
     "<@": any;
 }>;
 
-export type WhereClauseValueT<T> = T | null;
-export type WhereClauseT<T> = {
-    [K in keyof(T)]: WhereClauseValueT<T[K]>
+export type WhereClauseSimpleValue<T> = T | null;
+export type WhereClauseComplexValue<T> =
+        { $not: WhereClauseSimpleValue<T> }
+      | { $in: WhereClauseSimpleValue<T>[] }
+      | { $notIn: WhereClauseSimpleValue<T>[] }
+      | { $gt: T } //...when T extends number, Date
+      | { $gte: T } //...when T extends number, Date
+      | { $lt: T } //...when T extends number, Date
+      | { $lte: T } //...when T extends number, Date
+      | { $between: [T, T] } //...when T extends number, Date
+      | { $notBetween: [T, T] } //...when T extends number, Date
+      | { $like: string } //...when T extends string
+      | WhereClauseT<T>; //...when T extends ModelT<any>
+export type WhereClauseValueT<T> = WhereClauseSimpleValue<T> | WhereClauseComplexValue<T>;
+export type WhereClauseT<T> = { //T extends ModelT<any>
+    [K in keyof(T)]?: WhereClauseValueT<T[K]>
+} & {
+    $and?: WhereClauseT<T>[]
+    $or?: WhereClauseT<T>[]
 };
 export type WhereOptions<T> = WhereClauseT<T>;
 

@@ -1,4 +1,3 @@
-// import { DataTypeAbstract, DefineAttributeColumnReferencesOptions, DefineValidateOptions } from 'sequelize';
 import { Types } from './types';
 
 export type ReferenceCallbackAction = 'CASCADE' | 'RESTRICT' | 'SET DEFAULT' | 'SET NULL' | 'NO ACTION';
@@ -6,6 +5,7 @@ export type ReferenceCallbackAction = 'CASCADE' | 'RESTRICT' | 'SET DEFAULT' | '
 export type PropMetadata = {
     columnName?: string,
     type?: Types,
+    enumValues?: string[],
     defaultValue?: any,
     
     // validate?: DefineValidateOptions,
