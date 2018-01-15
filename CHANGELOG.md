@@ -1,9 +1,7 @@
 
 
 <a name="0.6.0"></a>
-## [0.6.0](https://github.com/miter-framework/miter/compare/0.5.0...HEAD) (_Future_)
-
-Big things planned! More unit tests! Less ORM quirks! More awesomeness!
+## [0.6.0](https://github.com/miter-framework/miter/compare/0.5.0...0.6.0) (2018-01-15)
 
 ### Features
 
@@ -17,6 +15,7 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 * **injector:** allow the server to provide metadata defaults programmatically
 * **server-metadata:** invert control of server metadata objects
 * **orm:** extract the ORM functionality into a service which can be implemented in a separate package.
+* **server:** Miter is now built to support TypeScript 2.6.2.
 
 ### Bug Fixes
 
@@ -31,7 +30,25 @@ Big things planned! More unit tests! Less ORM quirks! More awesomeness!
 
 ### Breaking Changes
 
-* Services are now required to have a `.start()` method
+* The default (sequelize) implementation of the ORM has been extracted into its own package.
+  To use it, you have to import `SequelizeORMService` from `miter-sequelize` and explicitly use it
+  instead of the default ORMService. In Miter.launch:
+  
+  ```
+  inject: [
+      {provide: ORMService, useClass: SequelizeORMService}
+  ],
+  ```
+  
+  Note: if you are providing a different value for the OrmTransformService,
+  you need to provide it before providing ORMService.
+  This is because providing a value instantiates that value immediately,
+  rather than waiting for another injectable value to require it.
+  (In future versions of Miter this behavior will change to allow
+  dependency providers to be added in any order.)
+  
+* Services are now required to have a `.start()` method, even if it is a no-op.
+* Miter is now built to support TypeScript 2.6.2. Older versions of TypeScript may not work correctly.
 
 
 
