@@ -1,5 +1,3 @@
-"use strict";
-
 import * as createExpressApp from 'express';
 import { Request, Response, Application as ExpressApp } from 'express';
 import * as bodyParser from 'body-parser';
