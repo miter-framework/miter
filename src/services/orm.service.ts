@@ -2,7 +2,6 @@ import { Injector } from '../core/injector';
 import { Service } from '../decorators/services/service.decorator';
 import { ClsNamespaceService } from './cls-namespace.service';
 import { TransactionT } from '../core/transaction';
-import { TransactionService } from './transaction.service';
 
 @Service()
 export class ORMService {
@@ -21,14 +20,7 @@ export class ORMService {
         return this._namespace;
     }
     
-    private _transactionService: TransactionService;
-    protected get transactionService() {
-        return this._transactionService;
-    }
-    
-    async start() {
-        this._transactionService = this.injector.resolveInjectable(TransactionService)!;
-    }
+    async start() { }
     async stop() { }
     
     get currentTransaction(): TransactionT | undefined {

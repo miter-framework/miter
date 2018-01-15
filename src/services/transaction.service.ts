@@ -12,8 +12,7 @@ export class TransactionService {
         private orm: ORMService,
         private logger: Logger,
         private namespace: ClsNamespaceService
-    ) {
-    }
+    ) { }
     
     async start() { }
     
