@@ -45,6 +45,7 @@ export class ServiceReflector {
     
     private _startedServices: ServiceT[] = [];
     async startServices() {
+        if (!this._reflectedServices || !this._reflectedServices.length) return true;
         this.logger.verbose(`Starting services...`);
         let result = await this.startServicesImpl();
         this.logger.info(`Finished starting services.`);
@@ -127,6 +128,7 @@ export class ServiceReflector {
     }
     
     async shutdownServices() {
+        if (!this._startedServices || !this._startedServices.length) return true;
         this.logger.verbose(`Shutting down services...`);
         let result = await this.shutdownServicesImpl();
         this.logger.info(`Finished shutting down services.`);

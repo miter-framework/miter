@@ -11,6 +11,7 @@
 
 * **injector:** ensure provided classes are constructed lazily
 * **router:** remove dependency on the TransactionService
+* **services:** hide services output when there are no services specified
 
 
 
