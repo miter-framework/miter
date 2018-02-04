@@ -1,5 +1,14 @@
 
 
+<a name="0.6.1"></a>
+## [0.6.1](https://github.com/miter-framework/miter/compare/0.6.0...master) (_Future_)
+
+### Bug Fixes
+
+* **injector:** ensure provided classes are constructed lazily
+
+
+
 <a name="0.6.0"></a>
 ## [0.6.0](https://github.com/miter-framework/miter/compare/0.5.0...0.6.0) (2018-01-15)
 

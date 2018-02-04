@@ -151,8 +151,15 @@ export class Injector {
         let tFn: { (): T };
         if (this.isClassSource(provideMeta)) {
             this.logger.verbose(`Providing ${ctorFn.name || ctorFn} using class ${provideMeta.useClass.name || provideMeta.useClass}`);
-            let t = this.construct(provideMeta.useClass);
-            tFn = () => t;
+            let wasConstructed = false;
+            let t: any;
+            tFn = () => {
+                if (!wasConstructed) {
+                    wasConstructed = true;
+                    t = this.construct(provideMeta.useClass);
+                }
+                return t;
+            };
         }
         else if (this.isValueSource(provideMeta)) {
             this.logger.verbose(`Providing ${ctorFn.name || ctorFn} using value ${JSON.stringify(provideMeta.useValue)}`);

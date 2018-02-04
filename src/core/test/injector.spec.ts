@@ -99,6 +99,22 @@ describe('Injector', () => {
                 instance.provide({ provide: TestClass, useClass: FauxTestClass });
                 expect(instance.resolveInjectable(TestClass)).to.be.an.instanceOf(FauxTestClass);
             });
+            it('should not construct the replacement class more than once', () => {
+                @Injectable() class TestClass { constructor() { } }
+                var instanceCount = 0;
+                @Injectable() class FauxTestClass { constructor() { instanceCount++; } };
+                instance.provide({ provide: TestClass, useClass: FauxTestClass });
+                instance.resolveInjectable(TestClass);
+                instance.resolveInjectable(TestClass);
+                expect(instanceCount).to.eq(1);
+            });
+            it('should not instantiate a provided class if resolveInjectable is never called', () => {
+                let ctorCallCount = 0;
+                @Injectable() class TestClass { constructor() { ctorCallCount++; } }
+                
+                instance.provide({ provide: TestClass, useClass: TestClass });
+                expect(ctorCallCount).to.eq(0);
+            });
         });
         
         describe('when the provide metadata is a replacement value', () => {
@@ -290,7 +306,34 @@ describe('Injector', () => {
                 instance.provide(meta);
                 expect(() => instance.resolveInjectable(TestClass)).to.throw(/circular dependency/i);
             });
-        })
+            it('should not call the factory function if resolveInjectable is never called', () => {
+                @Injectable() class TestClass { constructor() { } }
+                let callbackCallCount = 0;
+                let meta = {
+                    provide: TestClass,
+                    useCallback: () => {
+                        callbackCallCount++;
+                        return new TestClass();
+                    },
+                };
+                instance.provide(meta);
+                expect(callbackCallCount).to.eq(0);
+            });
+            it('should not call the factory function if resolveInjectable is never called, even if cached = true', () => {
+                @Injectable() class TestClass { constructor() { } }
+                let callbackCallCount = 0;
+                let meta = {
+                    provide: TestClass,
+                    useCallback: () => {
+                        callbackCallCount++;
+                        return new TestClass();
+                    },
+                    cache: true
+                };
+                instance.provide(meta);
+                expect(callbackCallCount).to.eq(0);
+            });
+        });
     });
     
     describe('.resolveDependencies', () => {
