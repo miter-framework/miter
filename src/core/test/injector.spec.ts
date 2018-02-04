@@ -9,8 +9,17 @@ import { Injector } from '../injector';
 import { LoggerCore } from '../../services/logger-core';
 import { CtorT } from '../../core/ctor';
 import { Injectable } from '../../decorators/services/injectable.decorator';
+import { Service } from '../../decorators/services/service.decorator';
+import { InjectableMetadata } from '../../metadata/services/injectable';
 import { Meta } from '../../decorators/services/meta.decorator';
 import { Name } from '../../decorators/services/name.decorator';
+
+type InjectableDecoratorT = <T>(meta?: InjectableMetadata<T>) => ((ij: CtorT<T>) => void);
+
+let allDecorators: [InjectableDecoratorT, string][] = [
+    [Injectable, 'injectable'],
+    [Service, 'service']
+];
 
 describe('Injector', () => {
     let loggerCore: LoggerCore;
@@ -77,6 +86,83 @@ describe('Injector', () => {
             Reflect.defineMetadata('design:paramtypes', [TestClass], TestClass2);
             expect(() => instance.resolveInjectable(TestClass)).to.throw(/circular dependency/i);
         });
+        
+        allDecorators.forEach(([decoratorFn, decoratorName]) => {
+            describe(`when the ${decoratorName} decorator defines a provide value`, () => {
+                describe('when the provide value attempts to use a replacement class', () => {
+                    it('should throw an exception', () => {
+                        class OtherTestClass { constructor() { } };
+                        @decoratorFn({
+                            provide: <any>{
+                                useClass: OtherTestClass
+                            }
+                        }) class TestClass { constructor() { } };
+                        
+                        expect(() => instance.resolveInjectable(TestClass)).to.throw(/specify a callback function/i);
+                    });
+                });
+                
+                describe('when the provide value attepts to use a replacement value', () => {
+                    it('should throw an exception', () => {
+                        @decoratorFn({
+                            provide: <any>{
+                                useValue: null
+                            }
+                        }) class TestClass { constructor() { } };
+                        
+                        expect(() => instance.resolveInjectable(TestClass)).to.throw(/specify a callback function/i);
+                    });
+                });
+                
+                describe('when the provide value attempts to use a factory function', () => {
+                    it('should invoke the factory function to provide the value', () => {
+                        let inst = Symbol();
+                        @decoratorFn({
+                            provide: {
+                                useCallback: () => <any>inst
+                            }
+                        }) class TestClass { constructor() { } };
+                        let result = instance.resolveInjectable(TestClass);
+                        expect(result).to.eq(inst);
+                    });
+                    it('should invoke the factory function each time the class is resolved', () => {
+                        let invokeCount = 0;
+                        @decoratorFn({
+                            provide: {
+                                useCallback: () => <any>invokeCount++
+                            }
+                        }) class TestClass { constructor() { } };
+                        instance.resolveInjectable(TestClass);
+                        instance.resolveInjectable(TestClass);
+                        expect(invokeCount).to.eq(2);
+                    });
+                    it('should invoke the factory function only once if cache = true', () => {
+                        let invokeCount = 0;
+                        @decoratorFn({
+                            provide: {
+                                useCallback: () => <any>invokeCount++,
+                                cache: true
+                            }
+                        }) class TestClass { constructor() { } };
+                        instance.resolveInjectable(TestClass);
+                        instance.resolveInjectable(TestClass);
+                        expect(invokeCount).to.eq(1);
+                    });
+                    it('should not invoke the factory function before the class is resolved even if cache = true', () => {
+                        let invokeCount = 0;
+                        @decoratorFn({
+                            provide: {
+                                useCallback: () => <any>invokeCount++,
+                                cache: true
+                            }
+                        }) class TestClass { constructor() { } };
+                        expect(invokeCount).to.eq(0);
+                        instance.resolveInjectable(TestClass);
+                        expect(invokeCount).to.eq(1);
+                    });
+                });
+            });
+        });
     });
     
     describe('.provide', () => {
@@ -95,7 +181,7 @@ describe('Injector', () => {
         describe('when the provide metadata is a replacement class', () => {
             it('should dependency inject a replacement class', () => {
                 @Injectable() class TestClass { constructor() { } }
-                @Injectable() class FauxTestClass { constructor() {} };
+                @Injectable() class FauxTestClass { constructor() {} }
                 instance.provide({ provide: TestClass, useClass: FauxTestClass });
                 expect(instance.resolveInjectable(TestClass)).to.be.an.instanceOf(FauxTestClass);
             });
@@ -153,6 +239,14 @@ describe('Injector', () => {
                 instance.provide({ provide: TestClass, useCallback: () => callbackCallCount++, cache: true });
                 instance.resolveInjectable(TestClass);
                 expect(callbackCallCount).to.eq(1);
+                instance.resolveInjectable(TestClass);
+                expect(callbackCallCount).to.eq(1);
+            });
+            it('should not call factory function before the class is resolved even if cache = true', () => {
+                @Injectable() class TestClass { constructor() { } }
+                let callbackCallCount = 0;
+                instance.provide({ provide: TestClass, useCallback: () => callbackCallCount++, cache: true });
+                expect(callbackCallCount).to.eq(0);
                 instance.resolveInjectable(TestClass);
                 expect(callbackCallCount).to.eq(1);
             });
@@ -332,6 +426,37 @@ describe('Injector', () => {
                 };
                 instance.provide(meta);
                 expect(callbackCallCount).to.eq(0);
+            });
+        });
+        
+        allDecorators.forEach(([decoratorFn, decoratorName]) => {
+            describe(`when the ${decoratorName} decorator defines a provide value`, () => {
+                it('should override the decorator provide value', () => {
+                    let callbackInvokeCount = 0, ctorInvokeCount = 0;
+                    @decoratorFn({
+                        provide: <any>{
+                            useCallback: () => callbackInvokeCount++
+                        }
+                    }) class TestClass { constructor() { } };
+                    @decoratorFn() class SuperTestClass extends TestClass { constructor() { super(); ctorInvokeCount++; } }
+                    instance.provide({ provide: TestClass, useClass: SuperTestClass });
+                    let result = instance.resolveInjectable(TestClass)!;
+                    expect(result).to.be.an.instanceOf(SuperTestClass);
+                    expect(callbackInvokeCount).to.eq(0);
+                    expect(ctorInvokeCount).to.eq(1);
+                });
+                it('should not invoke or construct anything before the class is resolved', () => {
+                    let callbackInvokeCount = 0, ctorInvokeCount = 0;
+                    @decoratorFn({
+                        provide: <any>{
+                            useCallback: () => callbackInvokeCount++
+                        }
+                    }) class TestClass { constructor() { } };
+                    @decoratorFn() class SuperTestClass extends TestClass { constructor() { super(); ctorInvokeCount++; } }
+                    instance.provide({ provide: TestClass, useClass: SuperTestClass });
+                    expect(callbackInvokeCount).to.eq(0);
+                    expect(ctorInvokeCount).to.eq(0);
+                });
             });
         });
     });

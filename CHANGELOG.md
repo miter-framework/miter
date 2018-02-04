@@ -12,6 +12,7 @@
 * **injector:** ensure provided classes are constructed lazily
 * **router:** remove dependency on the TransactionService
 * **services:** hide services output when there are no services specified
+* **injector:** ensure classes using the Service decorator can have custom provide values
 
 
 

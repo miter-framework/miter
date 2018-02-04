@@ -9,6 +9,6 @@ export function Service(meta?: ServiceMetadata) {
     meta = meta || {};
     return function(service: CtorT<any>) {
         Reflect.defineMetadata(ServiceMetadataSym, meta, service.prototype);
-        Injectable()(service);
+        Injectable(meta)(service);
     }
 }
