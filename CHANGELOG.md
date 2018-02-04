@@ -3,6 +3,10 @@
 <a name="0.6.1"></a>
 ## [0.6.1](https://github.com/miter-framework/miter/compare/0.6.0...master) (_Future_)
 
+### Features
+
+* **miter:** re-export Request and Response from the miter package
+
 ### Bug Fixes
 
 * **injector:** ensure provided classes are constructed lazily
