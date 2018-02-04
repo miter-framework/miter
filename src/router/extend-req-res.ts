@@ -6,6 +6,9 @@ declare module 'express' {
     interface Request {
         policyResults<T>(policy: CtorT<PolicyT<T>>): T | undefined;
         jwt: any;
+        
+        requestIndex: number;
+        routeMethodName: string;
     }
     interface Response {
         sendFile(path: string): Promise<void>;

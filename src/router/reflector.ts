@@ -16,7 +16,6 @@ import { PolicyMetadata, PolicyMetadataSym } from '../metadata/policies/policy';
 
 import { Logger } from '../services/logger';
 import { ErrorHandler } from '../services/error-handler';
-import { TransactionService } from '../services/transaction.service';
 import { RouterService } from '../services/router.service';
 
 import { inhertitanceHierarchy } from '../util/inheritance-hierarchy';
@@ -26,13 +25,16 @@ import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../uti
 
 import './extend-req-res';
 
+export type RouteInterceptorNextFunction = () => Promise<void>;
+export type RouteInterceptor = (req: Request, res: Response, next: RouteInterceptorNextFunction) => Promise<void>;
+
 @Injectable({
     provide: {
-        useCallback: function(injector: Injector, logger: Logger, errorHandler: ErrorHandler, routerMeta: RouterMetadata, _router: RouterService, transactionService: TransactionService) {
+        useCallback: function(injector: Injector, logger: Logger, errorHandler: ErrorHandler, routerMeta: RouterMetadata, _router: RouterService) {
             if (!routerMeta) return null;
-            return new RouterReflector(injector, logger, errorHandler, routerMeta, _router, transactionService);
+            return new RouterReflector(injector, logger, errorHandler, routerMeta, _router);
         },
-        deps: [Injector, Logger, ErrorHandler, RouterMetadata, RouterService, TransactionService],
+        deps: [Injector, Logger, ErrorHandler, RouterMetadata, RouterService],
         cache: true
     }
 })
@@ -43,8 +45,7 @@ export class RouterReflector {
         private logger: Logger,
         private errorHandler: ErrorHandler,
         private routerMeta: RouterMetadata,
-        private _router: RouterService,
-        private transactionService: TransactionService
+        private _router: RouterService
     ) { }
     
     get router() {
@@ -97,6 +98,19 @@ export class RouterReflector {
         this.reflectRoutes(meta.controllers || [], [...parentControllers, controllerFn]);
     }
     
+    private _interceptors: RouteInterceptor[] = [];
+    /**
+     * Registers a route interceptor which can be used to dynamically add or remove middleware.
+     * In most cases, you should use a regular policy or middleware function.
+     * Route interceptors are invoked AFTER middleware but BEFORE policies.
+     * They are useful in cases where you have to control the manner in which the next interceptor is invoked,
+     * or in cases where you have to execute code after a response has been sent rather than before.
+     * @param interceptor The route interceptor to be invoked for every request
+     */
+    public registerRouteInterceptor(interceptor: RouteInterceptor) {
+        this._interceptors.push(interceptor);
+    }
+    
     private reflectRouteMeta(controllerProto: any): [string, RouteMetadata[]][] {
         let hierarchy = inhertitanceHierarchy(controllerProto);
         this.logger.verbose('reflecting routes for inheritance hierarchy:', hierarchy.map(fn => fn.name || fn));
@@ -116,7 +130,7 @@ export class RouterReflector {
     
     private addRoute(parentMeta: ControllerMetadata[], controller: any, routeFnName: string, controllerMeta: ControllerMetadata, routeMeta: RouteMetadata) {
         let controllerName = this.getControllerName(controller);
-        let transactionName = `${controllerName}#${routeFnName}`;
+        let routeMethodName = `${controllerName}#${routeFnName}`;
         
         if (typeof routeMeta.method === 'undefined') throw new Error(`Failed to create route ${controller}.${routeFnName}. No method set!`);
         
@@ -164,7 +178,7 @@ export class RouterReflector {
         this.routesReflected++;
         
         let addRouteFn = (<any>this.router.expressRouter)[routeMeta.method].bind(this.router.expressRouter);
-        let fullRouterFn = this.createFullRouterFn(policies, boundRoute, transactionName);
+        let fullRouterFn = this.createFullRouterFn(policies, boundRoute, routeMethodName);
         addRouteFn(fullPath, fullRouterFn);
     }
     private getControllerName(controller: any): string {
@@ -242,7 +256,7 @@ export class RouterReflector {
     
     unfinishedRoutes = 0;
     requestIndex = 0;
-    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, transactionName: string) {
+    private createFullRouterFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], boundRoute: any, routeMethodName: string) {
         let fullRouterFn = async function(this: RouterReflector, requestIndex: number, req: Request, res: Response) {
             this.logger.info(`{${requestIndex}} beginning request: ${req.url}`);
             this.logger.verbose(`{${requestIndex}} unfinishedRoutes: ${++this.unfinishedRoutes}`);
@@ -316,15 +330,22 @@ export class RouterReflector {
         let self = this;
         return async function(req: Request, res: Response) {
             let requestIndex = ++self.requestIndex;
-            try {
-                await self.transactionService.run(`{${requestIndex}}:${transactionName}`, async () => {
-                    await fullRouterFn.call(self, requestIndex, req, res);
+            req.requestIndex = requestIndex;
+            req.routeMethodName = routeMethodName;
+            
+            let interceptors = [...self._interceptors];
+            let interceptorCallbacks: RouteInterceptorNextFunction[] = [];
+            let initialStatusCode = res.statusCode;
+            for (let q = 0; q < interceptors.length; q++) {
+                interceptorCallbacks.push(async () => {
+                    if (res.statusCode !== initialStatusCode || res.headersSent) return;
+                    await interceptors[q + 1](req, res, interceptorCallbacks[q + 2]);
                 });
             }
-            catch (e) {
-                self.logger.error(e);
-                if (!(<any>res).errorResult) throw e;
-            }
+            interceptors.push(async () => {
+                await fullRouterFn.call(self, requestIndex, req, res);
+            });
+            await interceptors[0](req, res, interceptorCallbacks[0]);
         }
     }
     private createPolicyResultsFn(policies: [undefined | CtorT<PolicyT<any>>, { (req: Request, res: Response): Promise<any> }][], allResults: any[]) {

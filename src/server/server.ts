@@ -16,6 +16,7 @@ import { DatabaseMetadata } from '../metadata/server/database';
 import { ServiceReflector } from '../services/reflector';
 import { LoggerCore } from '../services/logger-core';
 import { ORMService } from '../services/orm.service';
+import { TransactionService } from '../services/transaction.service';
 import { TemplateService } from '../services/template.service';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
@@ -165,8 +166,8 @@ export class Server {
     async initOrm() {
         let ormMeta = this.injector.resolveInjectable(OrmMetadata)!;
         let dbMeta = this.injector.resolveInjectable(DatabaseMetadata)!;
-        if (ormMeta && (typeof ormMeta.enabled === 'undefined' || ormMeta.enabled) && dbMeta) {
-            this.serviceReflector.reflectServices([ORMService]);
+        if (ormMeta && ((typeof ormMeta.enabled === 'undefined' && !!ormMeta.models.length) || ormMeta.enabled) && dbMeta) {
+            this.serviceReflector.reflectServices([ORMService, TransactionService]);
         }
         else if (ormMeta.models.length) {
             this.logger.warn(`Models included in server metadata, but no orm configuration defined.`);

@@ -10,6 +10,7 @@
 ### Bug Fixes
 
 * **injector:** ensure provided classes are constructed lazily
+* **router:** remove dependency on the TransactionService
 
 
 

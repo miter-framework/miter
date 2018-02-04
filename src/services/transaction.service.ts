@@ -4,6 +4,7 @@ import { Service } from '../decorators/services/service.decorator';
 import { Name } from '../decorators/services/name.decorator';
 import { Logger } from './logger';
 import { ORMService } from './orm.service';
+import { RouterReflector } from '../router/reflector';
 
 @Service()
 @Name('transactions')
@@ -11,10 +12,24 @@ export class TransactionService {
     constructor(
         private orm: ORMService,
         private logger: Logger,
-        private namespace: ClsNamespaceService
+        private namespace: ClsNamespaceService,
+        private routerReflector: RouterReflector
     ) { }
     
-    async start() { }
+    async start() {
+        this.routerReflector.registerRouteInterceptor(async (req, res, next) => {
+            try {
+                let requestIndex = req.requestIndex;
+                let routeMethodName = req.routeMethodName;
+                let transactionName = `{${requestIndex}}:${routeMethodName}`;
+                await this.run(transactionName, next);
+            }
+            catch (e) {
+                this.logger.error(e);
+                if (!(<any>res).errorResult) throw e;
+            }
+        });
+    }
     
     get current(): TransactionT | undefined {
         return this.orm.currentTransaction;
