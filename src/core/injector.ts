@@ -156,7 +156,7 @@ export class Injector {
             tFn = () => {
                 if (!wasConstructed) {
                     wasConstructed = true;
-                    t = this.construct(provideMeta.useClass);
+                    t = this.resolveInjectable(provideMeta.useClass);
                 }
                 return t;
             };

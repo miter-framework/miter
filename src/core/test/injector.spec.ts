@@ -201,6 +201,16 @@ describe('Injector', () => {
                 instance.provide({ provide: TestClass, useClass: TestClass });
                 expect(ctorCallCount).to.eq(0);
             });
+            it('should resolve to the same instance as if you resolved the replacement class directly', () => {
+                @Injectable() class TestClass { constructor() { } }
+                var instanceCount = 0;
+                @Injectable() class FauxTestClass { constructor() { instanceCount++; } };
+                instance.provide({ provide: TestClass, useClass: FauxTestClass });
+                let inst1 = instance.resolveInjectable(TestClass);
+                let inst2 = instance.resolveInjectable(FauxTestClass);
+                expect(instanceCount).to.eq(1);
+                expect(inst1).to.eq(inst2);
+            });
         });
         
         describe('when the provide metadata is a replacement value', () => {
@@ -430,7 +440,7 @@ describe('Injector', () => {
         });
         
         allDecorators.forEach(([decoratorFn, decoratorName]) => {
-            describe(`when the ${decoratorName} decorator defines a provide value`, () => {
+            describe(`when the ${decoratorName} decorator also defines a provide value`, () => {
                 it('should override the decorator provide value', () => {
                     let callbackInvokeCount = 0, ctorInvokeCount = 0;
                     @decoratorFn({

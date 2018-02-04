@@ -13,6 +13,7 @@
 * **router:** remove dependency on the TransactionService
 * **services:** hide services output when there are no services specified
 * **injector:** ensure classes using the Service decorator can have custom provide values
+* **injector:** resolve useClass dependencies using the same instance returned for direct resolution
 
 
 
