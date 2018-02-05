@@ -1,7 +1,7 @@
 
 
-<a name="0.6.1"></a>
-## [0.6.1](https://github.com/miter-framework/miter/compare/0.6.0...master) (_Future_)
+<a name="0.6.2"></a>
+## [0.6.2](https://github.com/miter-framework/miter/compare/0.6.0...0.6.2) (2018-02-04)
 
 ### Features
 
