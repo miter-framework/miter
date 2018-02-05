@@ -14,6 +14,11 @@
 * **services:** hide services output when there are no services specified
 * **injector:** ensure classes using the Service decorator can have custom provide values
 * **injector:** resolve useClass dependencies using the same instance returned for direct resolution
+* **orm-service:** resolve ORMService as null if there is no implementation
+
+### Breaking Changes
+
+* Injecting ORMService without providing an implementation will result in 'null', rather than throwing an exception directly.
 
 
 
