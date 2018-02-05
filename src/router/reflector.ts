@@ -46,7 +46,17 @@ export class RouterReflector {
         private errorHandler: ErrorHandler,
         private routerMeta: RouterMetadata,
         private _router: RouterService
-    ) { }
+    ) {
+        this.registerRouteInterceptor(async (req, res, next) => {
+            try {
+                await next();
+            }
+            catch (e) {
+                this.logger.error(e);
+                if (!(<any>res).errorResult) throw e;
+            }
+        });
+    }
     
     get router() {
         return this._router;

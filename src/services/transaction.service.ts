@@ -18,16 +18,10 @@ export class TransactionService {
     
     async start() {
         this.routerReflector.registerRouteInterceptor(async (req, res, next) => {
-            try {
-                let requestIndex = req.requestIndex;
-                let routeMethodName = req.routeMethodName;
-                let transactionName = `{${requestIndex}}:${routeMethodName}`;
-                await this.run(transactionName, next);
-            }
-            catch (e) {
-                this.logger.error(e);
-                if (!(<any>res).errorResult) throw e;
-            }
+            let requestIndex = req.requestIndex;
+            let routeMethodName = req.routeMethodName;
+            let transactionName = `{${requestIndex}}:${routeMethodName}`;
+            await this.run(transactionName, next);
         });
     }
     
