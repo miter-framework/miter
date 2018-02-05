@@ -32,6 +32,7 @@ export class TransactionService {
     }
     
     get current(): TransactionT | undefined {
+        if (!this.orm) return undefined;
         return this.orm.currentTransaction;
     }
     
@@ -41,6 +42,10 @@ export class TransactionService {
         if (typeof detach === 'function') {
             fn = detach;
             detach = false;
+        }
+        if (!this.orm) {
+            this.logger.warn(`Someone attempted to create a transaction, but there is no ORMService. Running callback without a transaction.`);
+            return await fn!();
         }
         return await this.namespace.runAndReturn(async () => {
             let t = await this.orm.transaction(transactionName, detach ? null : this.current);
