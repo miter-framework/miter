@@ -6,6 +6,8 @@
 ### Features
 
 * **miter:** re-export Request and Response from the miter package
+* **injector:** unit tests to cover more injector cases, especially relating to custom providers defined with the class
+* **logger:** expose the logger's subsystem as a readonly property
 
 ### Bug Fixes
 

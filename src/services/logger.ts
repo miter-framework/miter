@@ -8,7 +8,11 @@ import { LoggerCore } from './logger-core';
     }
 })
 export class Logger {
-    constructor(private core: LoggerCore, private subsystem: string) {
+    constructor(private core: LoggerCore, private _subsystem: string) {
+    }
+    
+    get subsystem() {
+        return this._subsystem;
     }
     
     static fromSubsystem(core: LoggerCore, subsystem: string) {

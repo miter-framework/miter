@@ -7,6 +7,7 @@ use(sinonChai);
 
 import { stubDirectLogger } from '../../util/test/stub-direct-logger';
 import { LoggerCore } from '../logger-core';
+import { Logger } from '../logger';
 
 const testServerName = 'abc-xyz';
 const logLevels = {
@@ -26,6 +27,19 @@ describe('LoggerCore', () => {
     describe('.serverName', () => {
         it('should persist the server name correctly', () => {
             expect(instance.serverName).to.eq(testServerName);
+        });
+    });
+    
+    describe('.getSubsystem', () => {
+        it('should return an instance of Logger with the specified subsystem', () => {
+            let logger = instance.getSubsystem('fish');
+            expect(logger).to.be.an.instanceOf(Logger);
+            expect(logger.subsystem).to.eq('fish');
+        });
+        it('should only create one logger for each subsystem', () => {
+            let logger1 = instance.getSubsystem('fish');
+            let logger2 = instance.getSubsystem('fish');
+            expect(logger1).to.eq(logger2);
         });
     });
     
