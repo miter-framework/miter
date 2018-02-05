@@ -1,6 +1,17 @@
+
+
 /node_modules/
 /dist/
 
 .yarnclean
 yarn-error.log
 npm-debug.log*
+
+examples/**/node_modules
+examples/**/dist
+
+examples/**/.yarnclean
+examples/**/yarn-error.log
+examples/**/npm-debug.log*
+
+examples/**/log

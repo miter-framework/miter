@@ -1,3 +1,5 @@
+
+
 /node_modules/
 /dist/**/*.js.map
 /src/
@@ -8,3 +10,5 @@ yarn-error.log
 .npmignore
 npm-debug.log*
 tsconfig.json
+
+examples
