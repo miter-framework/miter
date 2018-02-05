@@ -14,6 +14,8 @@ import { ServerMetadata } from '../../metadata/server';
 import { TransactionT } from '../../core/transaction';
 import { ORMService } from '../orm.service';
 import { FakeORMService } from './fake-orm.service';
+import { RouterReflector } from '../../router/reflector';
+import { FakeRouterReflector } from '../../router/test/fake-reflector';
 
 describe('TransactionService', () => {
     let transactService: TransactionService;
@@ -22,6 +24,7 @@ describe('TransactionService', () => {
         let injector = new Injector(loggerCore);
         injector.provide({ provide: ServerMetadata, useValue: <any>{ name: 'abc' } });
         injector.provide({ provide: ORMService, useClass: FakeORMService });
+        injector.provide({ provide: RouterReflector, useClass: FakeRouterReflector });
         transactService = injector.resolveInjectable(TransactionService)!;
     });
     
