@@ -478,6 +478,15 @@ describe('RouterReflector', () => {
                 let result = await resultFn(FakeRequest(), FakeResponse());
                 expect(handleOrder).to.eql([0, 1, 2]);
             });
+            it('should stop running route interceptors if one sends a response', async () => {
+                let handleOrder: number[] = [];
+                routerReflector.registerRouteInterceptor((req, res, next) => (handleOrder.push(0), next()));
+                routerReflector.registerRouteInterceptor((req, res, next) => (handleOrder.push(1), res.status(404).send('Blah'), next()));
+                routerReflector.registerRouteInterceptor((req, res, next) => (handleOrder.push(2), next()));
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let result = await resultFn(FakeRequest(), FakeResponse());
+                expect(handleOrder).to.eql([0, 1]);
+            });
         });
     });
     
