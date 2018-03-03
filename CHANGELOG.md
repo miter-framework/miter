@@ -1,5 +1,14 @@
 
 
+<a name="0.6.3"></a>
+## [0.6.3](https://github.com/miter-framework/miter/compare/0.6.2...0.6.3) (_Future_)
+
+### Bug Fixes
+
+* **router:** ensure route interceptors have valid next functions
+
+
+
 <a name="0.6.2"></a>
 ## [0.6.2](https://github.com/miter-framework/miter/compare/0.6.0...0.6.2) (2018-02-04)
 

@@ -349,7 +349,7 @@ export class RouterReflector {
             for (let q = 0; q < interceptors.length; q++) {
                 interceptorCallbacks.push(async () => {
                     if (res.statusCode !== initialStatusCode || res.headersSent) return;
-                    await interceptors[q + 1](req, res, interceptorCallbacks[q + 2]);
+                    await interceptors[q + 1](req, res, interceptorCallbacks[q + 1]);
                 });
             }
             interceptors.push(async () => {

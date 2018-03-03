@@ -468,6 +468,16 @@ describe('RouterReflector', () => {
                 expect(errored).to.be.true;
                 expect(res.status).to.have.been.calledWith(500);
             });
+            
+            it('should run all of the route interceptors before handling the route', async () => {
+                let handleOrder: number[] = [];
+                routerReflector.registerRouteInterceptor((req, res, next) => (handleOrder.push(0), next()));
+                routerReflector.registerRouteInterceptor((req, res, next) => (handleOrder.push(1), next()));
+                routerReflector.registerRouteInterceptor((req, res, next) => (handleOrder.push(2), next()));
+                let resultFn = fn([], boundRoute, 'tname', { path: 'fish' });
+                let result = await resultFn(FakeRequest(), FakeResponse());
+                expect(handleOrder).to.eql([0, 1, 2]);
+            });
         });
     });
     
