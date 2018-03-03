@@ -1,7 +1,7 @@
 
 
 <a name="0.6.3"></a>
-## [0.6.3](https://github.com/miter-framework/miter/compare/0.6.2...0.6.3) (_Future_)
+## [0.6.3](https://github.com/miter-framework/miter/compare/0.6.2...0.6.3) (2018-03-03)
 
 ### Bug Fixes
 
