@@ -5,7 +5,7 @@ import { JwtBasePolicy } from './jwt-base.policy';
 
 @Policy()
 export class RequiredJwtPolicy extends JwtBasePolicy {
-    constructor(jwtMeta: JwtMetadata, core: LoggerCore) {
-        super(jwtMeta, core, true);
-    }
+  constructor(jwtMeta: JwtMetadata, core: LoggerCore) {
+    super(jwtMeta, core, true);
+  }
 }

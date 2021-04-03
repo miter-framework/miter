@@ -7,18 +7,18 @@ import { FakeTransaction } from './fake-transaction';
 
 @Injectable()
 export class FakeORMService extends ORMService {
-    constructor(
-        injector: Injector,
-        namespace: ClsNamespaceService
-    ) {
-        super(injector, namespace);
-    }
-    
-    async transaction(transactionName: string, transaction?: TransactionT): Promise<TransactionT> {
-        let parentTransaction = transaction;
-        if (typeof parentTransaction === 'undefined') parentTransaction = this.currentTransaction;
-        let t = new FakeTransaction(transactionName, parentTransaction);
-        this.currentTransaction = t;
-        return t;
-    }
+  constructor(
+    injector: Injector,
+    namespace: ClsNamespaceService
+  ) {
+    super(injector, namespace);
+  }
+
+  async transaction(transactionName: string, transaction?: TransactionT): Promise<TransactionT> {
+    let parentTransaction = transaction;
+    if (typeof parentTransaction === 'undefined') parentTransaction = this.currentTransaction;
+    let t = new FakeTransaction(transactionName, parentTransaction);
+    this.currentTransaction = t;
+    return t;
+  }
 }

@@ -18,90 +18,90 @@ export class EmptyControllerRoot { }
 
 @Controller()
 export class SimpleController {
-    @Get('a') async a(req: Request, res: Response) { }
-    @Get('b') async b(req: Request, res: Response) { }
-    @Get('c') async c(req: Request, res: Response) { }
+  @Get('a') async a(req: Request, res: Response) { }
+  @Get('b') async b(req: Request, res: Response) { }
+  @Get('c') async c(req: Request, res: Response) { }
 }
 @Controller()
 export class SimpleChildController extends SimpleController {
-    @Get('x') async x(req: Request, res: Response) { }
-    @Get('y') async y(req: Request, res: Response) { }
-    @Get('z') async z(req: Request, res: Response) { }
+  @Get('x') async x(req: Request, res: Response) { }
+  @Get('y') async y(req: Request, res: Response) { }
+  @Get('z') async z(req: Request, res: Response) { }
 }
 @Controller({
-    controllers: [SimpleController]
+  controllers: [SimpleController]
 })
 export class SimpleControllerRoot { }
 
 @Controller()
 export class MultiRouteController {
-    @Get('a')
-    @Get('b')
-    @Post('x')
-    async multi(req: Request, res: Response) { }
+  @Get('a')
+  @Get('b')
+  @Post('x')
+  async multi(req: Request, res: Response) { }
 }
 
 @Controller()
 export class PhishingController {
-    public someFakeFunction(...args: any[]) {}
-    private anotherOne() {}
-    masqueradingAsRoutes(name: string, age: number) {}
-    async withTheSameSignature(req: Request, res: Response) {}
+  public someFakeFunction(...args: any[]) {}
+  private anotherOne() {}
+  masqueradingAsRoutes(name: string, age: number) {}
+  async withTheSameSignature(req: Request, res: Response) {}
 }
 
 @Controller({
-    path: 'api',
-    policies: [Policy1]
+  path: 'api',
+  policies: [Policy1]
 })
 export class ComplexController {
-    @Get({
-        path: 'x',
-        policies: [Policy2]
-    })
-    async healthCheck(req: Request, res: Response) { }
-    
-    transformRoutePathPart(routeFnName: string, part: string): string {
-        return routeFnName + part.repeat(3);
-    }
-    transformRoutePath(routeFnName: string, path: string): string {
-        return path.toUpperCase();
-    }
-    transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
-        return [Policy3, ...policies];
-    }
-    
-    transformRoute(route: TransformRouteT): boolean | void {
-        if (route.routeFnName === 'ambivalent') return;
-        return route.routeFnName !== 'skipThisRoute';
-    }
+  @Get({
+    path: 'x',
+    policies: [Policy2]
+  })
+  async healthCheck(req: Request, res: Response) { }
+
+  transformRoutePathPart(routeFnName: string, part: string): string {
+    return routeFnName + part.repeat(3);
+  }
+  transformRoutePath(routeFnName: string, path: string): string {
+    return path.toUpperCase();
+  }
+  transformRoutePolicies(routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] {
+    return [Policy3, ...policies];
+  }
+
+  transformRoute(route: TransformRouteT): boolean | void {
+    if (route.routeFnName === 'ambivalent') return;
+    return route.routeFnName !== 'skipThisRoute';
+  }
 }
 
 @Controller()
 export class SkipRouteController {
-    @Get('health-check')
-    async healthCheck(req: Request, res: Response) { }
-    
-    transformRoute(route: TransformRouteT): boolean | void {
-        return false;
-    }
+  @Get('health-check')
+  async healthCheck(req: Request, res: Response) { }
+
+  transformRoute(route: TransformRouteT): boolean | void {
+    return false;
+  }
 }
 
 @Controller()
 export class KeepRouteController {
-    @Get('health-check')
-    async healthCheck(req: Request, res: Response) { }
-    
-    transformRoute(route: TransformRouteT): boolean | void {
-        return true;
-    }
+  @Get('health-check')
+  async healthCheck(req: Request, res: Response) { }
+
+  transformRoute(route: TransformRouteT): boolean | void {
+    return true;
+  }
 }
 
 @Controller()
 export class AmbivalentController {
-    @Get('health-check')
-    async healthCheck(req: Request, res: Response) { }
-    
-    transformRoute(route: TransformRouteT): boolean | void {
-        return;
-    }
+  @Get('health-check')
+  async healthCheck(req: Request, res: Response) { }
+
+  transformRoute(route: TransformRouteT): boolean | void {
+    return;
+  }
 }

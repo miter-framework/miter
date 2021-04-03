@@ -1,8 +1,8 @@
 {
-    "exclude": [
-        "dist",
-        "node_modules",
-        "src/**/test/*"
-    ],
-    "extends": "./tsconfig.json"
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/**/test/*"
+  ],
+  "extends": "./tsconfig.json"
 }

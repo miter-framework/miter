@@ -8,5 +8,5 @@ use(sinonChai);
 import { RouterService } from '../router.service';
 
 describe('RouterService', () => {
-    //TODO: write unit tests for RouterService
+  //TODO: write unit tests for RouterService
 });

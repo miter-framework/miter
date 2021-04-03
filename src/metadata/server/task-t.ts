@@ -14,11 +14,11 @@ import { LogLevel } from './server-t';
 export type Task = (server: Server, ...args: string[]) => Promise<void>;
 
 export type TaskMetadataT = {
-    task: Task,
-    name?: string,
-    orm?: OrmMetadataT,
-    inject?: ProvideMetadata<any>[],
-    models?: StaticModelT<ModelT<PkType>>[],
-    services?: CtorT<ServiceT>[],
-    logLevel?: LogLevel | { [name: string]: LogLevel }
+  task: Task,
+  name?: string,
+  orm?: OrmMetadataT,
+  inject?: ProvideMetadata<any>[],
+  models?: StaticModelT<ModelT<PkType>>[],
+  services?: CtorT<ServiceT>[],
+  logLevel?: LogLevel | { [name: string]: LogLevel }
 }

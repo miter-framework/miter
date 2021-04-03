@@ -1,36 +1,36 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "target": "es6",
-        "outDir": "dist",
-        "rootDir": "./src",
-        "sourceMap": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "removeComments": true,
-        "forceConsistentCasingInFileNames": true,
-        "noImplicitThis": true,
-        "moduleResolution": "node",
-        "strictNullChecks": true,
-        "skipLibCheck": true,
-        "alwaysStrict": true,
-        "noImplicitAny": true,
-        "pretty": true,
-        "declaration": true,
-        "types": [
-            "express",
-            "lodash",
-            "node",
-            "pluralize"
-        ]
-    },
-    "include": [
-        "src"
-    ],
-    "exclude": [
-        "dist",
-        "node_modules"
-    ],
-    "compileOnSave": false,
-    "buildOnSave": false
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "outDir": "dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "removeComments": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitThis": true,
+    "moduleResolution": "node",
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "alwaysStrict": true,
+    "noImplicitAny": true,
+    "pretty": true,
+    "declaration": true,
+    "types": [
+      "express",
+      "lodash",
+      "node",
+      "pluralize"
+    ]
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "compileOnSave": false,
+  "buildOnSave": false
 }

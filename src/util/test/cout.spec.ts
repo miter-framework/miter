@@ -8,5 +8,5 @@ use(sinonChai);
 import { cout } from '../cout';
 
 describe('util/cout', () => {
-    //TODO: test util/cout
+  //TODO: test util/cout
 });

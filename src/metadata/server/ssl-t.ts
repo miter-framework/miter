@@ -1,7 +1,7 @@
 
 
 export interface SSLMetadataT {
-    enabled?: boolean,
-    privateKey?: string,
-    certificate?: string
+  enabled?: boolean,
+  privateKey?: string,
+  certificate?: string
 };

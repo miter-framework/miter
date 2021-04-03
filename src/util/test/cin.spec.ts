@@ -8,5 +8,5 @@ use(sinonChai);
 import { cin } from '../cin';
 
 describe('util/cin', () => {
-    //TODO: test util/cin
+  //TODO: test util/cin
 });

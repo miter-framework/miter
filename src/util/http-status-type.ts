@@ -1,8 +1,8 @@
 
 
 export function httpStatusType(statusCode: number) {
-    //tslint:disable-next-line:no-magic-numbers
-    return Math.floor(statusCode / 100);
+  //tslint:disable-next-line:no-magic-numbers
+  return Math.floor(statusCode / 100);
 }
 
 export const HTTP_STATUS_TYPE_INFO = 1;

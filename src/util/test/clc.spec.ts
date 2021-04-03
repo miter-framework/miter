@@ -8,5 +8,5 @@ use(sinonChai);
 import { clc } from '../clc';
 
 describe('util/clc', () => {
-    //TODO: test util/clc
+  //TODO: test util/clc
 });

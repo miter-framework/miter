@@ -11,64 +11,64 @@ type AbstractCtorT<T> = { (...args: any[]): T };
 
 @Policy()
 export class JwtBasePolicy {
-    constructor(
-        private jwtMeta: JwtMetadata,
-        loggerCore: LoggerCore,
-        public credentialsRequired: boolean
-    ) {
-        if (!jwtMeta) return;
-        
-        this.jwtHandler = expressJwt({
-            secret: jwtMeta.secret,
-            userProperty: this.property,
-            credentialsRequired: false,
-            getToken: req => this.getToken(req)
-        });
-        this.logger = Logger.fromSubsystem(loggerCore, 'jwt-policy');
+  constructor(
+    private jwtMeta: JwtMetadata,
+    loggerCore: LoggerCore,
+    public credentialsRequired: boolean
+  ) {
+    if (!jwtMeta) return;
+
+    this.jwtHandler = expressJwt({
+      secret: jwtMeta.secret,
+      userProperty: this.property,
+      credentialsRequired: false,
+      getToken: req => this.getToken(req)
+    });
+    this.logger = Logger.fromSubsystem(loggerCore, 'jwt-policy');
+  }
+  protected readonly logger: Logger;
+
+  get property() {
+    if (!this.jwtMeta) return undefined;
+    return this.jwtMeta.tokenProperty;
+  }
+  private jwtHandler: RequestHandler;
+
+  async handle(req: Request, res: Response) {
+    let jwt = await this.getJwt(req, res);
+    let reqProperty = this.property!;
+    if (jwt !== null) jwt = (<any>req)[reqProperty] = await this.fromJson(jwt);
+    if (this.credentialsRequired && !jwt) {
+      res.status(HTTP_STATUS_UNAUTHORIZED).json({ msg: 'Invalid Authorization header.' });
     }
-    protected readonly logger: Logger;
-    
-    get property() {
-        if (!this.jwtMeta) return undefined;
-        return this.jwtMeta.tokenProperty;
+    return jwt;
+  }
+
+  protected getToken(req: Request): string | null {
+    if (req.headers.authorization) {
+      let split = req.headers.authorization.split(' ');
+      if (split[0] === 'Bearer' && split.length === 2) {
+        return split[1];
+      }
     }
-    private jwtHandler: RequestHandler;
-    
-    async handle(req: Request, res: Response) {
-        let jwt = await this.getJwt(req, res);
-        let reqProperty = this.property!;
-        if (jwt !== null) jwt = (<any>req)[reqProperty] = await this.fromJson(jwt);
-        if (this.credentialsRequired && !jwt) {
-            res.status(HTTP_STATUS_UNAUTHORIZED).json({ msg: 'Invalid Authorization header.' });
-        }
-        return jwt;
+    return null;
+  }
+
+  private async getJwt(req: Request, res: Response) {
+    let reqProperty = this.property!;
+    if (this.jwtHandler) {
+      try {
+        await wrapPromise<void>(this.jwtHandler, req, res);
+      }
+      catch (e) {
+        this.logger.verbose(`express-jwt failed to parse 'Authorization' header.`);
+        this.logger.verbose(`'Authorization' header: '${req.header('Authorization')}'`);
+      }
     }
-    
-    protected getToken(req: Request): string | null {
-        if (req.headers.authorization) {
-            let split = req.headers.authorization.split(' ');
-            if (split[0] === 'Bearer' && split.length === 2) {
-                return split[1];
-            }
-        }
-        return null;
-    }
-    
-    private async getJwt(req: Request, res: Response) {
-        let reqProperty = this.property!;
-        if (this.jwtHandler) {
-            try {
-                await wrapPromise<void>(this.jwtHandler, req, res);
-            }
-            catch (e) {
-                this.logger.verbose(`express-jwt failed to parse 'Authorization' header.`);
-                this.logger.verbose(`'Authorization' header: '${req.header('Authorization')}'`);
-            }
-        }
-        return (<any>req)[reqProperty] = (<any>req)[reqProperty] || null;
-    }
-    
-    protected async fromJson(json: any) {
-        return json;
-    }
+    return (<any>req)[reqProperty] = (<any>req)[reqProperty] || null;
+  }
+
+  protected async fromJson(json: any) {
+    return json;
+  }
 }

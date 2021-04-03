@@ -4,10 +4,10 @@ import { PolicyMetadata, PolicyMetadataSym } from '../../metadata/policies/polic
 import { Injectable } from '../services/injectable.decorator';
 
 export function Policy<T>(meta?: PolicyMetadata) {
-    meta = meta || {};
-    return function(policyFn: CtorT<PolicyT<T>>) {
-        Reflect.defineMetadata(PolicyMetadataSym, meta, policyFn.prototype);
-        
-        Injectable()(policyFn);
-    }
+  meta = meta || {};
+  return function(policyFn: CtorT<PolicyT<T>>) {
+    Reflect.defineMetadata(PolicyMetadataSym, meta, policyFn.prototype);
+
+    Injectable()(policyFn);
+  }
 }

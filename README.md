@@ -24,12 +24,12 @@ import { Request, Response } from 'express';
 
 @Controller()
 class HelloWorldController {
-    
-    @Get('greet')
-    async sampleRoute(req: Request, res: Response) {
-        res.status(200).send(`Hello, World!`);
-    }
-    
+
+  @Get('greet')
+  async sampleRoute(req: Request, res: Response) {
+    res.status(200).send(`Hello, World!`);
+  }
+
 }
 ```
 
@@ -40,11 +40,11 @@ import { Miter } from 'miter';
 import { HelloWorldController } from './hello-world.controller.ts';
 
 Miter.launch({
-    name: 'server-name',
-    port: 8080,
-    router: {
-        controllers: [HelloWorldController]
-    }
+  name: 'server-name',
+  port: 8080,
+  router: {
+    controllers: [HelloWorldController]
+  }
 });
 ```
 

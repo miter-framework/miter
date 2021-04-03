@@ -6,7 +6,7 @@ export type ServiceListenFunc = { (webServer: http.Server | https.Server): Promi
 export type ServiceStopFunc = { (): Promise<void> }
 
 export interface ServiceT {
-    start: ServiceStartFunc,
-    listen?: ServiceListenFunc,
-    stop?: ServiceStopFunc
+  start: ServiceStartFunc,
+  listen?: ServiceListenFunc,
+  stop?: ServiceStopFunc
 }

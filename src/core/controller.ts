@@ -1,15 +1,15 @@
 import { PolicyDescriptor } from '../core/policy';
 
 export type TransformRouteT = {
-    routeFnName: string,
-    fullPath: string,
-    policyDescriptors: PolicyDescriptor[]
+  routeFnName: string,
+  fullPath: string,
+  policyDescriptors: PolicyDescriptor[]
 };
 
 export type ControllerT = {
-    transformRoutePathPart?: { (routeFnName: string, part: string): string },
-    transformRoutePath?: { (routeFnName: string, path: string): string },
-    transformRoutePolicies?: { (routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] },
-    
-    transformRoute?: { (route: TransformRouteT): boolean | void }
+  transformRoutePathPart?: { (routeFnName: string, part: string): string },
+  transformRoutePath?: { (routeFnName: string, path: string): string },
+  transformRoutePolicies?: { (routeFnName: string, fullPath: string, policies: PolicyDescriptor[]): PolicyDescriptor[] },
+
+  transformRoute?: { (route: TransformRouteT): boolean | void }
 }

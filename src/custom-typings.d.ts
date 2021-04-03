@@ -1,6 +1,6 @@
 
 
 declare module 'debug' {
-    let debug: any;
-    export = debug;
+  let debug: any;
+  export = debug;
 }
