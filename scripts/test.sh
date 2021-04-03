@@ -22,7 +22,7 @@ if [[ $TEST_COUNT != "watch" && ($STATUS_RESPONSE =~ $NOT_STAGED_FOR_COMMIT || $
 fi
 
 if [[ $TEST_COUNT == "watch" ]]; then
-    NODE_ENV=$ENV node_modules/.bin/mocha-typescript-watch -p tsconfig.json "dist/**/*.spec.js"
+    NODE_ENV=$ENV node_modules/.bin/testdeck-watch -p tsconfig.json "dist/**/*.spec.js"
 else
     NODE_ENV=$ENV node_modules/.bin/mocha --require ts-node/register "src/**/*.spec.ts"
 fi

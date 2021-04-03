@@ -22,8 +22,6 @@ import { LoggerCore } from '../../services/logger-core';
 import { ErrorHandler } from '../../services/error-handler';
 import { RouterService } from '../../services/router.service';
 import { FakeRouterService } from '../../services/test/fake-router.service';
-import { TransactionService } from '../../services/transaction.service';
-import { FakeTransactionService } from '../../services/test/fake-transaction.service';
 
 import { Policy1, Policy2, Policy3,
          UnusedPolicy,
@@ -57,7 +55,6 @@ describe('RouterReflector', () => {
     });
     injector.provide({ provide: RouterMetadata, useValue: routerMeta });
     injector.provide({ provide: RouterService, useClass: FakeRouterService });
-    injector.provide({ provide: TransactionService, useClass: FakeTransactionService });
     routerReflector = injector.resolveInjectable(RouterReflector)!;
     errorHandler = injector.resolveInjectable(ErrorHandler)!;
   });
@@ -100,13 +97,13 @@ describe('RouterReflector', () => {
       expect(() => routerReflector.reflectControllerRoutes([ControllerSansDecorator], EmptyController)).to.throw(/failed to reflect parent/i);
     });
     it('should invoke reflectRouteMeta', () => {
-      let stub = sinon.stub(routerReflector, 'reflectRouteMeta').callThrough();
+      let stub = sinon.stub(<any>routerReflector, 'reflectRouteMeta').callThrough();
       routerReflector.reflectControllerRoutes([], EmptyController);
       expect((<any>routerReflector).reflectRouteMeta).to.have.been.calledWith(EmptyController.prototype);
     });
     it('should invoke addRoute once for each route', () => {
       let inst = injector.resolveInjectable(SimpleController)!;
-      let stub = sinon.stub(routerReflector, 'addRoute');
+      let stub = sinon.stub(<any>routerReflector, 'addRoute');
       routerReflector.reflectControllerRoutes([], SimpleController);
       let subject = expect((<any>routerReflector).addRoute).to.have.been;
       subject.calledThrice;
@@ -227,7 +224,7 @@ describe('RouterReflector', () => {
       expect(router.expressRouter.get).to.have.been.calledOnce;
     });
     it('should invoke resolvePolicies', () => {
-      sinon.stub(routerReflector, 'resolvePolicies');
+      sinon.stub(<any>routerReflector, 'resolvePolicies');
       routerReflector.reflectControllerRoutes([], ComplexController);
       expect((<any>routerReflector).resolvePolicies).to.have.been.calledWith([Policy3, Policy1, Policy2]);
     });

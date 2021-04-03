@@ -247,7 +247,9 @@ export class Server {
   private async onListening() {
     if (!this.webServer) throw new Error(`onListening called, but there is no httpServer!`);
     let addr = this.webServer.address();
-    let bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`;
+    let bind = (typeof addr === "string") ? `pipe ${addr}` :
+                                   !!addr ? `port ${addr.port}` :
+                                            'no bind address (??!!)';
     this.logger.info(`Listening on ${bind}`);
     await this.listenServices();
   }

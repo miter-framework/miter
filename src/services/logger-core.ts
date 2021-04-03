@@ -35,7 +35,7 @@ export class LoggerCore {
   private logLevel: { [name: string]: LogLevel };
 
   public shutdown() {
-    if (this.createFile) fs.close(this.fd);
+    if (this.createFile) fs.closeSync(this.fd);
   }
 
   private _serverName: string | null;

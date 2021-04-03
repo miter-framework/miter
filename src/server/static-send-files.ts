@@ -125,7 +125,7 @@ function createRedirectDirectoryListener(req: Request) {
     var originalUrl = parseUrl.original(req)!;
 
     // append trailing slash
-    delete originalUrl.path;
+    delete (<any>originalUrl).path;
     originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + '/');
 
     // reformat the URL

@@ -72,11 +72,11 @@ describe('JwtBasePolicy', () => {
       describe('when the jwt is null', () => {
         beforeEach(() => {
           ctor({ secret: testSecret }, false);
-          sinon.stub(jwtBasePolicy, 'getJwt').returns(Promise.resolve(null));
+          sinon.stub(<any>jwtBasePolicy, 'getJwt').returns(Promise.resolve(null));
         });
 
         it('should not invoke fromJson', async () => {
-          sinon.spy(jwtBasePolicy, 'fromJson');
+          sinon.spy(<any>jwtBasePolicy, 'fromJson');
           await jwtBasePolicy.handle(req, res);
           expect((<any>jwtBasePolicy).fromJson).not.to.have.been.called;
         });
@@ -104,17 +104,17 @@ describe('JwtBasePolicy', () => {
       describe('when the jwt is not null', () => {
         beforeEach(() => {
           ctor({ secret: testSecret }, false);
-          sinon.stub(jwtBasePolicy, 'getJwt').returns(Promise.resolve(testJwt));
+          sinon.stub(<any>jwtBasePolicy, 'getJwt').returns(Promise.resolve(testJwt));
         });
 
         it('should invoke fromJson with the jwt if it is not null', async () => {
-          sinon.spy(jwtBasePolicy, 'fromJson');
+          sinon.spy(<any>jwtBasePolicy, 'fromJson');
           await jwtBasePolicy.handle(req, res);
           expect((<any>jwtBasePolicy).fromJson).to.have.been.calledOnce.calledWith(testJwt);
         });
         it('should return the value returned by fromJson', async () => {
           let testValue = 'fish!';
-          sinon.stub(jwtBasePolicy, 'fromJson').returns(Promise.resolve(testValue));
+          sinon.stub(<any>jwtBasePolicy, 'fromJson').returns(Promise.resolve(testValue));
           let result = await jwtBasePolicy.handle(req, res);
           expect(result).to.eq(testValue);
         });
@@ -147,7 +147,7 @@ describe('JwtBasePolicy', () => {
       });
       it('should not invoke the jwt handler', async () => {
         if (!(<any>jwtBasePolicy).jwtHandler) return;
-        sinon.stub(jwtBasePolicy, 'jwtHandler');
+        sinon.stub(<any>jwtBasePolicy, 'jwtHandler');
         await getJwt(req, res);
         expect((<any>jwtBasePolicy).jwtHandler).not.to.have.been.called;
       });
@@ -163,7 +163,7 @@ describe('JwtBasePolicy', () => {
         getJwt = (<any>jwtBasePolicy).getJwt.bind(jwtBasePolicy);
       });
       it('should invoke the jwtHandler', async () => {
-        sinon.spy(jwtBasePolicy, 'jwtHandler');
+        sinon.spy(<any>jwtBasePolicy, 'jwtHandler');
         await getJwt(req, res);
         expect((<any>jwtBasePolicy).jwtHandler).to.have.been.calledOnce;
       });
@@ -184,13 +184,13 @@ describe('JwtBasePolicy', () => {
         expect(result).to.deep.eq(testJwt);
       });
       it('should log verbose if the jwt handler throws an error', async () => {
-        sinon.stub(jwtBasePolicy, 'jwtHandler').throws('HAHA die!');
+        sinon.stub(<any>jwtBasePolicy, 'jwtHandler').throws('HAHA die!');
         let stub = sinon.stub((<any>jwtBasePolicy).logger, 'verbose');
         await getJwt(req, res);
         expect(stub).to.have.been.calledTwice;
       });
       it('should return null if the jwt handler throws an error', async () => {
-        sinon.stub(jwtBasePolicy, 'jwtHandler').throws('HAHA die!');
+        sinon.stub(<any>jwtBasePolicy, 'jwtHandler').throws('HAHA die!');
         let result = await getJwt(req, res);
         expect(result).to.be.null;
       });

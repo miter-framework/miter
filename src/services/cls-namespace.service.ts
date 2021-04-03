@@ -1,52 +1,50 @@
-import { createNamespace, Namespace, Context } from 'continuation-local-storage';
+import { AsyncLocalStorage } from 'async_hooks';
 import { ServerMetadata } from '../metadata/server/server';
 import { Service } from '../decorators/services/service.decorator';
+
+export type NamespaceContext = {
+  parent: NamespaceContext | null;
+  [key: string]: unknown;
+};
 
 @Service()
 export class ClsNamespaceService {
   constructor(
     private meta: ServerMetadata
   ) {
-    let _name = `miter-cls-(${this.meta.name || ''})-${ClsNamespaceService.namespaceNum++}`;
-    this._namespace = createNamespace(_name);
+    this._name = `miter-cls-(${this.meta.name || ''})-${ClsNamespaceService.namespaceNum++}`;
+    this._store = new AsyncLocalStorage();
   }
 
   async start() { }
 
   private static namespaceNum: number = 0;
-  private _namespace: Namespace;
+  private _name: string;
+  private _store: AsyncLocalStorage<NamespaceContext>;
 
   get name() {
-    return this._namespace.name;
+    return this._name;
   }
 
-  get activeContext() {
-    return this.active;
-  }
-  get active() {
-    return this._namespace.active;
-  }
-  createContext() {
-    return this._namespace.createContext();
+  get activeContext(): NamespaceContext | null {
+    return this._store.getStore() || null;
   }
 
-  get(key: string) {
-    return this._namespace.get(key);
+  get<T>(key: string): T | undefined {
+    let ctx = this.activeContext;
+    while (ctx) {
+      if (typeof ctx[key] !== 'undefined') return ctx[key] as T | undefined;
+    }
+    return undefined;
   }
   set<T>(key: string, val: T) {
-    this._namespace.set(key, val);
+    let ctx = this.activeContext;
+    if (!ctx) throw new Error(`Can't set a value: there is no active context!`);
+    ctx[key] = val;
   }
 
-  run<T = void>(callback: (...args: any[]) => T) {
-    return this._namespace.run(callback);
-  }
-  runAndReturn<T = void>(callback: (...args: any[]) => T): T {
-    return this._namespace.runAndReturn(callback);
-  }
-  bind(callback: any, context?: Context) {
-    return this._namespace.bind(callback, context);
-  }
-  bindEmitter(emitter: NodeJS.EventEmitter) {
-    return this._namespace.bindEmitter(emitter);
+  run<T = void>(callback: (...args: any[]) => T): T {
+    let newCtx = { parent: this.activeContext } as NamespaceContext;
+    return this._store.run<T>(newCtx, callback);
   }
 }

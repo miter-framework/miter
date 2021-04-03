@@ -9,11 +9,12 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "serve": "node .",
-    "start": "yarn build && yarn serve"
+    "start": "npm run build && npm run serve"
   },
   "dependencies": {
-    "@types/express": "^4.11.1",
-    "express": "^4.16.2",
-    "miter": "file:../../"
+    "@types/express": "^4.17.11",
+    "express": "^4.17.1",
+    "miter": "file:../../",
+    "typescript": "^4.2.3"
   }
 }

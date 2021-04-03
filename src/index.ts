@@ -1,6 +1,5 @@
 
 
-export * from './controllers';
 export * from './core';
 export * from './decorators';
 export * from './metadata';

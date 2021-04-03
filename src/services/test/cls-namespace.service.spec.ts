@@ -11,7 +11,7 @@ import { ServerMetadata } from '../../metadata/server/server';
 const testServerMeta = new ServerMetadata({ name: 'abc-xyz' });
 
 function delay(millis: number) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _) => {
     setTimeout(resolve, millis);
   });
 }
@@ -26,10 +26,10 @@ describe('ClsNamespaceService', () => {
     });
   });
 
-  describe('.runAndReturn', async () => {
+  describe('.run', async () => {
     it('should create a local storage that is accessable asynchronously', async () => {
       expect(instance.get('key')).not.to.be.ok;
-      await instance.runAndReturn(async () => {
+      await instance.run(async () => {
         instance.set('key', 'value1');
         expect(instance.get('key')).to.eq('value1');
         await delay(20);
@@ -38,35 +38,11 @@ describe('ClsNamespaceService', () => {
       expect(instance.get('key')).not.to.be.ok;
     });
     it('should return the result of running the function', async () => {
-      let result = await instance.runAndReturn(async () => {
+      let result = await instance.run(async () => {
         await delay(20);
         return 42;
       });
       expect(result).to.eq(42);
-    });
-  });
-
-  describe('.run', () => {
-    it('should return the local storage context immediately', () => {
-      expect(instance.activeContext).not.to.be.ok;
-      let context = <any>instance.run(() => {
-        instance.set('key', 'value');
-      });
-      expect(context).to.be.ok;
-      expect(instance.activeContext).not.to.be.ok;
-      expect(context.key).to.eq('value');
-    });
-  });
-
-  describe('.bind', () => {
-    it('should wrap the method with the asynchronous local storage context', () => {
-      let context = <any>instance.run(() => {
-        instance.set('key', 'value');
-      });
-      let fn = () => expect(instance.get('key')).to.eq('value');
-      let boundFn = instance.bind(fn, context);
-      expect(instance.get('key')).not.to.be.ok;
-      boundFn();
     });
   });
 });

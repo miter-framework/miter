@@ -74,7 +74,7 @@ describe('ServiceReflector', () => {
       expect(() => serviceReflector.reflectServices(<any>null)).not.to.throw;
     });
     it('should invoke reflectService on each service passed in', async () => {
-      sinon.stub(serviceReflector, 'reflectService');
+      sinon.stub(<any>serviceReflector, 'reflectService');
       serviceReflector.reflectServices([
         LifecycleWorkService,
         LifecycleFailService

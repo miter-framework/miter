@@ -68,7 +68,7 @@ describe('Injector', () => {
     it('should invoke resolveDependencies when constructing a new instance', () => {
       @Injectable() class TestClass2 { constructor() { } }
       @Injectable() class TestClass { constructor(tc2: TestClass2) { } }
-      sinon.spy(instance, 'resolveDependencies');
+      sinon.spy(<any>instance, 'resolveDependencies');
       instance.resolveInjectable(TestClass);
       expect((<any>instance).resolveDependencies).to.have.been.calledTwice
         .calledWith([TestClass2], TestClass)
@@ -279,7 +279,7 @@ describe('Injector', () => {
           useCallback: () => <any>void(0),
           deps: []
         };
-        sinon.stub(instance, 'resolveDependencies').returns([]);
+        sinon.stub(<any>instance, 'resolveDependencies').returns([]);
         instance.provide(meta);
         instance.resolveInjectable(TestClass);
         expect((<any>instance).resolveDependencies).to.have.been.calledOnce.calledWith(meta.deps, TestClass);
