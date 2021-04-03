@@ -1,6 +1,5 @@
 import { Service } from '../../decorators/services/service.decorator';
 import { Router as CoreRouter } from 'express-serve-static-core';
-import { Router as ExpressRouter, IRouterMatcher } from 'express';
 
 export class FakeExpressRouter {
   constructor() { }

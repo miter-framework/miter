@@ -46,7 +46,9 @@ export class JwtBasePolicy {
 
   protected getToken(req: Request): string | null {
     if (req.headers.authorization) {
-      let split = req.headers.authorization.split(' ');
+      //TODO: figure out if it's valid to have multiple authorization headers...
+      let authHeader = Array.isArray(req.headers.authorization) ? req.headers.authorization[0] : req.headers.authorization;
+      let split = authHeader.split(' ');
       if (split[0] === 'Bearer' && split.length === 2) {
         return split[1];
       }

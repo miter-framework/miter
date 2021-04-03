@@ -31,7 +31,7 @@ import { Policy1, Policy2, Policy3,
          ThrowPolicy } from './test-policies';
 import { EmptyController,
          ControllerSansDecorator,
-         EmptyControllerChild, EmptyControllerRoot,
+         EmptyControllerRoot,
          SimpleController, SimpleChildController, SimpleControllerRoot,
          MultiRouteController,
          PhishingController,

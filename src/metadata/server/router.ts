@@ -2,11 +2,6 @@ import { Injectable } from '../../decorators/services/injectable.decorator';
 import { ServerMetadata } from './server';
 import { RouterMetadataT } from './router-t';
 
-import { Handler } from 'express';
-import { PolicyDescriptor } from '../../core/policy';
-import { CtorT } from '../../core/ctor';
-import { ControllerT } from '../../core/controller';
-
 @Injectable({
   provide: {
     useCallback: function(meta: ServerMetadata) {

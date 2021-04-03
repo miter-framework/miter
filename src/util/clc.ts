@@ -1,10 +1,10 @@
 import clc = require('cli-color');
 
 declare module 'cli-color' {
-  interface Format {
-    info: Format;
-    error: Format;
-    warn: Format;
+  interface Color {
+    info: clc.Format;
+    error: clc.Format;
+    warn: clc.Format;
   }
 }
 clc.info = clc.cyan;

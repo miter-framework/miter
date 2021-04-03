@@ -1,4 +1,3 @@
-import { Injector } from '../../core/injector';
 import { Injectable } from '../../decorators/services/injectable.decorator';
 import { ServerMetadata } from './server';
 import { SSLMetadataT } from './ssl-t';

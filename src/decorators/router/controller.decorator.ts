@@ -1,5 +1,4 @@
 import { CtorT } from '../../core/ctor';
-import { ControllerT } from '../../core/controller';
 import { ControllerMetadata, ControllerMetadataSym, ControllerRoutesSym } from '../../metadata';
 import { Injectable } from '../services/injectable.decorator';
 

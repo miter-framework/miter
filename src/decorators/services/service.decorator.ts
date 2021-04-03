@@ -1,5 +1,4 @@
 import { CtorT } from '../../core/ctor';
-import { ServiceT } from '../../core/service';
 import { ServiceMetadata, ServiceMetadataSym } from '../../metadata/services/service';
 import { Injectable } from './injectable.decorator';
 

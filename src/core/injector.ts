@@ -7,7 +7,6 @@ import { MetadataMetadataSym } from '../metadata/services/metadata';
 import { InjectableMetadata, InjectableMetadataSym } from '../metadata/services/injectable';
 import { LoggerCore } from '../services/logger-core';
 import { Logger } from '../services/logger';
-import { clc } from '../util/clc';
 import _ = require('lodash');
 
 type MetaStackFrame = [CtorT<any>, Map<string, string> | undefined];

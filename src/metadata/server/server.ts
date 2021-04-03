@@ -1,9 +1,6 @@
 import { Injectable } from '../../decorators/services/injectable.decorator';
 import { ServerMetadataT } from './server-t';
 
-import { CtorT } from '../../core/ctor';
-import { ServiceT } from '../../core/service';
-
 @Injectable({
   provide: {
     useCallback: function(meta: ServerMetadataT) {

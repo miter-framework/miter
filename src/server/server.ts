@@ -9,25 +9,18 @@ import { ServerMetadataT } from '../metadata/server/server-t';
 import { ServerMetadata } from '../metadata/server/server';
 import { RouterMetadata } from '../metadata/server/router';
 import { ViewsMetadata } from '../metadata/server/views';
-import { OrmMetadata } from '../metadata/server/orm';
 import { SSLMetadata } from '../metadata/server/ssl';
-import { DatabaseMetadata } from '../metadata/server/database';
 
 import { ServiceReflector } from '../services/reflector';
 import { LoggerCore } from '../services/logger-core';
-import { ORMService } from '../services/orm.service';
-import { TransactionService } from '../services/transaction.service';
 import { TemplateService } from '../services/template.service';
 import { RouterReflector } from '../router/reflector';
 import { wrapPromise } from '../util/wrap-promise';
-import { wrapCallback } from '../util/wrap-callback';
 import { getMiterVersion } from '../util/get-miter-version';
 import { monkeypatchResponseSendFile, monkeypatchResponseRender } from './static-middleware';
 
 import * as http from 'http';
 import * as https from 'https';
-import debug_module = require('debug');
-let debug = debug_module('express:server');
 
 @Injectable()
 export class Server {
@@ -52,9 +45,6 @@ export class Server {
   private get logger() {
     return this._loggerCore.getSubsystem('miter');
   }
-  // get logger(): Logger {
-  //   return this._logger;
-  // }
 
   private _app: ExpressApp;
   get app(): ExpressApp {
@@ -80,7 +70,6 @@ export class Server {
       let routerMeta = this.injector.resolveInjectable(RouterMetadata)!;
       if (routerMeta) await this.createExpressApp();
       this.serviceReflector = this._injector.resolveInjectable(ServiceReflector)!;
-      await this.initOrm();
       await this.startServices();
       if (routerMeta) {
         this.reflectRoutes();
@@ -162,17 +151,6 @@ export class Server {
   }
 
   private serviceReflector: ServiceReflector;
-
-  async initOrm() {
-    let ormMeta = this.injector.resolveInjectable(OrmMetadata)!;
-    let dbMeta = this.injector.resolveInjectable(DatabaseMetadata)!;
-    if (ormMeta && ((typeof ormMeta.enabled === 'undefined' && !!ormMeta.models.length) || ormMeta.enabled) && dbMeta) {
-      this.serviceReflector.reflectServices([ORMService, TransactionService]);
-    }
-    else if (ormMeta.models.length) {
-      this.logger.warn(`Models included in server metadata, but no orm configuration defined.`);
-    }
-  }
 
   private async startServices() {
     this.serviceReflector.reflectServices();

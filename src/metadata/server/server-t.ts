@@ -1,7 +1,6 @@
 import { CtorT } from '../../core/ctor';
 import { ServiceT } from '../../core/service';
 
-import { OrmMetadataT } from './orm-t';
 import { SSLMetadataT } from './ssl-t';
 import { RouterMetadataT } from './router-t';
 import { ViewsMetadataT } from './views-t';
@@ -19,8 +18,6 @@ export interface ServerMetadataT {
   allowCrossOrigin?: boolean,
   ssl?: SSLMetadataT,
   router?: RouterMetadataT | null,
-
-  orm?: OrmMetadataT,
 
   services?: CtorT<ServiceT>[],
   views?: ViewsMetadataT | null,

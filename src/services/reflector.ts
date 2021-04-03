@@ -8,7 +8,6 @@ import { Injector } from '../core/injector';
 import { Injectable } from '../decorators/services/injectable.decorator';
 import { Name } from '../decorators/services/name.decorator';
 import { ServerMetadata } from '../metadata/server/server';
-import { Server } from '../server/server';
 import { Logger } from '../services/logger';
 
 @Injectable()

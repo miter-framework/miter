@@ -2,7 +2,6 @@ import { Service } from '../decorators/services/service.decorator';
 import { Name } from '../decorators/services/name.decorator';
 import { Server } from '../server/server';
 import { ServerMetadata } from '../metadata/server/server';
-import { OrmMetadata } from '../metadata/server/orm';
 import { Logger } from './logger';
 import { cin } from '../util/cin';
 import { cout } from '../util/cout';
@@ -19,7 +18,6 @@ export class ReplService {
     private server: Server,
     private logger: Logger,
     private meta: ServerMetadata,
-    private ormMeta: OrmMetadata
   ) { }
 
   private context: vm.Context;
@@ -31,30 +29,8 @@ export class ReplService {
     this.loopPromise = this.repl();
   }
 
-  private proxyModel(model: any) {
-    let proxy_handler = {
-      get: (target: any, name: string, receiver: any) => {
-        if (!(name in target) && (name in target.db)) {
-          this.logger.warn(`${name} is not a property on ${target.name || target}. Forwarding call to ${target.name || target}.db`);
-          let value = target.db[name];
-          if (typeof value === 'function') value = value.bind(target.db);
-          return value;
-        }
-        return target[name];
-      }
-    };
-    let proxy = new Proxy(model, proxy_handler);
-    proxy.toString = Function.prototype.toString.bind(model);
-    return proxy;
-  }
   private makeContext() {
     this.context = vm.createContext();
-    let models = this.ormMeta.models;
-    if (models) {
-      for (let q = 0; q < models.length; q++) {
-        (<any>this.context)[models[q].name] = this.proxyModel(models[q]);
-      }
-    }
     let services = this.meta.services;
     if (services) {
       for (let q = 0; q < services.length; q++) {

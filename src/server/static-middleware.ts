@@ -1,4 +1,4 @@
-import { Request, Response, Handler, NextFunction, Application as ExpressApp } from 'express';
+import { Request, Response, NextFunction, Application as ExpressApp } from 'express';
 import { Injector } from '../core/injector';
 import { wrapPromise } from '../util/wrap-promise';
 import { sendFiles } from './static-send-files';
